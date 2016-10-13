@@ -11,30 +11,41 @@ import (
 	"github.com/labstack/echo/engine"
 	"github.com/labstack/echo/engine/standard"
 	echologrus "github.com/nullbio/echo-logrus"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"github.com/spf13/cobra"
 )
 
-// The configuration flags for the web server.
-// The default values are development mode values.
-// For production mode all flags will need to be supplied appropriately.
-var (
-	// The HTTP port to listen on. If TLS is enabled it will redirect to TLS port.
-	hostname = kingpin.Flag("hostname", "The domain name, server hostname or IP address.").Default("localhost").Short('h').String()
-	port     = kingpin.Flag("port", "The HTTP port to listen on.").Default("3000").Short('p').Int()
+func main() {
+	rootCmd := &cobra.Command{
+		Use:   "{{.AppName}} [flags]",
+		Short: "{{.AppName}} web app server",
+		RunE:  run,
+	}
 
-	// TLS configuration variables. If --tls=false they won't be used.
-	tls      = kingpin.Flag("tls", "Enable TLS & HTTP2 mode.").Default("false").Short('s').Bool()
-	tlsport  = kingpin.Flag("tlsport", "The TLS port to listen on.").Default("3001").Int()
-	certfile = kingpin.Flag("certfile", "The TLS cert file path.").Default("./server.pem").String()
-	keyfile  = kingpin.Flag("keyfile", "The TLS key file path.").Default("./server.key").String()
+	registerFlags(rootCmd)
 
-	assets    = kingpin.Flag("assets", "The static assets path.").Default("./assets").Short('a').String()
-	templates = kingpin.Flag("templates", "The dynamic templates path.").Default("./templates").Short('t').String()
+	// Initialize the logger
+	initLogger()
 
-	// If no log file is provided, os.Stdout will be used
-	logfile  = kingpin.Flag("log", "The optional log file path.").Short('l').String()
-	loglevel = kingpin.Flag("level", "The minimum level to log.").Default("INFO").String()
-)
+	e := echo.New()
+
+	// Log echo activity using echo logrus middleware
+	e.Use(echologrus.New())
+
+	// Bind the template renderer
+	e.SetRenderer(NewRender())
+
+	// Initialize the routes
+	initRoutes(e)
+
+	// Start the web server listener
+	if err := startServer(e); err != nil {
+		log.Error(err.Error())
+	}
+}
+
+func run(cmd *cobra.Command, args []string) error {
+
+}
 
 // initLogger initializes Logrus using an optional log file or Stdout.
 func initLogger() {
@@ -60,31 +71,6 @@ func initLogger() {
 		log.Fatalln("cannot parse log level:", err)
 	}
 	log.SetLevel(level)
-}
-
-func main() {
-	// Initialize flags
-	kingpin.Version("1.0.0")
-	kingpin.Parse()
-
-	// Initialize the logger
-	initLogger()
-
-	e := echo.New()
-
-	// Log echo activity using echo logrus middleware
-	e.Use(echologrus.New())
-
-	// Bind the template renderer
-	e.SetRenderer(NewRender())
-
-	// Initialize the routes
-	initRoutes(e)
-
-	// Start the web server listener
-	if err := startServer(e); err != nil {
-		log.Error(err.Error())
-	}
 }
 
 // redirect listens on the non-HTTPS port, and redirects all requests to HTTPS

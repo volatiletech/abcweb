@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/labstack/echo"
-	"github.com/nullbio/go-web-one/controllers"
+	"github.com/nullbio/abcweb/controllers"
 )
 
 func initRoutes(e *echo.Echo) {

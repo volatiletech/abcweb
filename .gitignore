@@ -28,4 +28,4 @@ server.key
 server.pem
 
 # Ignore binary
-go-web-one
+abcweb

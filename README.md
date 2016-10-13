@@ -30,12 +30,24 @@ a client-side rendered web app or a stand-alone web API server.
 * [sql-migrate](https://github.com/rubenv/sql-migrate) *-- database migrations*
 * [lrserver](https://github.com/jaschaephraim/lrserver) *-- LiveReload automatic browser refreshing for front-end development*
 * [godo](https://github.com/go-godo/godo) and/or shell scripts *-- task runner for build tasks like minification*
-* [envconf](https://github.com/nullbio/envconf) *-- TOML configuration parser supporting multiple environments*
+* [switch](https://github.com/nullbio/switch) *-- TOML configuration parser supporting multiple environments*
 * [cobra](https://github.com/spf13/cobra) *-- command line arguments*
 * [minify](https://github.com/tdewolff/minify) *-- HTML/CSS/JS minification build task*
 * [zap](https://github.com/uber-go/zap) & [zapcolors](https://github.com/aarondl/zapcolors) *-- colored logging*
 * [chi](https://github.com/pressly/chi) *-- routing*
 * [render](https://github.com/unrolled/render) *-- dynamic template rendering using render*
+
+### Configuration
+
+This project loads configuration in the order of:
+
+1. command line argument default values
+2. config.toml
+3. environment variables
+4. supplied command line arguments
+
+This means that values passed into the command line will
+override values passed in through the config.toml and env vars.
 
 ### FAQ
 
