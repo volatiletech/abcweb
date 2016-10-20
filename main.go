@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/nullbio/abcweb/app"
-	"github.com/nullbio/abcweb/controllers"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
 	"github.com/uber-go/zap"
@@ -43,14 +42,8 @@ func main() {
 	// Configure the renderer (app/render.go)
 	a.InitRenderer()
 
-	// Hook up the controller object (controllers/controller.go)
-	controller := controllers.Controller{
-		Log:    a.Log,
-		Render: a.Render,
-	}
-
 	// Initialize the routes with the renderer (app/routes.go)
-	a.InitRoutes(controller)
+	a.InitRoutes()
 
 	if err := a.Root.Execute(); err != nil {
 		a.Log.Fatal("root command execution failed", zap.Error(err))
