@@ -9,6 +9,43 @@ import (
 	"github.com/uber-go/zap"
 )
 
+// serverErrLogger allows us to use the zap.Logger as our http.Server ErrorLog
+type serverErrLogger struct {
+	log zap.Logger
+}
+
+// Implement Write to log server errors using the zap logger
+func (s serverErrLogger) Write(b []byte) (int, error) {
+	s.log.Debug(string(b))
+	return 0, nil
+}
+
+// StartServer starts the web server on the specified port
+func (a AppState) StartServer() error {
+	var err error
+	server := http.Server{
+		ReadTimeout:  a.Config.ReadTimeout,
+		WriteTimeout: a.Config.WriteTimeout,
+		ErrorLog:     log.New(serverErrLogger{a.Log}, "", 0),
+		Handler:      a.Router,
+	}
+
+	if len(a.Config.TLSBind) > 0 {
+		a.Log.Info("starting https listener", zap.String("bind", a.Config.TLSBind))
+		server.Addr = a.Config.TLSBind
+
+		// Redirect http requests to https
+		go a.Redirect()
+		err = server.ListenAndServeTLS(a.Config.TLSCertFile, a.Config.TLSKeyFile)
+	} else {
+		a.Log.Info("starting http listener", zap.String("bind", a.Config.Bind))
+		server.Addr = a.Config.Bind
+		err = server.ListenAndServe()
+	}
+
+	return err
+}
+
 // TO DO
 //
 // UPDATE
@@ -41,39 +78,4 @@ func (a AppState) Redirect() {
 		},
 	))
 	a.Log.Fatal("http redirect listener failed", zap.Error(err))
-}
-
-type serverErrLogger struct {
-	log zap.Logger
-}
-
-func (s serverErrLogger) Write(b []byte) (int, error) {
-	s.log.Debug(string(b))
-	return 0, nil
-}
-
-// StartServer starts the web server on the specified port
-func (a AppState) StartServer() error {
-	var err error
-	server := http.Server{
-		ReadTimeout:  a.Config.ReadTimeout,
-		WriteTimeout: a.Config.WriteTimeout,
-		ErrorLog:     log.New(serverErrLogger{a.Log}, "", 0),
-		Handler:      a.Router,
-	}
-
-	if len(a.Config.TLSBind) > 0 {
-		a.Log.Info("starting https listener", zap.String("bind", a.Config.TLSBind))
-		server.Addr = a.Config.TLSBind
-
-		// Redirect http requests to https
-		go a.Redirect()
-		err = server.ListenAndServeTLS(a.Config.TLSCertFile, a.Config.TLSKeyFile)
-	} else {
-		a.Log.Info("starting http listener", zap.String("bind", a.Config.Bind))
-		server.Addr = a.Config.Bind
-		err = server.ListenAndServe()
-	}
-
-	return err
 }
