@@ -17,6 +17,7 @@ func main() {
 		Use:   "{{.AppName}} [flags]",
 		Short: "{{.AppName}} web app server",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Start https and/or http listeners
 			return a.StartServer()
 		},
 	}
@@ -24,7 +25,7 @@ func main() {
 	// Register the command-line configuration flags (app/config.go)
 	a.RegisterFlags()
 
-	// Load the app configuration (app/config.go)
+	// Build app Config using env vars, cfg file and cmd line flags (app/config.go)
 	if err := a.LoadConfig(); err != nil {
 		fmt.Println("failed to load app config", err)
 		os.Exit(1)
