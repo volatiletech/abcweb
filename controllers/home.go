@@ -1,12 +1,11 @@
 package controllers
 
-import (
-	"net/http"
-
-	"github.com/labstack/echo"
-)
+import "net/http"
 
 // Home page
-func Home(c echo.Context) error {
-	return c.Render(http.StatusOK, "home", nil)
+func (c Controller) Home(w http.ResponseWriter, r *http.Request) {
+	err := c.Render.HTML(w, http.StatusOK, "home", nil)
+	if err != nil {
+		c.Log.Error(err.Error())
+	}
 }

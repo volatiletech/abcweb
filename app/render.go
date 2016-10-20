@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"html/template"
@@ -17,12 +17,12 @@ func init() {
 }
 
 // Initialize the renderer using the app configuration
-func initRenderer(c appConfig) *render.Render {
+func (a AppState) InitRenderer() *render.Render {
 	return render.New(render.Options{
-		Directory:     c.templates,
+		Directory:     a.Config.Templates,
 		Layout:        "layout",
 		Extensions:    []string{".tmpl", ".html"},
-		IsDevelopment: c.renderRecompile,
+		IsDevelopment: a.Config.RenderRecompile,
 		Funcs:         []template.FuncMap{appHelpers},
 	})
 }
