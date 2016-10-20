@@ -22,25 +22,25 @@ func main() {
 		},
 	}
 
-	// Register the command-line configuration flags (config.go)
+	// Register the command-line configuration flags (app/config.go)
 	a.RegisterFlags()
 
-	// Load the app configuration (config.go)
+	// Load the app configuration (app/config.go)
 	if err := a.LoadConfig(); err != nil {
 		fmt.Println("failed to load app config", err)
 		os.Exit(1)
 	}
 
-	// Initialize the zap logger
+	// Initialize the zap logger (app/logger.go)
 	a.InitLogger()
 
 	// Create a new router
 	a.Router = chi.NewRouter()
 
-	// Enable middleware for the router
+	// Enable middleware for the router (app/middleware.go)
 	a.InitMiddleware()
 
-	// Configure the renderer (render.go)
+	// Configure the renderer (app/render.go)
 	a.InitRenderer()
 
 	// Hook up the controller object (controllers/controller.go)
@@ -49,7 +49,7 @@ func main() {
 		Render: a.Render,
 	}
 
-	// Initialize the routes with the renderer (routes.go)
+	// Initialize the routes with the renderer (app/routes.go)
 	a.InitRoutes(controller)
 
 	if err := a.Root.Execute(); err != nil {
