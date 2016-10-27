@@ -46,14 +46,6 @@ func (a AppState) StartServer() error {
 	return err
 }
 
-// TO DO
-//
-// UPDATE
-// THE
-// THING
-// WITH THE
-// HTTP.SERVER
-
 // Redirect listens on the non-https port, and redirects all requests to https
 func (a AppState) Redirect() {
 	var err error
@@ -65,8 +57,13 @@ func (a AppState) Redirect() {
 	}
 
 	a.Log.Info("starting http -> https redirect listener", zap.String("bind", a.Config.Bind))
-	err = http.ListenAndServe(a.Config.Bind, http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+
+	server := http.Server{
+		Addr:         a.Config.Bind,
+		ReadTimeout:  a.Config.ReadTimeout,
+		WriteTimeout: a.Config.WriteTimeout,
+		ErrorLog:     log.New(serverErrLogger{a.Log}, "", 0),
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Remove port if it exists so we can replace it with https port
 			httpHost, _, err := net.SplitHostPort(r.Host)
 			if err != nil {
@@ -75,7 +72,10 @@ func (a AppState) Redirect() {
 
 			url := fmt.Sprintf("https://%s:%s%s", httpHost, httpsPort, r.RequestURI)
 			http.Redirect(w, r, url, http.StatusMovedPermanently)
-		},
-	))
+		}),
+	}
+
+	// Start permanent listener
+	err = server.ListenAndServe()
 	a.Log.Fatal("http redirect listener failed", zap.Error(err))
 }

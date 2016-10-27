@@ -17,7 +17,7 @@ func main() {
 		Use:   "{{.AppName}} [flags]",
 		Short: "{{.AppName}} web app server",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Start https and/or http listeners
+			// Start https and/or http listeners (app/server.go)
 			return a.StartServer()
 		},
 	}
