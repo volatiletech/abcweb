@@ -9,19 +9,19 @@ import (
 	"github.com/unrolled/render"
 )
 
-type AppState struct {
-	Config *AppConfig
+type State struct {
+	Config *Config
 	Log    zap.Logger
 	Router *chi.Mux
 	Render *render.Render
 	Root   *cobra.Command
 }
 
-type AppConfig struct {
+type Config struct {
 	// LiveReload enabled or disabled
 	LiveReload bool `toml:"live_reload"`
 	// Log messages in JSON format
-	LogJSON bool `toml:"log_JSON"`
+	LogJSON bool `toml:"log_json"`
 	// Minimum level to log
 	LogLevel string `toml:"log_level"`
 	// http bind address. ":<port>" for all interfaces
@@ -58,32 +58,32 @@ type AppConfig struct {
 	RenderRecompile bool `toml:"render_recompile"`
 }
 
-func (a AppState) RegisterFlags() {
-	a.Root.PersistentFlags().BoolP("livereload", "", false, "Enable or disable LiveReload")
-	a.Root.PersistentFlags().BoolP("logjson", "", true, "Log messages in JSON format")
-	a.Root.PersistentFlags().StringP("loglevel", "", "warn", "Minimum level to log")
-	a.Root.PersistentFlags().StringP("bind", "", ":80", `HTTP bind address, eg: ":80"`)
-	a.Root.PersistentFlags().StringP("tlsbind", "", "", `HTTPS bind address, eg: ":443"`)
-	a.Root.PersistentFlags().StringP("tlscertfile", "", "", "TLS certificate file path")
-	a.Root.PersistentFlags().StringP("tlskeyfile", "", "", "TLS key file path")
-	a.Root.PersistentFlags().DurationP("readtimeout", "", time.Second*30, "Maximum duration before timing out read of the request")
-	a.Root.PersistentFlags().DurationP("writetimeout", "", time.Second*30, "Maximum duration before timing out write of the response")
-	a.Root.PersistentFlags().StringP("templates", "", "./compiled_templates", "Templates folder path")
-	a.Root.PersistentFlags().StringP("assetsin", "", "./assets", "Static assets input folder path")
-	a.Root.PersistentFlags().StringP("assetsout", "", "./public/assets", "Static assets output folder path")
-	a.Root.PersistentFlags().BoolP("assetsnocompile", "", false, "Disable precompilation of assets")
-	a.Root.PersistentFlags().BoolP("assetsnominify", "", false, "Disable minification of assets")
-	a.Root.PersistentFlags().BoolP("assetsnohash", "", false, "Disable fingerprints in compiled asset filenames")
-	a.Root.PersistentFlags().BoolP("assetsnocompress", "", false, "Disable gzip compression of asset files")
-	a.Root.PersistentFlags().BoolP("assetsnocache", "", false, "Disable browsers caching asset files by setting response headers")
+func (s State) RegisterFlags() {
+	s.Root.PersistentFlags().BoolP("livereload", "", false, "Enable or disable LiveReload")
+	s.Root.PersistentFlags().BoolP("logjson", "", true, "Log messages in JSON format")
+	s.Root.PersistentFlags().StringP("loglevel", "", "warn", "Minimum level to log")
+	s.Root.PersistentFlags().StringP("bind", "", ":80", `HTTP bind address, eg: ":80"`)
+	s.Root.PersistentFlags().StringP("tlsbind", "", "", `HTTPS bind address, eg: ":443"`)
+	s.Root.PersistentFlags().StringP("tlscertfile", "", "", "TLS certificate file path")
+	s.Root.PersistentFlags().StringP("tlskeyfile", "", "", "TLS key file path")
+	s.Root.PersistentFlags().DurationP("readtimeout", "", time.Second*30, "Maximum duration before timing out read of the request")
+	s.Root.PersistentFlags().DurationP("writetimeout", "", time.Second*30, "Maximum duration before timing out write of the response")
+	s.Root.PersistentFlags().StringP("templates", "", "./compiled_templates", "Templates folder path")
+	s.Root.PersistentFlags().StringP("assetsin", "", "./assets", "Static assets input folder path")
+	s.Root.PersistentFlags().StringP("assetsout", "", "./public/assets", "Static assets output folder path")
+	s.Root.PersistentFlags().BoolP("assetsnocompile", "", false, "Disable precompilation of assets")
+	s.Root.PersistentFlags().BoolP("assetsnominify", "", false, "Disable minification of assets")
+	s.Root.PersistentFlags().BoolP("assetsnohash", "", false, "Disable fingerprints in compiled asset filenames")
+	s.Root.PersistentFlags().BoolP("assetsnocompress", "", false, "Disable gzip compression of asset files")
+	s.Root.PersistentFlags().BoolP("assetsnocache", "", false, "Disable browsers caching asset files by setting response headers")
 	// This should be used in development mode to avoid having to reload the
 	// server on every template file modification.
-	a.Root.PersistentFlags().BoolP("renderrecompile", "", false, "Enable recompilation of the template on each render")
+	s.Root.PersistentFlags().BoolP("renderrecompile", "", false, "Enable recompilation of the template on each render")
 }
 
-func (a AppState) LoadConfig() error {
+func (s State) LoadConfig() error {
 	//shift.LoadConfig(&cfg, )
 
-	a.Config = &AppConfig{}
+	s.Config = &Config{}
 	return nil
 }

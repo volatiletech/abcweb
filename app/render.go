@@ -6,23 +6,18 @@ import (
 	"github.com/unrolled/render"
 )
 
-// appHelpers is a map of the template helper functions
-var appHelpers map[string]interface{}
-
-// Initialize the template helper function map
-func init() {
-	// Assign the template helper funcs in here, example:
-	// "titleCase": strings.TitleCase
-	appHelpers = map[string]interface{}{}
-}
+// appHelpers is a map of the template helper functions.
+// Assign the template helper funcs in here, example:
+// "titleCase": strings.TitleCase
+var appHelpers = template.FuncMap{}
 
 // Initialize the renderer using the app configuration
-func (a AppState) InitRenderer() *render.Render {
+func (s State) InitRenderer() *render.Render {
 	return render.New(render.Options{
-		Directory:     a.Config.Templates,
+		Directory:     s.Config.Templates,
 		Layout:        "layout",
 		Extensions:    []string{".tmpl", ".html"},
-		IsDevelopment: a.Config.RenderRecompile,
+		IsDevelopment: s.Config.RenderRecompile,
 		Funcs:         []template.FuncMap{appHelpers},
 	})
 }

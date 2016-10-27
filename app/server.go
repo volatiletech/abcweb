@@ -21,25 +21,25 @@ func (s serverErrLogger) Write(b []byte) (int, error) {
 }
 
 // StartServer starts the web server on the specified port
-func (a AppState) StartServer() error {
+func (s State) StartServer() error {
 	var err error
 	server := http.Server{
-		ReadTimeout:  a.Config.ReadTimeout,
-		WriteTimeout: a.Config.WriteTimeout,
-		ErrorLog:     log.New(serverErrLogger{a.Log}, "", 0),
-		Handler:      a.Router,
+		ReadTimeout:  s.Config.ReadTimeout,
+		WriteTimeout: s.Config.WriteTimeout,
+		ErrorLog:     log.New(serverErrLogger{s.Log}, "", 0),
+		Handler:      s.Router,
 	}
 
-	if len(a.Config.TLSBind) > 0 {
-		a.Log.Info("starting https listener", zap.String("bind", a.Config.TLSBind))
-		server.Addr = a.Config.TLSBind
+	if len(s.Config.TLSBind) > 0 {
+		s.Log.Info("starting https listener", zap.String("bind", s.Config.TLSBind))
+		server.Addr = s.Config.TLSBind
 
 		// Redirect http requests to https
-		go a.Redirect()
-		err = server.ListenAndServeTLS(a.Config.TLSCertFile, a.Config.TLSKeyFile)
+		go s.Redirect()
+		err = server.ListenAndServeTLS(s.Config.TLSCertFile, s.Config.TLSKeyFile)
 	} else {
-		a.Log.Info("starting http listener", zap.String("bind", a.Config.Bind))
-		server.Addr = a.Config.Bind
+		s.Log.Info("starting http listener", zap.String("bind", s.Config.Bind))
+		server.Addr = s.Config.Bind
 		err = server.ListenAndServe()
 	}
 
@@ -47,27 +47,27 @@ func (a AppState) StartServer() error {
 }
 
 // Redirect listens on the non-https port, and redirects all requests to https
-func (a AppState) Redirect() {
+func (s State) Redirect() {
 	var err error
 
 	// Get https port from TLS Bind
-	_, httpsPort, err := net.SplitHostPort(a.Config.TLSBind)
+	_, httpsPort, err := net.SplitHostPort(s.Config.TLSBind)
 	if err != nil {
-		a.Log.Fatal("failed to get port from tls bind", zap.Error(err))
+		s.Log.Fatal("failed to get port from tls bind", zap.Error(err))
 	}
 
-	a.Log.Info("starting http -> https redirect listener", zap.String("bind", a.Config.Bind))
+	s.Log.Info("starting http -> https redirect listener", zap.String("bind", s.Config.Bind))
 
 	server := http.Server{
-		Addr:         a.Config.Bind,
-		ReadTimeout:  a.Config.ReadTimeout,
-		WriteTimeout: a.Config.WriteTimeout,
-		ErrorLog:     log.New(serverErrLogger{a.Log}, "", 0),
+		Addr:         s.Config.Bind,
+		ReadTimeout:  s.Config.ReadTimeout,
+		WriteTimeout: s.Config.WriteTimeout,
+		ErrorLog:     log.New(serverErrLogger{s.Log}, "", 0),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Remove port if it exists so we can replace it with https port
 			httpHost, _, err := net.SplitHostPort(r.Host)
 			if err != nil {
-				a.Log.Fatal("failed to get http host from request", zap.Error(err))
+				s.Log.Fatal("failed to get http host from request", zap.Error(err))
 			}
 
 			url := fmt.Sprintf("https://%s:%s%s", httpHost, httpsPort, r.RequestURI)
@@ -77,5 +77,5 @@ func (a AppState) Redirect() {
 
 	// Start permanent listener
 	err = server.ListenAndServe()
-	a.Log.Fatal("http redirect listener failed", zap.Error(err))
+	s.Log.Fatal("http redirect listener failed", zap.Error(err))
 }

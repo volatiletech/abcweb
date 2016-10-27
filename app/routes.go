@@ -6,15 +6,16 @@ import (
 	"github.com/nullbio/abcweb/controllers"
 )
 
-func (a AppState) InitRoutes() {
+func (s State) InitRoutes() {
 	// The state for each route handler
-	controller := controllers.Controller{
-		Log:    a.Log,
-		Render: a.Render,
+	root := controllers.Root{
+		Log:    s.Log,
+		Render: s.Render,
 	}
 
 	// Serve static assets
-	a.Router.FileServer("/assets", http.Dir(a.Config.AssetsIn))
+	s.Router.FileServer("/assets", http.Dir(s.Config.AssetsIn))
 
-	a.Router.Get("/", controller.Home)
+	home := controllers.Home{Root: root}
+	s.Router.Get("/", home.Index)
 }
