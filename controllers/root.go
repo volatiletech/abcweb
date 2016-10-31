@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"github.com/nullbio/abcweb/sessions"
 	"github.com/uber-go/zap"
 	"github.com/unrolled/render"
 )
@@ -10,6 +11,7 @@ import (
 // you can add them here, and then assign them in main.go where the
 // instance of controller is created.
 type Root struct {
-	Log    zap.Logger
-	Render *render.Render
+	Log     zap.Logger
+	Render  *render.Render
+	Session sessions.SessionStorer
 }
