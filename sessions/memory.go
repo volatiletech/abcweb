@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -35,7 +36,9 @@ func NewMemorySessions(secure, httpOnly bool, expiry, clean time.Duration) (*Mem
 		panic("if clean or expiry is set, the other must also be set")
 	}
 
-	m := &MemorySessions{}
+	m := &MemorySessions{
+		sessions: make(map[string]memorySession),
+	}
 
 	// If expiry is not set, do not start the cleaner routine
 	if expiry == 0 {
@@ -67,6 +70,7 @@ func (m *MemorySessions) Get(r *http.Request) (value string, err error) {
 	defer m.mut.RUnlock()
 
 	session, ok := m.sessions[cookie.Value]
+	fmt.Println(cookie.Value)
 	if !ok {
 		return "", ErrNoSession
 	}
