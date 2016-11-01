@@ -23,7 +23,7 @@ func (d DiskSession) New(folderPath string) (DiskSession, error) {
 func (d DiskSession) Get(header http.Header) (value string, err error) {
 	id := header.Get(SessionKey)
 	if id == "" {
-		return id, ErrSessionNotExist
+		return id, ErrNoSession
 	}
 
 	return d.GetID(id)
