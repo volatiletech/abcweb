@@ -1,7 +1,6 @@
 package sessions
 
 import (
-	"errors"
 	"net/http"
 	"sync"
 	"time"
@@ -30,13 +29,12 @@ type memorySess struct {
 // which defines how often the clean task should check for expired sessions
 // to be removed from memory.
 func (m MemorySession) New(expiry time.Duration, clean time.Duration) (MemorySession, error) {
-	var cleanInterval time.Duration
 	m := MemorySession{}
 
 	// If expiry is set and clean is not, or clean is set and expiry is not,
 	// then expirations will not work properly.
 	if (expiry == 0 && clean != 0) || (expiry != 0 && clean == 0) {
-		return nil, errors.New("invalid configuration supplied")
+		panic("if clean or expiry is set, the other must also be set")
 	}
 
 	// If no expiry is not set, do not start the cleaner routine
@@ -46,9 +44,10 @@ func (m MemorySession) New(expiry time.Duration, clean time.Duration) (MemorySes
 
 	m.expiry = expiry
 
+	// Start the memory cleaner go routine
 	go m.cleaner(clean)
 
-	return MemorySession{}, nil
+	return m, nil
 }
 
 // Get returns the value string saved in the session pointed to by the headers
@@ -96,6 +95,9 @@ func (m MemorySession) DelID(header http.Header, id string) error {
 	return nil
 }
 
+// sleepFunc is a test harness
+var sleepFunc = time.Sleep
+
 func (m MemorySession) cleaner(loop time.Duration) {
 	for {
 		t := time.Now()
@@ -106,6 +108,6 @@ func (m MemorySession) cleaner(loop time.Duration) {
 			}
 		}
 		m.mut.Unlock()
-		sleep(loop)
+		sleepFunc(loop)
 	}
 }

@@ -2,7 +2,6 @@ package app
 
 // initMiddleware enables useful middleware for the router.
 import (
-	"github.com/goware/cors"
 	"github.com/nullbio/abcweb/middleware"
 	chimiddleware "github.com/pressly/chi/middleware"
 )
@@ -58,5 +57,5 @@ func (s State) InitMiddleware() {
 	// Configuration documentation at: https://godoc.org/github.com/goware/cors
 	// Note: If you're getting CORS related errors you may need to adjust the
 	// default settings by calling cors.New() with your own cors.Options struct.
-	s.Router.Use(cors.Default().Handler)
+	// s.Router.Use(cors.Default().Handler)
 }
