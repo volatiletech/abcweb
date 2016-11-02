@@ -2,11 +2,14 @@ package sessions
 
 import (
 	"net/http"
+	"net/http/httptest"
+	"regexp"
 	"testing"
 	"time"
-
-	"github.com/davecgh/go-spew/spew"
 )
+
+var rgxPutCookie = regexp.MustCompile(`_SESSION_ID=([a-z0-9\-]+); Expires=[^;]*; Max-Age=60; HttpOnly; Secure`)
+var rgxDelCookie = regexp.MustCompile(`_SESSION_ID=; Expires=[^;]*; Max-Age=0; HttpOnly; Secure`)
 
 func TestMemoryStorerNew(t *testing.T) {
 	t.Parallel()
@@ -61,10 +64,7 @@ func TestMemoryStorerNewDefault(t *testing.T) {
 func TestMemoryStorerGet(t *testing.T) {
 	t.Parallel()
 
-	r, err := http.NewRequest("GET", "http://localhost", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := httptest.NewRequest("GET", "http://localhost", nil)
 
 	m, err := NewDefaultMemoryStorer(false)
 	if err != nil {
@@ -77,37 +77,18 @@ func TestMemoryStorerGet(t *testing.T) {
 	}
 
 	cookieOne := &http.Cookie{
-		Name:  "test",
-		Value: "test",
+		Name:  SessionKey,
+		Value: "sessionid",
 	}
 	r.AddCookie(cookieOne)
 
-	if ln := len(r.Cookies()); ln != 1 {
-		t.Errorf("Expected cookie len 1, got %d", ln)
-	}
-
 	val, err = m.Get(r)
 	if err != ErrNoSession {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
-
-	cookieTwo := &http.Cookie{
-		Name:  SessionKey,
-		Value: "test2",
+	m.sessions["sessionid"] = &memorySession{
+		value: "whatever",
 	}
-	r.AddCookie(cookieTwo)
-
-	if ln := len(r.Cookies()); ln != 2 {
-		t.Errorf("Expected cookie len 2, got %d", ln)
-	}
-
-	val, err = m.Get(r)
-	// should be ErrNoSession because cookie does not exist in session store yet
-	if err != ErrNoSession {
-		t.Errorf("Expected ErrNoSession, got: %v", err)
-	}
-
-	m.sessions["test2"] = memorySession{value: "whatever"}
 	val, err = m.Get(r)
 	if err != nil {
 		t.Fatal(err)
@@ -121,10 +102,8 @@ func TestMemoryStorerGet(t *testing.T) {
 func TestMemoryStorerPut(t *testing.T) {
 	t.Parallel()
 
-	r, err := http.NewRequest("GET", "http://localhost", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := httptest.NewRecorder()
 
 	m, err := NewMemoryStorer(true, true, time.Minute, time.Hour, time.Hour)
 	if err != nil {
@@ -136,61 +115,100 @@ func TestMemoryStorerPut(t *testing.T) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 
-	if ln := len(r.Cookies()); ln != 0 {
-		t.Errorf("Expected cookie len 0, got %d", ln)
+	m.Put(r, w, "whatever")
+
+	setCookie := w.Header().Get("Set-Cookie")
+	if setCookie == "" {
+		t.Errorf("expected set cookie to be set")
+	}
+	if !rgxPutCookie.MatchString(setCookie) {
+		t.Errorf("Expected to match regexp, got: %s", setCookie)
+	}
+	if len(m.sessions) != 1 {
+		t.Errorf("Expected sessions len 1, got %d", len(m.sessions))
 	}
 
-	m.Put(r, "whatever")
+	id1 := rgxPutCookie.FindStringSubmatch(setCookie)[1]
 
-	if ln := len(r.Cookies()); ln != 1 {
-		t.Errorf("Expected cookie len 1, got %d", ln)
+	sess, ok := m.sessions[id1]
+	if !ok {
+		t.Errorf("could not find session with id: %s", id1)
+	}
+	if sess.value != "whatever" {
+		t.Errorf("expected sess value %q, got %q", "whatever", sess.value)
 	}
 
-	spew.Dump(r.Cookies())
-
-	val, err := m.Get(r)
-	if err != nil {
-		t.Error(err)
+	// make sure it re-uses the same session cookie
+	m.Put(r, w, "hello")
+	setCookie = w.Header().Get("Set-Cookie")
+	if setCookie == "" {
+		t.Errorf("expected set cookie to be set")
+	}
+	if !rgxPutCookie.MatchString(setCookie) {
+		t.Errorf("Expected to match regexp, got: %s", setCookie)
+	}
+	if len(m.sessions) != 1 {
+		t.Errorf("Expected sessions len 1, got %d", len(m.sessions))
 	}
 
-	if val != "whatever" {
-		t.Errorf("Expected %q, got %q", "whatever", val)
+	id2 := rgxPutCookie.FindStringSubmatch(setCookie)[1]
+
+	sess, ok = m.sessions[id2]
+	if !ok {
+		t.Errorf("could not find session with id: %s", id2)
+	}
+	if sess.value != "hello" {
+		t.Errorf("expected sess value %q, got %q", "hello", sess.value)
 	}
 
-	c, err := r.Cookie(SessionKey)
-	if err != nil {
-		t.Error(err)
-	}
-	id := c.Value
-
-	m.Put(r, "hello")
-
-	if ln := len(r.Cookies()); ln != 1 {
-		t.Errorf("Expected cookie len 1, got %d", ln)
-	}
-
-	val, err = m.Get(r)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if val != "hello" {
-		t.Errorf("Expected %q, got %q", "hello", val)
-	}
-
-	c, err = r.Cookie(SessionKey)
-	if err != nil {
-		t.Error(err)
-	}
-	id2 := c.Value
-
-	if id != id2 {
-		t.Errorf("Expected to re-use cookie, but got different id: %q and %q", id, id2)
+	if id1 != id2 {
+		t.Error("expected to use same session variable")
 	}
 }
 
 func TestMemoryStorerDel(t *testing.T) {
 	t.Parallel()
+
+	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := httptest.NewRecorder()
+
+	m, err := NewMemoryStorer(true, true, time.Minute, time.Hour, time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ln := len(r.Cookies()); ln != 0 {
+		t.Errorf("Expected cookie len 0, got %d", ln)
+	}
+
+	if len(m.sessions) != 0 {
+		t.Errorf("Expected sessions len 0, got %d", len(m.sessions))
+	}
+
+	cookieOne := &http.Cookie{
+		Name:  SessionKey,
+		Value: "sessionid",
+	}
+	r.AddCookie(cookieOne)
+	m.sessions["sessionid"] = &memorySession{
+		value: "whatever",
+	}
+
+	m.Del(r, w)
+
+	if err != nil {
+		t.Error(err)
+	}
+	setCookie := w.Header().Get("Set-Cookie")
+	if setCookie == "" {
+		t.Errorf("expected del cookie to be set")
+	}
+	if !rgxDelCookie.MatchString(setCookie) {
+		t.Errorf("Expected to match regexp, got: %s", setCookie)
+	}
+	if len(m.sessions) != 0 {
+		t.Errorf("Expected sessions len 0, got %d", len(m.sessions))
+	}
 }
 
 func TestMemoryStorerCleaner(t *testing.T) {

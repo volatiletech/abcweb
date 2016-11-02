@@ -28,7 +28,7 @@ type memorySession struct {
 	value   string
 }
 
-type memorySessions map[string]memorySession
+type memorySessions map[string]*memorySession
 
 // NewDefaultMemoryStorer returns a MemoryStorer object with default values.
 // The default values are:
@@ -52,7 +52,7 @@ func NewMemoryStorer(secure, httpOnly bool, clientExpiry, serverExpiry, cleanInt
 	}
 
 	m := &MemoryStorer{
-		sessions:     make(map[string]memorySession),
+		sessions:     make(map[string]*memorySession),
 		clientExpiry: clientExpiry,
 		serverExpiry: serverExpiry,
 		secure:       secure,
@@ -97,48 +97,65 @@ func (m *MemoryStorer) Get(r *http.Request) (value string, err error) {
 // Put saves the value string to the session pointed to by the headers
 // SessionKey. If SessionKey does not exist, Put creates a new session
 // with a random unique id.
-func (m *MemoryStorer) Put(r *http.Request, value string) {
+func (m *MemoryStorer) Put(r *http.Request, w http.ResponseWriter, value string) {
 	var cookie *http.Cookie
 	var err error
 
+	expires := time.Now().Add(m.clientExpiry)
+
 	cookie, err = r.Cookie(SessionKey)
-	if err != nil || cookie.Value == "" {
+	if err != nil {
 		cookie = m.makeCookie()
+		http.SetCookie(w, cookie)
+		// add cookie to request as well in case subsequent calls to Put are made
 		r.AddCookie(cookie)
+	} else if cookie.Value == "" {
+		cookie = m.makeCookie()
+		http.SetCookie(w, cookie)
 	}
 
 	m.mut.Lock()
 	defer m.mut.Unlock()
 
-	m.sessions[cookie.Value] = memorySession{
-		value:   value,
-		expires: cookie.Expires,
+	sess, ok := m.sessions[cookie.Value]
+	if ok {
+		sess.value = value
+	} else {
+		m.sessions[cookie.Value] = &memorySession{
+			value:   value,
+			expires: expires,
+		}
 	}
 }
 
 // Del the session pointed to by the headers SessionKey and remove it from
 // the header.
-func (m *MemoryStorer) Del(r *http.Request) {
+func (m *MemoryStorer) Del(r *http.Request, w http.ResponseWriter) {
 	cookie, err := r.Cookie(SessionKey)
 	if err != nil {
 		return
 	}
 
 	// Set cookie to expire on browser side
+	id := cookie.Value
+	// If the browser refuses to delete it, set value to "" so subsequent
+	// requests replace it when it does not point to a valid session id.
+	cookie.Value = ""
 	cookie.MaxAge = -1
 	cookie.Expires = time.Now().AddDate(-1, 0, 0)
-	// Re-add the cookie with the new expiration settings
-	r.AddCookie(cookie)
+	cookie.HttpOnly = m.httpOnly
+	cookie.Secure = m.secure
+	http.SetCookie(w, cookie)
 
-	// cookie.Value is expected to be the session id
-	if cookie.Value == "" {
+	// id is expected to be the session id
+	if id == "" {
 		return
 	}
 
 	m.mut.Lock()
 	defer m.mut.Unlock()
 
-	delete(m.sessions, cookie.Value)
+	delete(m.sessions, id)
 }
 
 // sleepFunc is a test harness
