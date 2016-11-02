@@ -226,4 +226,25 @@ func TestMemoryStorerCleaner(t *testing.T) {
 func TestMakeCookie(t *testing.T) {
 	t.Parallel()
 
+	m, err := NewMemoryStorer(true, true, time.Minute, time.Hour, time.Hour)
+	if err != nil {
+		t.Error(err)
+	}
+	c := m.makeCookie()
+
+	if c.Name != SessionKey {
+		t.Errorf("expected name to be session key, got: %v", c.Name)
+	}
+	if c.Value == "" {
+		t.Errorf("expected value to be a uuid")
+	}
+	if c.MaxAge != int(m.clientExpiry.Seconds()) {
+		t.Errorf("mismatch between %d and %d", c.MaxAge, int(m.clientExpiry.Seconds()))
+	}
+	if c.HttpOnly != true {
+		t.Error("expected httponly true")
+	}
+	if c.Secure != true {
+		t.Error("expected httponly true")
+	}
 }
