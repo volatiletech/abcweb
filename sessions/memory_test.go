@@ -86,9 +86,11 @@ func TestMemoryStorerGet(t *testing.T) {
 	if err != ErrNoSession {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
+	m.mut.Lock()
 	m.sessions["sessionid"] = &memorySession{
 		value: "whatever",
 	}
+	m.mut.Unlock()
 	val, err = m.Get(r)
 	if err != nil {
 		t.Fatal(err)
@@ -124,12 +126,15 @@ func TestMemoryStorerPut(t *testing.T) {
 	if !rgxPutCookie.MatchString(setCookie) {
 		t.Errorf("Expected to match regexp, got: %s", setCookie)
 	}
+	m.mut.RLock()
 	if len(m.sessions) != 1 {
 		t.Errorf("Expected sessions len 1, got %d", len(m.sessions))
 	}
+	m.mut.RUnlock()
 
 	id1 := rgxPutCookie.FindStringSubmatch(setCookie)[1]
 
+	m.mut.RLock()
 	sess, ok := m.sessions[id1]
 	if !ok {
 		t.Errorf("could not find session with id: %s", id1)
@@ -137,6 +142,7 @@ func TestMemoryStorerPut(t *testing.T) {
 	if sess.value != "whatever" {
 		t.Errorf("expected sess value %q, got %q", "whatever", sess.value)
 	}
+	m.mut.RUnlock()
 
 	// make sure it re-uses the same session cookie
 	m.Put(r, w, "hello")
@@ -147,12 +153,15 @@ func TestMemoryStorerPut(t *testing.T) {
 	if !rgxPutCookie.MatchString(setCookie) {
 		t.Errorf("Expected to match regexp, got: %s", setCookie)
 	}
+	m.mut.RLock()
 	if len(m.sessions) != 1 {
 		t.Errorf("Expected sessions len 1, got %d", len(m.sessions))
 	}
+	m.mut.RUnlock()
 
 	id2 := rgxPutCookie.FindStringSubmatch(setCookie)[1]
 
+	m.mut.RLock()
 	sess, ok = m.sessions[id2]
 	if !ok {
 		t.Errorf("could not find session with id: %s", id2)
@@ -160,6 +169,7 @@ func TestMemoryStorerPut(t *testing.T) {
 	if sess.value != "hello" {
 		t.Errorf("expected sess value %q, got %q", "hello", sess.value)
 	}
+	m.mut.RUnlock()
 
 	if id1 != id2 {
 		t.Error("expected to use same session variable")
@@ -181,9 +191,11 @@ func TestMemoryStorerDel(t *testing.T) {
 		t.Errorf("Expected cookie len 0, got %d", ln)
 	}
 
+	m.mut.RLock()
 	if len(m.sessions) != 0 {
 		t.Errorf("Expected sessions len 0, got %d", len(m.sessions))
 	}
+	m.mut.RUnlock()
 
 	cookieOne := &http.Cookie{
 		Name:  SessionKey,
@@ -206,21 +218,54 @@ func TestMemoryStorerDel(t *testing.T) {
 	if !rgxDelCookie.MatchString(setCookie) {
 		t.Errorf("Expected to match regexp, got: %s", setCookie)
 	}
+	m.mut.RLock()
 	if len(m.sessions) != 0 {
 		t.Errorf("Expected sessions len 0, got %d", len(m.sessions))
 	}
+	m.mut.RUnlock()
 }
 
 func TestMemoryStorerCleaner(t *testing.T) {
-	t.Parallel()
-
 	wait := make(chan struct{})
-	sleepFunc = func(x time.Duration) {
+
+	sleepFunc = func(time.Duration) {
 		<-wait
 	}
 
+	m, err := NewMemoryStorer(true, true, time.Minute, time.Hour, time.Hour)
+	if err != nil {
+		t.Error(err)
+	}
+
+	m.sessions["testid1"] = &memorySession{
+		value:   "test1",
+		expires: time.Now().Add(time.Hour),
+	}
+	m.sessions["testid2"] = &memorySession{
+		value:   "test2",
+		expires: time.Now().AddDate(0, 0, -1),
+	}
+
+	m.mut.RLock()
+	if len(m.sessions) != 2 {
+		t.Error("expected len 2")
+	}
+	m.mut.RUnlock()
+
 	// stop sleep in cleaner loop
 	wait <- struct{}{}
+	wait <- struct{}{}
+
+	m.mut.RLock()
+	if len(m.sessions) != 1 {
+		t.Errorf("expected len 1, got %d", len(m.sessions))
+	}
+
+	_, ok := m.sessions["testid2"]
+	if ok {
+		t.Error("expected testid2 to be deleted, but was not")
+	}
+	m.mut.RUnlock()
 }
 
 func TestMakeCookie(t *testing.T) {
