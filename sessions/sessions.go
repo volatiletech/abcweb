@@ -20,8 +20,5 @@ type Overseer interface {
 	Del(w http.ResponseWriter, r *http.Request) (err error)
 }
 
-// Key is the key name in the cookie that holds the session id.
-const Key = "_SESSION_ID"
-
 // ErrNoSession is returned when a session does not exist.
 var ErrNoSession = errors.New("cookie has no session id")

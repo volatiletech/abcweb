@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var rgxDelCookie = regexp.MustCompile(`_SESSION_ID=; Expires=[^;]*; Max-Age=0; HttpOnly; Secure`)
+var rgxDelCookie = regexp.MustCompile(`id=; Expires=[^;]*; Max-Age=0; HttpOnly; Secure`)
 
 var _ Overseer = &StorageOverseer{}
 
@@ -58,7 +58,7 @@ func TestStorageOverseerGet(t *testing.T) {
 	}
 
 	cookieOne := &http.Cookie{
-		Name:  Key,
+		Name:  s.options.Name,
 		Value: "sessionid",
 	}
 	r.AddCookie(cookieOne)
@@ -154,7 +154,7 @@ func TestStorageOverseerDel(t *testing.T) {
 	m.mut.RUnlock()
 
 	cookieOne := &http.Cookie{
-		Name:  Key,
+		Name:  s.options.Name,
 		Value: "sessionid",
 	}
 	r.AddCookie(cookieOne)
@@ -188,7 +188,7 @@ func TestStorageOverseerMakeCookie(t *testing.T) {
 	s := NewStorageOverseer(NewCookieOptions(), m)
 	c := s.makeCookie("hello")
 
-	if c.Name != Key {
+	if c.Name != s.options.Name {
 		t.Errorf("expected name to be session key, got: %v", c.Name)
 	}
 	if c.Value == "" {

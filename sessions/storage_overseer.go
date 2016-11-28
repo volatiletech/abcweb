@@ -48,7 +48,7 @@ func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value stri
 		// subsequent calls to put can locate the session ID that was generated
 		// for this cookie, otherwise you will get a new session every time Put()
 		// is called.
-		ctx := context.WithValue(r.Context(), Key, cookieID)
+		ctx := context.WithValue(r.Context(), s.options.Name, cookieID)
 		r = r.WithContext(ctx)
 	}
 
@@ -57,7 +57,7 @@ func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value stri
 }
 
 func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) error {
-	cookie, err := r.Cookie(Key)
+	cookie, err := r.Cookie(s.options.Name)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) error {
 
 func (s *StorageOverseer) makeCookie(cookieID string) *http.Cookie {
 	return &http.Cookie{
-		Name:     Key,
+		Name:     s.options.Name,
 		Value:    cookieID,
 		MaxAge:   int(s.options.MaxAge.Seconds()),
 		Expires:  time.Now().UTC().Add(s.options.MaxAge),
@@ -96,12 +96,12 @@ func (s *StorageOverseer) makeCookie(cookieID string) *http.Cookie {
 // exist in the request context it will attempt to fetch it from the request
 // headers. If this fails it will return nil.
 func (s *StorageOverseer) getCookieID(r *http.Request) string {
-	cookieID, ok := r.Context().Value(Key).(string)
+	cookieID, ok := r.Context().Value(s.options.Name).(string)
 	if ok && cookieID != "" {
 		return cookieID
 	}
 
-	reqCookie, err := r.Cookie(Key)
+	reqCookie, err := r.Cookie(s.options.Name)
 	if err != nil {
 		return ""
 	}
