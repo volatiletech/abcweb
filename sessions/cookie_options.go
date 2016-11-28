@@ -1,14 +1,16 @@
 package sessions
 
-import "time"
+import (
+	"net/http"
+	"time"
+)
 
 // CookieOptions for the session cookies themselves.
 type CookieOptions struct {
 	// Name for the session cookie
 	Name string
-	// ClientExpiry is set as well as max-age, max-age is determined from
-	// ClientExpiry
-	ClientExpiry time.Duration
+	// MaxAge sets the max-age and the expires fields of a cookie.
+	MaxAge time.Duration
 	// Secure ensures the cookie is only given on https connections
 	Secure bool
 	// HTTPOnly means the browser will never allow JS to touch this cookie
@@ -18,9 +20,20 @@ type CookieOptions struct {
 // NewCookieOptions gives healthy defaults for session cookies
 func NewCookieOptions() CookieOptions {
 	return CookieOptions{
-		Name:         "id",
-		ClientExpiry: 0,
-		Secure:       true,
-		HTTPOnly:     true,
+		Name:     "id",
+		MaxAge:   0,
+		Secure:   true,
+		HTTPOnly: true,
+	}
+}
+
+func (c CookieOptions) makeCookie(value string) *http.Cookie {
+	return &http.Cookie{
+		Name:     c.Name,
+		Value:    value,
+		MaxAge:   int(c.MaxAge.Seconds()),
+		Expires:  time.Now().UTC().Add(c.MaxAge),
+		HttpOnly: c.HTTPOnly,
+		Secure:   c.Secure,
 	}
 }
