@@ -12,6 +12,7 @@ import (
 )
 
 var testCookieKey, _ = MakeSecretKey()
+var _ Overseer = &CookieOverseer{}
 
 func TestCookieOverseerNew(t *testing.T) {
 	t.Parallel()

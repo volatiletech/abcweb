@@ -13,6 +13,7 @@ type Storer interface {
 	Del(key string) error
 }
 
+// Overseer of session cookies
 type Overseer interface {
 	Get(w http.ResponseWriter, r *http.Request) (value string, err error)
 	Put(w http.ResponseWriter, r *http.Request, value string) (cr *http.Request, err error)

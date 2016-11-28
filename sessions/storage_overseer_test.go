@@ -9,6 +9,8 @@ import (
 
 var rgxDelCookie = regexp.MustCompile(`_SESSION_ID=; Expires=[^;]*; Max-Age=0; HttpOnly; Secure`)
 
+var _ Overseer = &StorageOverseer{}
+
 func TestStorageOverseerNew(t *testing.T) {
 	t.Parallel()
 
