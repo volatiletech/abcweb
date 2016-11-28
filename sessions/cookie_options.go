@@ -4,6 +4,8 @@ import "time"
 
 // CookieOptions for the session cookies themselves.
 type CookieOptions struct {
+	// Name for the session cookie
+	Name string
 	// ClientExpiry is set as well as max-age, max-age is determined from
 	// ClientExpiry
 	ClientExpiry time.Duration
@@ -16,6 +18,7 @@ type CookieOptions struct {
 // NewCookieOptions gives healthy defaults for session cookies
 func NewCookieOptions() CookieOptions {
 	return CookieOptions{
+		Name:         "id",
 		ClientExpiry: 0,
 		Secure:       true,
 		HTTPOnly:     true,
