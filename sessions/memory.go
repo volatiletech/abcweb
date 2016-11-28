@@ -69,9 +69,9 @@ func NewMemoryStorer(secure, httpOnly bool, clientExpiry, serverExpiry, cleanInt
 }
 
 // Get returns the value string saved in the session pointed to by the headers
-// SessionKey.
+// Key.
 func (m *MemoryStorer) Get(r *http.Request) (value string, err error) {
-	cookie, err := r.Cookie(SessionKey)
+	cookie, err := r.Cookie(Key)
 	if err != nil || len(cookie.Value) == 0 {
 		return "", ErrNoSession
 	}
@@ -87,7 +87,7 @@ func (m *MemoryStorer) Get(r *http.Request) (value string, err error) {
 }
 
 // Put saves the value string to the session pointed to by the headers
-// SessionKey. If SessionKey does not exist, Put creates a new session
+// Key. If Key does not exist, Put creates a new session
 // with a random unique id.
 func (m *MemoryStorer) Put(w http.ResponseWriter, r *http.Request, value string) *http.Request {
 	cookie := m.getCookie(r)
@@ -101,7 +101,7 @@ func (m *MemoryStorer) Put(w http.ResponseWriter, r *http.Request, value string)
 		// subsequent calls to put can locate the session ID that was generated
 		// for this cookie, otherwise you will get a new session every time Put()
 		// is called.
-		ctx := context.WithValue(r.Context(), SessionKey, cookie)
+		ctx := context.WithValue(r.Context(), Key, cookie)
 		request = r.WithContext(ctx)
 	}
 
@@ -116,10 +116,10 @@ func (m *MemoryStorer) Put(w http.ResponseWriter, r *http.Request, value string)
 	return request
 }
 
-// Del the session pointed to by the headers SessionKey and remove it from
+// Del the session pointed to by the headers Key and remove it from
 // the header.
 func (m *MemoryStorer) Del(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(SessionKey)
+	cookie, err := r.Cookie(Key)
 	if err != nil {
 		return
 	}
@@ -164,7 +164,7 @@ func (m *MemoryStorer) cleaner(loop time.Duration) {
 
 func (m *MemoryStorer) makeCookie() *http.Cookie {
 	return &http.Cookie{
-		Name:     SessionKey,
+		Name:     Key,
 		Value:    uuid.NewV4().String(),
 		MaxAge:   m.maxAge,
 		Expires:  time.Now().UTC().Add(m.clientExpiry),
@@ -177,12 +177,12 @@ func (m *MemoryStorer) makeCookie() *http.Cookie {
 // exist in the request context it will attempt to fetch it from the request
 // headers. If this fails it will return nil.
 func (m *MemoryStorer) getCookie(r *http.Request) *http.Cookie {
-	ctxCookie, ok := r.Context().Value(SessionKey).(*http.Cookie)
+	ctxCookie, ok := r.Context().Value(Key).(*http.Cookie)
 	if ok && ctxCookie != nil {
 		return ctxCookie
 	}
 
-	reqCookie, err := r.Cookie(SessionKey)
+	reqCookie, err := r.Cookie(Key)
 	if err != nil {
 		return nil
 	}
