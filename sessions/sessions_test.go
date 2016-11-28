@@ -33,6 +33,10 @@ func TestPutAndGet(t *testing.T) {
 	}
 }
 
+func TestDel(t *testing.T) {
+	t.Error("test")
+}
+
 type TestSessJSON struct {
 	Test string
 }
