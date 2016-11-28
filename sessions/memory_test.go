@@ -87,7 +87,7 @@ func TestMemoryStorerGet(t *testing.T) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 	m.mut.Lock()
-	m.sessions["sessionid"] = &memorySession{
+	m.sessions["sessionid"] = memorySession{
 		value: "whatever",
 	}
 	m.mut.Unlock()
@@ -117,7 +117,7 @@ func TestMemoryStorerPut(t *testing.T) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 
-	m.Put(r, w, "whatever")
+	req2 := m.Put(w, r, "whatever")
 
 	setCookie := w.Header().Get("Set-Cookie")
 	if setCookie == "" {
@@ -145,7 +145,7 @@ func TestMemoryStorerPut(t *testing.T) {
 	m.mut.RUnlock()
 
 	// make sure it re-uses the same session cookie
-	m.Put(r, w, "hello")
+	m.Put(w, req2, "hello")
 	setCookie = w.Header().Get("Set-Cookie")
 	if setCookie == "" {
 		t.Errorf("expected set cookie to be set")
@@ -202,11 +202,11 @@ func TestMemoryStorerDel(t *testing.T) {
 		Value: "sessionid",
 	}
 	r.AddCookie(cookieOne)
-	m.sessions["sessionid"] = &memorySession{
+	m.sessions["sessionid"] = memorySession{
 		value: "whatever",
 	}
 
-	m.Del(r, w)
+	m.Del(w, r)
 
 	if err != nil {
 		t.Error(err)
@@ -237,11 +237,11 @@ func TestMemoryStorerCleaner(t *testing.T) {
 		t.Error(err)
 	}
 
-	m.sessions["testid1"] = &memorySession{
+	m.sessions["testid1"] = memorySession{
 		value:   "test1",
 		expires: time.Now().Add(time.Hour),
 	}
-	m.sessions["testid2"] = &memorySession{
+	m.sessions["testid2"] = memorySession{
 		value:   "test2",
 		expires: time.Now().AddDate(0, 0, -1),
 	}

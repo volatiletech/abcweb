@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"context"
 	"net/http"
 	"sync"
 	"time"
@@ -13,6 +14,7 @@ import (
 type MemoryStorer struct {
 	clientExpiry time.Duration
 	serverExpiry time.Duration
+	maxAge       int
 
 	secure   bool
 	httpOnly bool
@@ -20,15 +22,13 @@ type MemoryStorer struct {
 	// session storage mutex
 	mut sync.RWMutex
 	// sessions is the memory storage for the sessions. The map key is the id.
-	sessions memorySessions
+	sessions map[string]memorySession
 }
 
 type memorySession struct {
 	expires time.Time
 	value   string
 }
-
-type memorySessions map[string]*memorySession
 
 // NewDefaultMemoryStorer returns a MemoryStorer object with default values.
 // The default values are:
@@ -52,20 +52,18 @@ func NewMemoryStorer(secure, httpOnly bool, clientExpiry, serverExpiry, cleanInt
 	}
 
 	m := &MemoryStorer{
-		sessions:     make(map[string]*memorySession),
+		sessions:     make(map[string]memorySession),
 		clientExpiry: clientExpiry,
 		serverExpiry: serverExpiry,
+		maxAge:       int(clientExpiry.Seconds()),
 		secure:       secure,
 		httpOnly:     httpOnly,
 	}
 
-	// If server expiry is not set, do not start the cleaner routine
-	if serverExpiry == 0 {
-		return m, nil
+	// If server expiry is set start the memory cleaner go routine
+	if serverExpiry != 0 {
+		go m.cleaner(cleanInterval)
 	}
-
-	// Start the memory cleaner go routine
-	go m.cleaner(cleanInterval)
 
 	return m, nil
 }
@@ -74,19 +72,13 @@ func NewMemoryStorer(secure, httpOnly bool, clientExpiry, serverExpiry, cleanInt
 // SessionKey.
 func (m *MemoryStorer) Get(r *http.Request) (value string, err error) {
 	cookie, err := r.Cookie(SessionKey)
-	if err != nil {
-		return "", ErrNoSession
-	}
-
-	// cookie.Value is expected to be the session id
-	if cookie.Value == "" {
+	if err != nil || len(cookie.Value) == 0 {
 		return "", ErrNoSession
 	}
 
 	m.mut.RLock()
-	defer m.mut.RUnlock()
-
 	session, ok := m.sessions[cookie.Value]
+	m.mut.RUnlock()
 	if !ok {
 		return "", ErrNoSession
 	}
@@ -97,40 +89,36 @@ func (m *MemoryStorer) Get(r *http.Request) (value string, err error) {
 // Put saves the value string to the session pointed to by the headers
 // SessionKey. If SessionKey does not exist, Put creates a new session
 // with a random unique id.
-func (m *MemoryStorer) Put(r *http.Request, w http.ResponseWriter, value string) {
-	var cookie *http.Cookie
-	var err error
+func (m *MemoryStorer) Put(w http.ResponseWriter, r *http.Request, value string) *http.Request {
+	cookie := m.getCookie(r)
+	var request *http.Request
 
-	expires := time.Now().Add(m.clientExpiry)
-
-	cookie, err = r.Cookie(SessionKey)
-	if err != nil {
+	if cookie == nil || cookie.Value == "" {
 		cookie = m.makeCookie()
 		http.SetCookie(w, cookie)
-		// add cookie to request as well in case subsequent calls to Put are made
-		r.AddCookie(cookie)
-	} else if cookie.Value == "" {
-		cookie = m.makeCookie()
-		http.SetCookie(w, cookie)
+		// Assign the cookie to the request context so that it can be used
+		// again in subsequent calls to Put(). This is required so that
+		// subsequent calls to put can locate the session ID that was generated
+		// for this cookie, otherwise you will get a new session every time Put()
+		// is called.
+		ctx := context.WithValue(r.Context(), SessionKey, cookie)
+		request = r.WithContext(ctx)
 	}
 
 	m.mut.Lock()
 	defer m.mut.Unlock()
 
-	sess, ok := m.sessions[cookie.Value]
-	if ok {
-		sess.value = value
-	} else {
-		m.sessions[cookie.Value] = &memorySession{
-			value:   value,
-			expires: expires,
-		}
+	m.sessions[cookie.Value] = memorySession{
+		expires: time.Now().UTC().Add(m.serverExpiry),
+		value:   value,
 	}
+
+	return request
 }
 
 // Del the session pointed to by the headers SessionKey and remove it from
 // the header.
-func (m *MemoryStorer) Del(r *http.Request, w http.ResponseWriter) {
+func (m *MemoryStorer) Del(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie(SessionKey)
 	if err != nil {
 		return
@@ -142,7 +130,7 @@ func (m *MemoryStorer) Del(r *http.Request, w http.ResponseWriter) {
 	// requests replace it when it does not point to a valid session id.
 	cookie.Value = ""
 	cookie.MaxAge = -1
-	cookie.Expires = time.Now().AddDate(-1, 0, 0)
+	cookie.Expires = time.Now().UTC().AddDate(-1, 0, 0)
 	cookie.HttpOnly = m.httpOnly
 	cookie.Secure = m.secure
 	http.SetCookie(w, cookie)
@@ -153,9 +141,8 @@ func (m *MemoryStorer) Del(r *http.Request, w http.ResponseWriter) {
 	}
 
 	m.mut.Lock()
-	defer m.mut.Unlock()
-
 	delete(m.sessions, id)
+	m.mut.Unlock()
 }
 
 // sleepFunc is a test harness
@@ -164,7 +151,7 @@ var sleepFunc = time.Sleep
 func (m *MemoryStorer) cleaner(loop time.Duration) {
 	for {
 		sleepFunc(loop)
-		t := time.Now()
+		t := time.Now().UTC()
 		m.mut.Lock()
 		for id, session := range m.sessions {
 			if t.After(session.expires) {
@@ -179,9 +166,26 @@ func (m *MemoryStorer) makeCookie() *http.Cookie {
 	return &http.Cookie{
 		Name:     SessionKey,
 		Value:    uuid.NewV4().String(),
-		MaxAge:   int(m.clientExpiry.Seconds()),
-		Expires:  time.Now().Add(m.clientExpiry),
+		MaxAge:   m.maxAge,
+		Expires:  time.Now().UTC().Add(m.clientExpiry),
 		HttpOnly: m.httpOnly,
 		Secure:   m.secure,
 	}
+}
+
+// getCookie returns the cookie stored in the request context. If it does not
+// exist in the request context it will attempt to fetch it from the request
+// headers. If this fails it will return nil.
+func (m *MemoryStorer) getCookie(r *http.Request) *http.Cookie {
+	ctxCookie, ok := r.Context().Value(SessionKey).(*http.Cookie)
+	if ok && ctxCookie != nil {
+		return ctxCookie
+	}
+
+	reqCookie, err := r.Cookie(SessionKey)
+	if err != nil {
+		return nil
+	}
+
+	return reqCookie
 }
