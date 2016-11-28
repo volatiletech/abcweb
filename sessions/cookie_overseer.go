@@ -53,13 +53,11 @@ func MakeSecretKey() ([32]byte, error) {
 // Get a value from the cookie overseer
 func (c *CookieOverseer) Get(w http.ResponseWriter, r *http.Request) (string, error) {
 	// Abuse request to be able to easily parse out cookies
-	request := http.Request{
-		Header: w.Header(),
-	}
-	cookies := request.Cookies()
-	for _, cookie := range cookies {
+	request := http.Request{Header: make(http.Header)}
+	request.Header.Set("Cookie", w.Header().Get("Set-Cookie"))
+	for _, cookie := range request.Cookies() {
 		if cookie.Name == c.options.Name {
-			return cookie.Value, nil
+			return c.decode(cookie.Value)
 		}
 	}
 
@@ -69,6 +67,22 @@ func (c *CookieOverseer) Get(w http.ResponseWriter, r *http.Request) (string, er
 	}
 
 	return c.decode(cookie.Value)
+}
+
+// Put a value into the cookie overseer
+func (c *CookieOverseer) Put(w http.ResponseWriter, r *http.Request, value string) (*http.Request, error) {
+	ct, err := c.encode(value)
+	if err != nil {
+		return nil, err
+	}
+
+	http.SetCookie(w, c.options.makeCookie(ct))
+	return r, nil
+}
+
+// Del a value from the cookie overseer
+func (c *CookieOverseer) Del(w http.ResponseWriter, r *http.Request) error {
+	return errors.New("not impl")
 }
 
 // encode into base64'd aes-gcm
@@ -105,14 +119,4 @@ func (c *CookieOverseer) decode(ciphertext string) (string, error) {
 	}
 
 	return string(plaintext), nil
-}
-
-// Put a value into the cookie overseer
-func (c *CookieOverseer) Put(w http.ResponseWriter, r *http.Request, value string) (*http.Request, error) {
-	return nil, errors.New("not impl")
-}
-
-// Del a value from the cookie overseer
-func (c *CookieOverseer) Del(w http.ResponseWriter, r *http.Request) error {
-	return errors.New("not impl")
 }

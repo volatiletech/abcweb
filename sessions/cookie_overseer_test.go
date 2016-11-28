@@ -55,7 +55,25 @@ func TestCookieOverseerGetFromCookie(t *testing.T) {
 func TestCookieOverseerGetFromWritten(t *testing.T) {
 	t.Parallel()
 
-	//c := NewCookieOverseer(CookieOptions{}, testCookieKey)
+	opts := NewCookieOptions()
+	c := NewCookieOverseer(opts, testCookieKey)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+
+	ct, err := c.encode("hello world")
+	if err != nil {
+		t.Error(err)
+	}
+	http.SetCookie(w, opts.makeCookie(ct))
+
+	value, err := c.Get(w, r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if value != "hello world" {
+		t.Error("value was wrong:", value)
+	}
 }
 
 func TestCookieOverseerCrypto(t *testing.T) {
