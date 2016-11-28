@@ -13,5 +13,5 @@ import (
 type Root struct {
 	Log     zap.Logger
 	Render  *render.Render
-	Session sessions.SessionStorer
+	Session sessions.Overseer
 }

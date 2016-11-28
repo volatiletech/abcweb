@@ -11,6 +11,8 @@ func (s State) InitRoutes() {
 	root := controllers.Root{
 		Log:    s.Log,
 		Render: s.Render,
+		// create session storer (secure & httpsonly bool/false for https, 0 for default clientexpiry),
+		// true, true, 0
 	}
 
 	// Serve static assets
