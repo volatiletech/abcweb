@@ -53,7 +53,7 @@ func TestStorageOverseerGet(t *testing.T) {
 	s := NewStorageOverseer(NewCookieOptions(), m)
 
 	val, err := s.Get(w, r)
-	if err != ErrNoSession {
+	if !IsNoSessionError(err) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 
@@ -64,7 +64,7 @@ func TestStorageOverseerGet(t *testing.T) {
 	r.AddCookie(cookieOne)
 
 	val, err = s.Get(w, r)
-	if err != ErrNoSession {
+	if !IsNoSessionError(err) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 	m.sessions["sessionid"] = memorySession{
@@ -90,7 +90,7 @@ func TestStorageOverseerPut(t *testing.T) {
 	s := NewStorageOverseer(NewCookieOptions(), m)
 
 	_, err := s.Get(w, r)
-	if err != ErrNoSession {
+	if !IsNoSessionError(err) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 

@@ -61,7 +61,7 @@ func (c *CookieOverseer) Get(w http.ResponseWriter, r *http.Request) (string, er
 
 	cookie, err := r.Cookie(c.options.Name)
 	if err != nil {
-		return "", err
+		return "", errNoSession{}
 	}
 
 	return c.decode(cookie.Value)

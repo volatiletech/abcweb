@@ -37,7 +37,7 @@ func TestMemoryStorerGet(t *testing.T) {
 	m, _ := NewDefaultMemoryStorer()
 
 	val, err := m.Get("lol")
-	if err != ErrNoSession {
+	if !IsNoSessionError(err) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 

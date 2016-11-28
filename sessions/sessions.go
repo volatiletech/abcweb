@@ -1,9 +1,6 @@
 package sessions
 
-import (
-	"errors"
-	"net/http"
-)
+import "net/http"
 
 // Storer provides methods to retrieve, add and delete session keys
 // and their corresponding values.
@@ -20,5 +17,17 @@ type Overseer interface {
 	Del(w http.ResponseWriter, r *http.Request) (err error)
 }
 
-// ErrNoSession is returned when a session does not exist.
-var ErrNoSession = errors.New("cookie has no session id")
+type errNoSession struct{}
+
+func (errNoSession) NoSession()    {}
+func (errNoSession) Error() string { return "no session found" }
+
+type noSessionInterface interface {
+	NoSession()
+}
+
+// IsNoSessionError checks an error to see if it means that there was no session
+func IsNoSessionError(err error) bool {
+	_, ok := err.(noSessionInterface)
+	return ok
+}

@@ -61,7 +61,7 @@ func (m *MemoryStorer) Get(key string) (value string, err error) {
 	session, ok := m.sessions[key]
 	m.mut.RUnlock()
 	if !ok {
-		return "", ErrNoSession
+		return "", errNoSession{}
 	}
 
 	return session.value, nil

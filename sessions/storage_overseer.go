@@ -25,7 +25,7 @@ func NewStorageOverseer(opts CookieOptions, storer Storer) *StorageOverseer {
 func (s *StorageOverseer) Get(w http.ResponseWriter, r *http.Request) (value string, err error) {
 	cookieID := s.getCookieID(r)
 	if len(cookieID) == 0 {
-		return "", ErrNoSession
+		return "", errNoSession{}
 	}
 
 	val, err := s.storer.Get(cookieID)

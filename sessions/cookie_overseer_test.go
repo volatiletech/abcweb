@@ -82,6 +82,20 @@ func TestCookieOverseerGetFromWritten(t *testing.T) {
 	}
 }
 
+func TestCookieOverseerNoSession(t *testing.T) {
+	t.Parallel()
+
+	opts := NewCookieOptions()
+	c := NewCookieOverseer(opts, testCookieKey)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+
+	_, err := c.Get(w, r)
+	if !IsNoSessionError(err) {
+		t.Error("wrong err:", err)
+	}
+}
+
 func TestCookieOverseerPut(t *testing.T) {
 	t.Parallel()
 
