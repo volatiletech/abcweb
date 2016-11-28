@@ -11,10 +11,6 @@ type SessionStorer interface {
 	Get(r *http.Request) (value string, err error)
 	Put(r *http.Request, value string) error
 	Del(r *http.Request) error
-
-	GetID(id string) (value string, err error)
-	PutID(id string, value string) error
-	DelID(r *http.Request, id string) error
 }
 
 // SessionKey is the key name in the cookie that holds the session id.
