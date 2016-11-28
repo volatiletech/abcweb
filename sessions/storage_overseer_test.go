@@ -13,9 +13,9 @@ func TestStorageOverseerNew(t *testing.T) {
 	t.Parallel()
 
 	opts := CookieOptions{
-		ClientExpiry: 2,
-		Secure:       true,
-		HTTPOnly:     true,
+		MaxAge:   2,
+		Secure:   true,
+		HTTPOnly: true,
 	}
 
 	mem, err := NewDefaultMemoryStorer()
@@ -28,7 +28,7 @@ func TestStorageOverseerNew(t *testing.T) {
 		t.Error(err)
 	}
 
-	if s.options.ClientExpiry != 2 {
+	if s.options.MaxAge != 2 {
 		t.Error("expected client expiry to be 2")
 	}
 
@@ -192,8 +192,8 @@ func TestStorageOverseerMakeCookie(t *testing.T) {
 	if c.Value == "" {
 		t.Errorf("expected value to be a uuid")
 	}
-	if c.MaxAge != int(s.options.ClientExpiry.Seconds()) {
-		t.Errorf("mismatch between %d and %d", c.MaxAge, int(s.options.ClientExpiry.Seconds()))
+	if c.MaxAge != int(s.options.MaxAge.Seconds()) {
+		t.Errorf("mismatch between %d and %d", c.MaxAge, int(s.options.MaxAge.Seconds()))
 	}
 	if c.HttpOnly != true {
 		t.Error("expected httponly true")

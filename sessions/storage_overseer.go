@@ -85,8 +85,8 @@ func (s *StorageOverseer) makeCookie(cookieID string) *http.Cookie {
 	return &http.Cookie{
 		Name:     Key,
 		Value:    cookieID,
-		MaxAge:   int(s.options.ClientExpiry.Seconds()),
-		Expires:  time.Now().UTC().Add(s.options.ClientExpiry),
+		MaxAge:   int(s.options.MaxAge.Seconds()),
+		Expires:  time.Now().UTC().Add(s.options.MaxAge),
 		HttpOnly: s.options.HTTPOnly,
 		Secure:   s.options.Secure,
 	}
