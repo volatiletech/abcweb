@@ -2,9 +2,13 @@ package sessions
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 )
 
 var testCookieKey, _ = MakeSecretKey()
@@ -64,7 +68,8 @@ func TestCookieOverseerGetFromWritten(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	http.SetCookie(w, opts.makeCookie(ct))
+
+	r = r.WithContext(context.WithValue(r.Context(), c.options.Name, ct))
 
 	value, err := c.Get(w, r)
 	if err != nil {
@@ -83,13 +88,50 @@ func TestCookieOverseerPut(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", nil)
 
-	c.Put(w, r, "hello world")
-	w.Header().Get("Set-Cookie")
+	var err error
+	r, err = c.Put(w, r, "hello world")
+	if err != nil {
+		t.Error(err)
+	}
 
 	if val, err := c.Get(w, r); err != nil {
 		t.Error(err)
 	} else if val != "hello world" {
 		t.Error("value was wrong:", val)
+	}
+}
+
+func TestCookieOverseerDel(t *testing.T) {
+	t.Parallel()
+
+	opts := NewCookieOptions()
+	c := NewCookieOverseer(opts, testCookieKey)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+
+	if err := c.Del(w, r); err != nil {
+		t.Error(err)
+	}
+
+	header := w.Header().Get("Set-Cookie")
+
+	year := strconv.Itoa(time.Now().UTC().AddDate(-1, 0, 0).Year())
+	foundYear := false
+	foundMaxAge := false
+	for _, s := range strings.Split(header, "; ") {
+		if strings.Contains(s, "Expires=") && strings.Contains(s, year) {
+			foundYear = true
+		}
+		if s == "Max-Age=0" {
+			foundMaxAge = true
+		}
+	}
+
+	if !foundYear {
+		t.Error("could not find year", header)
+	}
+	if !foundMaxAge {
+		t.Error("could not find maxage", header)
 	}
 }
 

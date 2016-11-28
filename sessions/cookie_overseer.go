@@ -1,11 +1,13 @@
 package sessions
 
 import (
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -52,13 +54,9 @@ func MakeSecretKey() ([32]byte, error) {
 
 // Get a value from the cookie overseer
 func (c *CookieOverseer) Get(w http.ResponseWriter, r *http.Request) (string, error) {
-	// Abuse request to be able to easily parse out cookies
-	request := http.Request{Header: make(http.Header)}
-	request.Header.Set("Cookie", w.Header().Get("Set-Cookie"))
-	for _, cookie := range request.Cookies() {
-		if cookie.Name == c.options.Name {
-			return c.decode(cookie.Value)
-		}
+	val, ok := r.Context().Value(c.options.Name).(string)
+	if ok && len(val) != 0 {
+		return c.decode(val)
 	}
 
 	cookie, err := r.Cookie(c.options.Name)
@@ -76,13 +74,19 @@ func (c *CookieOverseer) Put(w http.ResponseWriter, r *http.Request, value strin
 		return nil, err
 	}
 
+	r = r.WithContext(context.WithValue(r.Context(), c.options.Name, ct))
+
 	http.SetCookie(w, c.options.makeCookie(ct))
 	return r, nil
 }
 
 // Del a value from the cookie overseer
 func (c *CookieOverseer) Del(w http.ResponseWriter, r *http.Request) error {
-	return errors.New("not impl")
+	cookie := c.options.makeCookie("")
+	cookie.MaxAge = -1
+	cookie.Expires = time.Now().UTC().AddDate(-1, 0, 0)
+	http.SetCookie(w, cookie)
+	return nil
 }
 
 // encode into base64'd aes-gcm
