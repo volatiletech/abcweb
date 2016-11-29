@@ -48,7 +48,7 @@ func (errNoMapKey) Error() string {
 	return "session map key does not exist"
 }
 
-// IsNoMapKey checks an error to see if it means that there was no session map key
+// IsNoMapKeyError checks an error to see if it means that there was no session map key
 func IsNoMapKeyError(err error) bool {
 	_, ok := err.(noMapKeyInterface)
 	return ok
@@ -59,7 +59,9 @@ func IsNoMapKeyError(err error) bool {
 func Put(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value string) (*http.Request, error) {
 	sessMap := map[string]string{}
 	err := GetObj(overseer, w, r, &sessMap)
-	if err != nil {
+	// If it's a no session error because a session hasn't been created yet
+	// then we can skip this return statement and create a fresh map
+	if err != nil && !IsNoSessionError(err) {
 		return nil, err
 	}
 
@@ -94,6 +96,8 @@ func Get(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) 
 	return mapVal, nil
 }
 
+// Del is a JSON helper used for deleting keys from a key-value session values store.
+// Del is a noop on nonexistent keys, but will error if the session does not exist.
 func Del(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) error {
 	sessMap := map[string]string{}
 	err := GetObj(overseer, w, r, &sessMap)
