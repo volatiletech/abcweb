@@ -32,7 +32,7 @@ func NewDefaultMemoryStorer() (*MemoryStorer, error) {
 // NewMemoryStorer initializes and returns a new MemoryStorer object.
 // It takes the maxAge of how long each session should live in memory,
 // and a cleanInterval duration which defines how often the clean
-// task should check for server expired sessions to be removed from memory.
+// task should check for maxAge sessions to be removed from memory.
 // Persistent storage can be attained by setting maxAge and cleanInterval
 // to zero, however the memory will be wiped when the server is restarted.
 func NewMemoryStorer(maxAge, cleanInterval time.Duration) (*MemoryStorer, error) {
@@ -87,12 +87,12 @@ func (m *MemoryStorer) Del(key string) error {
 	return nil
 }
 
-// sleepFunc is a test harness
-var sleepFunc = time.Sleep
+// memorySleepFunc is a test harness
+var memorySleepFunc = time.Sleep
 
 func (m *MemoryStorer) cleaner(loop time.Duration) {
 	for {
-		sleepFunc(loop)
+		memorySleepFunc(loop)
 		t := time.Now().UTC()
 		m.mut.Lock()
 		for id, session := range m.sessions {

@@ -14,7 +14,7 @@ func TestMemoryStorerNew(t *testing.T) {
 	}
 
 	if m.maxAge != 2 {
-		t.Error("expected server expiry to be 2")
+		t.Error("expected max age to be 2")
 	}
 }
 
@@ -27,7 +27,7 @@ func TestMemoryStorerNewDefault(t *testing.T) {
 	}
 
 	if m.maxAge != time.Hour*24*7 {
-		t.Error("expected server expiry to be a week")
+		t.Error("expected max age to be a week")
 	}
 }
 
@@ -57,21 +57,17 @@ func TestMemoryStorerPut(t *testing.T) {
 
 	m, _ := NewDefaultMemoryStorer()
 
-	m.mut.RLock()
 	if len(m.sessions) != 0 {
 		t.Errorf("Expected len 0, got %d", len(m.sessions))
 	}
-	m.mut.RUnlock()
 
 	m.Put("hi", "hello")
 	m.Put("hi", "whatsup")
 	m.Put("yo", "friend")
 
-	m.mut.RLock()
 	if len(m.sessions) != 2 {
 		t.Errorf("Expected len 2, got %d", len(m.sessions))
 	}
-	m.mut.RUnlock()
 
 	val, err := m.Get("hi")
 	if err != nil {
@@ -95,21 +91,17 @@ func TestMemoryStorerDel(t *testing.T) {
 
 	m, _ := NewDefaultMemoryStorer()
 
-	m.mut.RLock()
 	if len(m.sessions) != 0 {
 		t.Errorf("Expected len 0, got %d", len(m.sessions))
 	}
-	m.mut.RUnlock()
 
 	m.Put("hi", "hello")
 	m.Put("hi", "whatsup")
 	m.Put("yo", "friend")
 
-	m.mut.RLock()
 	if len(m.sessions) != 2 {
 		t.Errorf("Expected len 2, got %d", len(m.sessions))
 	}
-	m.mut.RUnlock()
 
 	err := m.Del("hi")
 	if err != nil {
@@ -121,17 +113,15 @@ func TestMemoryStorerDel(t *testing.T) {
 		t.Errorf("Expected get hi to fail")
 	}
 
-	m.mut.RLock()
 	if len(m.sessions) != 1 {
 		t.Errorf("Expected len 1, got %d", len(m.sessions))
 	}
-	m.mut.RUnlock()
 }
 
 func TestMemoryStorerCleaner(t *testing.T) {
 	wait := make(chan struct{})
 
-	sleepFunc = func(time.Duration) {
+	memorySleepFunc = func(time.Duration) {
 		<-wait
 	}
 
