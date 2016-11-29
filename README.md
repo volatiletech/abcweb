@@ -23,6 +23,7 @@ a client-side rendered web app or a stand-alone web API server.
 * Flexible rendering (HTML templates, JSON, XML, text & binary data)
 * Colored & leveled logging
 * TLS/SSL support (https://)
+* HTTP sessions (supports cookie, disk, memory and redis sessions)
 
 ### Packages
 
@@ -36,6 +37,8 @@ a client-side rendered web app or a stand-alone web API server.
 * [zap](https://github.com/uber-go/zap) & [zapcolors](https://github.com/aarondl/zapcolors) *-- colored logging*
 * [chi](https://github.com/pressly/chi) *-- routing*
 * [render](https://github.com/unrolled/render) *-- dynamic template rendering using render*
+* [redis](https://github.com/go-redis/redis) *-- used for the optional redis session storer*
+* [afero](https://github.com/spf13/afero) *-- used for the optional disk session storer*
 
 ### Configuration
 
