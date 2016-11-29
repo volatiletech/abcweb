@@ -14,7 +14,7 @@ type StorageOverseer struct {
 	options CookieOptions
 }
 
-// NewStorageOverseer returns a new overseer
+// NewStorageOverseer returns a new storage overseer
 func NewStorageOverseer(opts CookieOptions, storer Storer) *StorageOverseer {
 	return &StorageOverseer{
 		storer:  storer,

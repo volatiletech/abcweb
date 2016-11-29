@@ -13,7 +13,7 @@ func TestMemoryStorerNew(t *testing.T) {
 		t.Error(err)
 	}
 
-	if m.serverExpiry != 2 {
+	if m.maxAge != 2 {
 		t.Error("expected server expiry to be 2")
 	}
 }
@@ -26,7 +26,7 @@ func TestMemoryStorerNewDefault(t *testing.T) {
 		t.Error(err)
 	}
 
-	if m.serverExpiry != time.Hour*24*7 {
+	if m.maxAge != time.Hour*24*7 {
 		t.Error("expected server expiry to be a week")
 	}
 }

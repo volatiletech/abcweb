@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-// CookieOptions for the session cookies themselves.
+// CookieOptions for the session cookies themselves
 type CookieOptions struct {
 	// Name for the session cookie
 	Name string
-	// MaxAge sets the max-age and the expires fields of a cookie.
+	// MaxAge sets the max-age and the expires fields of a cookie
 	MaxAge time.Duration
 	// Secure ensures the cookie is only given on https connections
 	Secure bool
