@@ -3,7 +3,6 @@ package sessions
 import (
 	"os"
 	"path"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -14,24 +13,36 @@ func TestMain(m *testing.M) {
 	// Use an in-memory filesystem for testing so we don't pollute the disk
 	FS = afero.NewMemMapFs()
 
-	os.Exit(m.Run())
+	retCode := m.Run()
+
+	os.Exit(retCode)
 }
 
 func TestDiskStorerNew(t *testing.T) {
-	d, err := NewDiskStorer("path", 2, 3)
+	diskSleepFunc = func(time.Duration) bool {
+		return false
+	}
+
+	d, err := NewDiskStorer("path", time.Hour*11, time.Hour*12)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if d.maxAge != 2 {
-		t.Error("expected max age to be 2")
+	if d.maxAge != time.Hour*11 {
+		t.Errorf("expected max age to be %d", time.Hour*11)
 	}
 	if d.folderPath != "path" {
 		t.Errorf("expected folder path to be %q", "path")
 	}
+
+	d.wg.Wait()
 }
 
 func TestDiskStorerNewDefault(t *testing.T) {
+	diskSleepFunc = func(time.Duration) bool {
+		return false
+	}
+
 	d, err := NewDefaultDiskStorer()
 	if err != nil {
 		t.Error(err)
@@ -40,15 +51,12 @@ func TestDiskStorerNewDefault(t *testing.T) {
 	if d.maxAge != time.Hour*24*7 {
 		t.Error("expected max age to be a week")
 	}
+
+	d.wg.Wait()
 }
 
 func TestDiskStorerGet(t *testing.T) {
-	d, _ := NewDefaultDiskStorer()
-
-	// Empty the contents of the directory to get a clean slate for each test run
-	if err := emptyDir(d.folderPath); err != nil {
-		t.Fatal(err)
-	}
+	d, _ := NewDiskStorer(path.Join(os.TempDir(), "a"), 0, 0)
 
 	val, err := d.Get("lol")
 	if !IsNoSessionError(err) {
@@ -67,12 +75,7 @@ func TestDiskStorerGet(t *testing.T) {
 }
 
 func TestDiskStorerPut(t *testing.T) {
-	d, _ := NewDefaultDiskStorer()
-
-	// Empty the contents of the directory to get a clean slate for each test run
-	if err := emptyDir(d.folderPath); err != nil {
-		t.Fatal(err)
-	}
+	d, _ := NewDiskStorer(path.Join(os.TempDir(), "b"), 0, 0)
 
 	files, err := afero.ReadDir(FS, d.folderPath)
 	if err != nil {
@@ -112,12 +115,7 @@ func TestDiskStorerPut(t *testing.T) {
 }
 
 func TestDiskStorerDel(t *testing.T) {
-	d, _ := NewDefaultDiskStorer()
-
-	// Empty the contents of the directory to get a clean slate for each test run
-	if err := emptyDir(d.folderPath); err != nil {
-		t.Fatal(err)
-	}
+	d, _ := NewDiskStorer(path.Join(os.TempDir(), "c"), 0, 0)
 
 	files, err := afero.ReadDir(FS, d.folderPath)
 	if err != nil {
@@ -159,17 +157,13 @@ func TestDiskStorerDel(t *testing.T) {
 }
 
 func TestDiskStorerCleaner(t *testing.T) {
-	d, _ := NewDiskStorer(path.Join(os.TempDir(), "asdf"), time.Hour, time.Hour)
-
-	// Empty the contents of the directory to get a clean slate for each test run
-	if err := emptyDir(d.folderPath); err != nil {
-		t.Fatal(err)
-	}
+	d, _ := NewDiskStorer(path.Join(os.TempDir(), "d"), time.Hour, time.Hour)
 
 	wait := make(chan struct{})
 
-	diskSleepFunc = func(time.Duration) {
+	diskSleepFunc = func(time.Duration) bool {
 		<-wait
+		return true
 	}
 
 	err := d.Put("testid1", "test1")
@@ -217,23 +211,4 @@ func TestDiskStorerCleaner(t *testing.T) {
 	}
 
 	d.mut.RUnlock()
-}
-
-func emptyDir(dir string) error {
-	d, err := FS.Open(dir)
-	if err != nil {
-		return err
-	}
-	defer d.Close()
-	names, err := d.Readdirnames(-1)
-	if err != nil {
-		return err
-	}
-	for _, name := range names {
-		err = FS.RemoveAll(filepath.Join(dir, name))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

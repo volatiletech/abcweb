@@ -8,12 +8,14 @@ import (
 // MemoryStorer is a session storer implementation for saving sessions
 // to memory.
 type MemoryStorer struct {
+	// How long sessions take to expire on disk
 	maxAge time.Duration
-
 	// session storage mutex
 	mut sync.RWMutex
 	// sessions is the memory storage for the sessions. The map key is the id.
 	sessions map[string]memorySession
+	// wg is used to manage the cleaner go routines
+	wg sync.WaitGroup
 }
 
 type memorySession struct {
@@ -46,7 +48,8 @@ func NewMemoryStorer(maxAge, cleanInterval time.Duration) (*MemoryStorer, error)
 	}
 
 	// If max age is set start the memory cleaner go routine
-	if maxAge != 0 {
+	if int(maxAge) != 0 {
+		m.wg.Add(1)
 		go m.cleaner(cleanInterval)
 	}
 
@@ -88,11 +91,18 @@ func (m *MemoryStorer) Del(key string) error {
 }
 
 // memorySleepFunc is a test harness
-var memorySleepFunc = time.Sleep
+var memorySleepFunc = func(sleep time.Duration) bool {
+	time.Sleep(sleep)
+	return true
+}
 
 func (m *MemoryStorer) cleaner(loop time.Duration) {
 	for {
-		memorySleepFunc(loop)
+		if ok := memorySleepFunc(loop); !ok {
+			defer m.wg.Done()
+			return
+		}
+
 		t := time.Now().UTC()
 		m.mut.Lock()
 		for id, session := range m.sessions {

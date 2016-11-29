@@ -6,7 +6,9 @@ import (
 )
 
 func TestMemoryStorerNew(t *testing.T) {
-	t.Parallel()
+	memorySleepFunc = func(time.Duration) bool {
+		return false
+	}
 
 	m, err := NewMemoryStorer(2, 2)
 	if err != nil {
@@ -16,10 +18,14 @@ func TestMemoryStorerNew(t *testing.T) {
 	if m.maxAge != 2 {
 		t.Error("expected max age to be 2")
 	}
+
+	m.wg.Wait()
 }
 
 func TestMemoryStorerNewDefault(t *testing.T) {
-	t.Parallel()
+	memorySleepFunc = func(time.Duration) bool {
+		return false
+	}
 
 	m, err := NewDefaultMemoryStorer()
 	if err != nil {
@@ -29,12 +35,12 @@ func TestMemoryStorerNewDefault(t *testing.T) {
 	if m.maxAge != time.Hour*24*7 {
 		t.Error("expected max age to be a week")
 	}
+
+	m.wg.Wait()
 }
 
 func TestMemoryStorerGet(t *testing.T) {
-	t.Parallel()
-
-	m, _ := NewDefaultMemoryStorer()
+	m, _ := NewMemoryStorer(0, 0)
 
 	val, err := m.Get("lol")
 	if !IsNoSessionError(err) {
@@ -53,9 +59,7 @@ func TestMemoryStorerGet(t *testing.T) {
 }
 
 func TestMemoryStorerPut(t *testing.T) {
-	t.Parallel()
-
-	m, _ := NewDefaultMemoryStorer()
+	m, _ := NewMemoryStorer(0, 0)
 
 	if len(m.sessions) != 0 {
 		t.Errorf("Expected len 0, got %d", len(m.sessions))
@@ -87,9 +91,7 @@ func TestMemoryStorerPut(t *testing.T) {
 }
 
 func TestMemoryStorerDel(t *testing.T) {
-	t.Parallel()
-
-	m, _ := NewDefaultMemoryStorer()
+	m, _ := NewMemoryStorer(0, 0)
 
 	if len(m.sessions) != 0 {
 		t.Errorf("Expected len 0, got %d", len(m.sessions))
@@ -121,8 +123,9 @@ func TestMemoryStorerDel(t *testing.T) {
 func TestMemoryStorerCleaner(t *testing.T) {
 	wait := make(chan struct{})
 
-	memorySleepFunc = func(time.Duration) {
+	memorySleepFunc = func(time.Duration) bool {
 		<-wait
+		return true
 	}
 
 	m, err := NewMemoryStorer(time.Hour, time.Hour)

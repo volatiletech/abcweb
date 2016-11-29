@@ -12,14 +12,19 @@ import (
 // DiskStorer is a session storer implementation for saving sessions
 // to disk.
 type DiskStorer struct {
+	// Path to the session files folder
 	folderPath string
 	// How long sessions take to expire on disk
 	maxAge time.Duration
 	// Disk storage mutex
 	mut sync.RWMutex
+	// wg is used to manage the cleaner go routines
+	wg sync.WaitGroup
 }
 
-// Use afero to wrap the filesystem so we can use a mock file system in the tests
+// FS is a filesystem pointer. This is used in favor of os and ioutil directly
+// so that we can point it to a mock filesystem in the tests to avoid polluting
+// the disk when testing.
 var FS afero.Fs = afero.NewOsFs()
 
 // NewDefaultDiskStorer returns a DiskStorer object with default values.
@@ -58,7 +63,8 @@ func NewDiskStorer(folderPath string, maxAge, cleanInterval time.Duration) (*Dis
 	}
 
 	// If max age is set start the memory cleaner go routine
-	if maxAge != 0 {
+	if int(maxAge) != 0 {
+		d.wg.Add(1)
 		go d.cleaner(cleanInterval)
 	}
 
@@ -116,11 +122,18 @@ func (d *DiskStorer) Del(key string) error {
 }
 
 // diskSleepFunc is a test harness
-var diskSleepFunc = time.Sleep
+var diskSleepFunc = func(sleep time.Duration) bool {
+	time.Sleep(sleep)
+	return true
+}
 
 func (d *DiskStorer) cleaner(loop time.Duration) {
 	for {
-		diskSleepFunc(loop)
+		if ok := diskSleepFunc(loop); !ok {
+			defer d.wg.Done()
+			return
+		}
+
 		t := time.Now().UTC()
 
 		d.mut.RLock()
