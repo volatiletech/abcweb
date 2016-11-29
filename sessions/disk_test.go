@@ -206,7 +206,11 @@ func TestDiskStorerCleaner(t *testing.T) {
 		t.Error(err)
 	}
 	if len(files) != 1 {
+		for _, f := range files {
+			t.Log(f.Name())
+		}
 		t.Fatalf("Expected len 1, got %d: %#v", len(files), files)
+
 	}
 	if files[0].Name() != "testid1" {
 		t.Errorf("expected testid2 to be deleted, but is present")
