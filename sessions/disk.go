@@ -16,16 +16,20 @@ type DiskStorer struct {
 	folderPath string
 	// How long sessions take to expire on disk
 	maxAge time.Duration
+	// How often the disk should be polled for maxAge expired sessions
+	cleanInterval time.Duration
 	// Disk storage mutex
 	mut sync.RWMutex
-	// wg is used to manage the cleaner go routines
+	// wg is used to manage the cleaner loop
 	wg sync.WaitGroup
+	// quit channel for exiting the cleaner loop
+	quit chan struct{}
 }
 
-// FS is a filesystem pointer. This is used in favor of os and ioutil directly
+// fs is a filesystem pointer. This is used in favor of os and ioutil directly
 // so that we can point it to a mock filesystem in the tests to avoid polluting
 // the disk when testing.
-var FS afero.Fs = afero.NewOsFs()
+var fs afero.Fs = afero.NewOsFs()
 
 // NewDefaultDiskStorer returns a DiskStorer object with default values.
 // The default values are:
@@ -49,23 +53,18 @@ func NewDiskStorer(folderPath string, maxAge, cleanInterval time.Duration) (*Dis
 	}
 
 	d := &DiskStorer{
-		folderPath: folderPath,
-		maxAge:     maxAge,
+		folderPath:    folderPath,
+		maxAge:        maxAge,
+		cleanInterval: cleanInterval,
 	}
 
 	// Create the storage folder if it does not exist
-	_, err := FS.Stat(folderPath)
+	_, err := fs.Stat(folderPath)
 	if os.IsNotExist(err) {
-		err := FS.Mkdir(folderPath, os.FileMode(int(0755)))
+		err := fs.Mkdir(folderPath, os.FileMode(int(0755)))
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	// If max age is set start the memory cleaner go routine
-	if int(maxAge) != 0 {
-		d.wg.Add(1)
-		go d.cleaner(cleanInterval)
 	}
 
 	return d, nil
@@ -79,14 +78,14 @@ func (d *DiskStorer) Get(key string) (value string, err error) {
 	d.mut.RLock()
 	defer d.mut.RUnlock()
 
-	_, err = FS.Stat(filePath)
+	_, err = fs.Stat(filePath)
 	if os.IsNotExist(err) {
 		return "", errNoSession{}
 	} else if err != nil {
 		return "", err
 	}
 
-	contents, err := afero.ReadFile(FS, filePath)
+	contents, err := afero.ReadFile(fs, filePath)
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +100,7 @@ func (d *DiskStorer) Put(key, value string) error {
 	d.mut.Lock()
 	defer d.mut.Unlock()
 
-	return afero.WriteFile(FS, filePath, []byte(value), 0600)
+	return afero.WriteFile(fs, filePath, []byte(value), 0600)
 }
 
 // Del the session pointed to by the session id key and remove it.
@@ -111,61 +110,91 @@ func (d *DiskStorer) Del(key string) error {
 	d.mut.Lock()
 	defer d.mut.Unlock()
 
-	_, err := FS.Stat(filePath)
+	_, err := fs.Stat(filePath)
 	if os.IsNotExist(err) {
 		return nil
 	} else if err != nil {
 		return err
 	}
 
-	return FS.Remove(filePath)
+	return fs.Remove(filePath)
 }
 
-// diskSleepFunc is a test harness
-var diskSleepFunc = func(sleep time.Duration) bool {
-	time.Sleep(sleep)
-	return true
+// StopCleaner stops the cleaner go routine
+func (d *DiskStorer) StopCleaner() {
+	close(d.quit)
+	d.wg.Wait()
 }
 
-func (d *DiskStorer) cleaner(loop time.Duration) {
-	for {
-		if ok := diskSleepFunc(loop); !ok {
-			defer d.wg.Done()
-			return
-		}
+// StartCleaner starts the disk session cleaner go routine. This go routine
+// will delete expired disk sessions on the cleanInterval interval.
+func (d *DiskStorer) StartCleaner() {
+	if d.maxAge == 0 || d.cleanInterval == 0 {
+		panic("both max age and clean interval must be set to non-zero")
+	}
 
-		t := time.Now().UTC()
+	// init quit chan
+	d.quit = make(chan struct{})
 
-		d.mut.RLock()
-		files, err := afero.ReadDir(FS, d.folderPath)
-		d.mut.RUnlock()
+	d.wg.Add(1)
 
-		if err != nil {
-			panic(err)
-		}
+	// Start the cleaner infinite loop go routine.
+	// StopCleaner() can be used to kill this go routine.
+	go d.cleanerLoop()
+}
 
-		for _, file := range files {
-			// File is expired
-			if file.ModTime().UTC().Add(d.maxAge).Before(t) {
-				filePath := path.Join(d.folderPath, file.Name())
+// cleanerLoop executes the Clean() method every time cleanInterval elapses.
+// StopCleaner() can be used to kill this go routine loop.
+func (d *DiskStorer) cleanerLoop() {
+	defer d.wg.Done()
 
-				d.mut.Lock()
-				_, err := FS.Stat(filePath)
-				// If the file has been deleted manually from the server
-				// in between the time we read the directory and now, it will
-				// fail here with a ErrNotExist. If so, continue gracefully.
-				if os.IsNotExist(err) {
-					d.mut.Unlock()
-					continue
-				} else if err != nil {
-					panic(err)
-				}
+	t, c := timerTestHarness(d.cleanInterval)
 
-				err = FS.Remove(filePath)
+	select {
+	case <-c:
+		d.Clean()
+		t.Reset(d.cleanInterval)
+	case <-d.quit:
+		t.Stop()
+		return
+	}
+}
+
+// Clean checks all session files on disk to see if they are older than
+// maxAge by checking their modtime. If it finds an expired session file
+// it will remove it from disk.
+func (d *DiskStorer) Clean() {
+	t := time.Now().UTC()
+
+	d.mut.RLock()
+	files, err := afero.ReadDir(fs, d.folderPath)
+	d.mut.RUnlock()
+
+	if err != nil {
+		panic(err)
+	}
+
+	for _, file := range files {
+		// File is expired
+		if file.ModTime().UTC().Add(d.maxAge).Before(t) {
+			filePath := path.Join(d.folderPath, file.Name())
+
+			d.mut.Lock()
+			_, err := fs.Stat(filePath)
+			// If the file has been deleted manually from the server
+			// in between the time we read the directory and now, it will
+			// fail here with a ErrNotExist. If so, continue gracefully.
+			if os.IsNotExist(err) {
 				d.mut.Unlock()
-				if err != nil {
-					panic(err)
-				}
+				continue
+			} else if err != nil {
+				panic(err)
+			}
+
+			err = fs.Remove(filePath)
+			d.mut.Unlock()
+			if err != nil {
+				panic(err)
 			}
 		}
 	}

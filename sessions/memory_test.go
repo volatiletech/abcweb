@@ -6,10 +6,6 @@ import (
 )
 
 func TestMemoryStorerNew(t *testing.T) {
-	memorySleepFunc = func(time.Duration) bool {
-		return false
-	}
-
 	m, err := NewMemoryStorer(2, 2)
 	if err != nil {
 		t.Error(err)
@@ -23,9 +19,7 @@ func TestMemoryStorerNew(t *testing.T) {
 }
 
 func TestMemoryStorerNewDefault(t *testing.T) {
-	memorySleepFunc = func(time.Duration) bool {
-		return false
-	}
+	t.Parallel()
 
 	m, err := NewDefaultMemoryStorer()
 	if err != nil {
@@ -40,7 +34,9 @@ func TestMemoryStorerNewDefault(t *testing.T) {
 }
 
 func TestMemoryStorerGet(t *testing.T) {
-	m, _ := NewMemoryStorer(0, 0)
+	t.Parallel()
+
+	m, _ := NewDefaultMemoryStorer()
 
 	val, err := m.Get("lol")
 	if !IsNoSessionError(err) {
@@ -59,7 +55,9 @@ func TestMemoryStorerGet(t *testing.T) {
 }
 
 func TestMemoryStorerPut(t *testing.T) {
-	m, _ := NewMemoryStorer(0, 0)
+	t.Parallel()
+
+	m, _ := NewDefaultMemoryStorer()
 
 	if len(m.sessions) != 0 {
 		t.Errorf("Expected len 0, got %d", len(m.sessions))
@@ -91,7 +89,9 @@ func TestMemoryStorerPut(t *testing.T) {
 }
 
 func TestMemoryStorerDel(t *testing.T) {
-	m, _ := NewMemoryStorer(0, 0)
+	t.Parallel()
+
+	m, _ := NewDefaultMemoryStorer()
 
 	if len(m.sessions) != 0 {
 		t.Errorf("Expected len 0, got %d", len(m.sessions))
@@ -120,17 +120,28 @@ func TestMemoryStorerDel(t *testing.T) {
 	}
 }
 
+// memoryTestTimer is used in the timerTestHarness override so we can
+// control sending signals to the sleep channel and trigger cleans manually
+type memoryTestTimer struct{}
+
+func (memoryTestTimer) Reset(time.Duration) bool {
+	return true
+}
+
+func (memoryTestTimer) Stop() bool {
+	return true
+}
+
 func TestMemoryStorerCleaner(t *testing.T) {
-	wait := make(chan struct{})
-
-	memorySleepFunc = func(time.Duration) bool {
-		<-wait
-		return true
-	}
-
 	m, err := NewMemoryStorer(time.Hour, time.Hour)
 	if err != nil {
 		t.Error(err)
+	}
+
+	tm := memoryTestTimer{}
+	ch := make(chan time.Time)
+	timerTestHarness = func(d time.Duration) (timer, <-chan time.Time) {
+		return tm, ch
 	}
 
 	m.sessions["testid1"] = memorySession{
@@ -142,17 +153,19 @@ func TestMemoryStorerCleaner(t *testing.T) {
 		expires: time.Now().AddDate(0, 0, -1),
 	}
 
-	m.mut.RLock()
 	if len(m.sessions) != 2 {
 		t.Error("expected len 2")
 	}
-	m.mut.RUnlock()
 
-	// stop sleep in cleaner loop
-	wait <- struct{}{}
-	wait <- struct{}{}
+	// Start the cleaner go routine
+	m.StartCleaner()
 
-	m.mut.RLock()
+	// Signal the timer channel to execute the clean
+	ch <- time.Time{}
+
+	// Stop the cleaner, this will block until the cleaner has finished its operations
+	m.StopCleaner()
+
 	if len(m.sessions) != 1 {
 		t.Errorf("expected len 1, got %d", len(m.sessions))
 	}
@@ -161,5 +174,4 @@ func TestMemoryStorerCleaner(t *testing.T) {
 	if ok {
 		t.Error("expected testid2 to be deleted, but was not")
 	}
-	m.mut.RUnlock()
 }

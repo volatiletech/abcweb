@@ -11,7 +11,7 @@ import (
 
 func TestMain(m *testing.M) {
 	// Use an in-memory filesystem for testing so we don't pollute the disk
-	FS = afero.NewMemMapFs()
+	fs = afero.NewMemMapFs()
 
 	retCode := m.Run()
 
@@ -19,9 +19,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestDiskStorerNew(t *testing.T) {
-	diskSleepFunc = func(time.Duration) bool {
-		return false
-	}
+	t.Parallel()
 
 	d, err := NewDiskStorer("path", time.Hour*11, time.Hour*12)
 	if err != nil {
@@ -39,9 +37,7 @@ func TestDiskStorerNew(t *testing.T) {
 }
 
 func TestDiskStorerNewDefault(t *testing.T) {
-	diskSleepFunc = func(time.Duration) bool {
-		return false
-	}
+	t.Parallel()
 
 	d, err := NewDefaultDiskStorer()
 	if err != nil {
@@ -56,6 +52,8 @@ func TestDiskStorerNewDefault(t *testing.T) {
 }
 
 func TestDiskStorerGet(t *testing.T) {
+	t.Parallel()
+
 	d, _ := NewDiskStorer(path.Join(os.TempDir(), "a"), 0, 0)
 
 	val, err := d.Get("lol")
@@ -75,9 +73,11 @@ func TestDiskStorerGet(t *testing.T) {
 }
 
 func TestDiskStorerPut(t *testing.T) {
+	t.Parallel()
+
 	d, _ := NewDiskStorer(path.Join(os.TempDir(), "b"), 0, 0)
 
-	files, err := afero.ReadDir(FS, d.folderPath)
+	files, err := afero.ReadDir(fs, d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -89,7 +89,7 @@ func TestDiskStorerPut(t *testing.T) {
 	d.Put("hi", "whatsup")
 	d.Put("yo", "friend")
 
-	files, err = afero.ReadDir(FS, d.folderPath)
+	files, err = afero.ReadDir(fs, d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -115,9 +115,11 @@ func TestDiskStorerPut(t *testing.T) {
 }
 
 func TestDiskStorerDel(t *testing.T) {
+	t.Parallel()
+
 	d, _ := NewDiskStorer(path.Join(os.TempDir(), "c"), 0, 0)
 
-	files, err := afero.ReadDir(FS, d.folderPath)
+	files, err := afero.ReadDir(fs, d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -129,7 +131,7 @@ func TestDiskStorerDel(t *testing.T) {
 	d.Put("hi", "whatsup")
 	d.Put("yo", "friend")
 
-	files, err = afero.ReadDir(FS, d.folderPath)
+	files, err = afero.ReadDir(fs, d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -147,7 +149,7 @@ func TestDiskStorerDel(t *testing.T) {
 		t.Errorf("Expected get hi to fail")
 	}
 
-	files, err = afero.ReadDir(FS, d.folderPath)
+	files, err = afero.ReadDir(fs, d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -156,14 +158,25 @@ func TestDiskStorerDel(t *testing.T) {
 	}
 }
 
+// diskTestTimer is used in the timerTestHarness override so we can
+// control sending signals to the sleep channel and trigger cleans manually
+type diskTestTimer struct{}
+
+func (diskTestTimer) Reset(time.Duration) bool {
+	return true
+}
+
+func (diskTestTimer) Stop() bool {
+	return true
+}
+
 func TestDiskStorerCleaner(t *testing.T) {
 	d, _ := NewDiskStorer(path.Join(os.TempDir(), "d"), time.Hour, time.Hour)
 
-	wait := make(chan struct{})
-
-	diskSleepFunc = func(time.Duration) bool {
-		<-wait
-		return true
+	tm := diskTestTimer{}
+	ch := make(chan time.Time)
+	timerTestHarness = func(d time.Duration) (timer, <-chan time.Time) {
+		return tm, ch
 	}
 
 	err := d.Put("testid1", "test1")
@@ -176,13 +189,13 @@ func TestDiskStorerCleaner(t *testing.T) {
 	}
 
 	// Change the mod time of testid2 file to yesterday so we can test it gets deleted
-	FS.Chtimes(path.Join(d.folderPath, "testid2"),
+	fs.Chtimes(path.Join(d.folderPath, "testid2"),
 		time.Now().AddDate(0, 0, -1),
 		time.Now().AddDate(0, 0, -1),
 	)
 
 	// Ensure there are currently 2 files, as expected
-	files, err := afero.ReadDir(FS, d.folderPath)
+	files, err := afero.ReadDir(fs, d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -190,12 +203,16 @@ func TestDiskStorerCleaner(t *testing.T) {
 		t.Errorf("Expected len 2, got %d", len(files))
 	}
 
-	// stop sleep in cleaner loop
-	wait <- struct{}{}
-	wait <- struct{}{}
+	// Start the cleaner go routine
+	d.StartCleaner()
 
-	d.mut.RLock()
-	files, err = afero.ReadDir(FS, d.folderPath)
+	// Signal the timer channel to execute the clean
+	ch <- time.Time{}
+
+	// Stop the cleaner, this will block until the cleaner has finished its operations
+	d.StopCleaner()
+
+	files, err = afero.ReadDir(fs, d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -209,6 +226,4 @@ func TestDiskStorerCleaner(t *testing.T) {
 	if files[0].Name() != "testid1" {
 		t.Errorf("expected testid2 to be deleted, but is present")
 	}
-
-	d.mut.RUnlock()
 }

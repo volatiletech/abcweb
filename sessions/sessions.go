@@ -3,6 +3,7 @@ package sessions
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 // Storer provides methods to retrieve, add and delete session keys
@@ -18,6 +19,19 @@ type Overseer interface {
 	Get(w http.ResponseWriter, r *http.Request) (value string, err error)
 	Put(w http.ResponseWriter, r *http.Request, value string) (cr *http.Request, err error)
 	Del(w http.ResponseWriter, r *http.Request) (err error)
+}
+
+// timer interface is used to mock the test harness for disk and memory storers
+type timer interface {
+	Stop() bool
+	Reset(time.Duration) bool
+}
+
+// timerTestHarness allows us to control the timer channels manually in the
+// disk and memory storer tests so that we can trigger cleans at will
+var timerTestHarness = func(d time.Duration) (timer, <-chan time.Time) {
+	t := time.NewTimer(d)
+	return t, t.C
 }
 
 type noSessionInterface interface {

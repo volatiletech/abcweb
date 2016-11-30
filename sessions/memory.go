@@ -8,14 +8,18 @@ import (
 // MemoryStorer is a session storer implementation for saving sessions
 // to memory.
 type MemoryStorer struct {
-	// How long sessions take to expire on disk
-	maxAge time.Duration
-	// session storage mutex
-	mut sync.RWMutex
 	// sessions is the memory storage for the sessions. The map key is the id.
 	sessions map[string]memorySession
+	// How long sessions take to expire on disk
+	maxAge time.Duration
+	// How often the memory map should be polled for maxAge expired sessions
+	cleanInterval time.Duration
+	// session storage mutex
+	mut sync.RWMutex
 	// wg is used to manage the cleaner go routines
 	wg sync.WaitGroup
+	// quit channel for exiting the cleaner loop
+	quit chan struct{}
 }
 
 type memorySession struct {
@@ -43,14 +47,9 @@ func NewMemoryStorer(maxAge, cleanInterval time.Duration) (*MemoryStorer, error)
 	}
 
 	m := &MemoryStorer{
-		sessions: make(map[string]memorySession),
-		maxAge:   maxAge,
-	}
-
-	// If max age is set start the memory cleaner go routine
-	if int(maxAge) != 0 {
-		m.wg.Add(1)
-		go m.cleaner(cleanInterval)
+		sessions:      make(map[string]memorySession),
+		maxAge:        maxAge,
+		cleanInterval: cleanInterval,
 	}
 
 	return m, nil
@@ -90,26 +89,56 @@ func (m *MemoryStorer) Del(key string) error {
 	return nil
 }
 
-// memorySleepFunc is a test harness
-var memorySleepFunc = func(sleep time.Duration) bool {
-	time.Sleep(sleep)
-	return true
+// Clean checks all sessions in memory to see if they are older than
+// maxAge by checking their expiry. If it finds an expired session
+// it will remove it from memory.
+func (m *MemoryStorer) Clean() {
+	t := time.Now().UTC()
+	m.mut.Lock()
+	for id, session := range m.sessions {
+		if t.After(session.expires) {
+			delete(m.sessions, id)
+		}
+	}
+	m.mut.Unlock()
 }
 
-func (m *MemoryStorer) cleaner(loop time.Duration) {
-	for {
-		if ok := memorySleepFunc(loop); !ok {
-			defer m.wg.Done()
-			return
-		}
+// StopCleaner stops the cleaner go routine
+func (m *MemoryStorer) StopCleaner() {
+	close(m.quit)
+	m.wg.Wait()
+}
 
-		t := time.Now().UTC()
-		m.mut.Lock()
-		for id, session := range m.sessions {
-			if t.After(session.expires) {
-				delete(m.sessions, id)
-			}
-		}
-		m.mut.Unlock()
+// StartCleaner starts the memory session cleaner go routine. This go routine
+// will delete expired sessions from the memory map on the cleanInterval interval.
+func (m *MemoryStorer) StartCleaner() {
+	if m.maxAge == 0 || m.cleanInterval == 0 {
+		panic("both max age and clean interval must be set to non-zero")
+	}
+
+	// init quit chan
+	m.quit = make(chan struct{})
+
+	m.wg.Add(1)
+
+	// Start the cleaner infinite loop go routine.
+	// StopCleaner() can be used to kill this go routine.
+	go m.cleanerLoop()
+}
+
+// cleanerLoop executes the Clean() method every time cleanInterval elapses.
+// StopCleaner() can be used to kill this go routine loop.
+func (m *MemoryStorer) cleanerLoop() {
+	defer m.wg.Done()
+
+	t, c := timerTestHarness(m.cleanInterval)
+
+	select {
+	case <-c:
+		m.Clean()
+		t.Reset(m.cleanInterval)
+	case <-m.quit:
+		t.Stop()
+		return
 	}
 }
