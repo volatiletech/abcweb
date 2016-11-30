@@ -29,7 +29,7 @@ type DiskStorer struct {
 // fs is a filesystem pointer. This is used in favor of os and ioutil directly
 // so that we can point it to a mock filesystem in the tests to avoid polluting
 // the disk when testing.
-var fs afero.Fs = afero.NewOsFs()
+var fs = afero.NewOsFs()
 
 // NewDefaultDiskStorer returns a DiskStorer object with default values.
 // The default values are:

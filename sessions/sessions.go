@@ -27,22 +27,25 @@ type timer interface {
 	Reset(time.Duration) bool
 }
 
-// timerTestHarness allows us to control the timer channels manually in the
-// disk and memory storer tests so that we can trigger cleans at will
-var timerTestHarness = func(d time.Duration) (timer, <-chan time.Time) {
-	t := time.NewTimer(d)
-	return t, t.C
-}
-
 type noSessionInterface interface {
 	NoSession()
 }
+type noMapKeyInterface interface {
+	NoMapKey()
+}
 
 type errNoSession struct{}
+type errNoMapKey struct{}
 
 func (errNoSession) NoSession() {}
+func (errNoMapKey) NoMapKey()   {}
+
 func (errNoSession) Error() string {
 	return "session does not exist"
+}
+
+func (errNoMapKey) Error() string {
+	return "session map key does not exist"
 }
 
 // IsNoSessionError checks an error to see if it means that there was no session
@@ -51,21 +54,17 @@ func IsNoSessionError(err error) bool {
 	return ok
 }
 
-type noMapKeyInterface interface {
-	NoMapKey()
-}
-
-type errNoMapKey struct{}
-
-func (errNoMapKey) NoMapKey() {}
-func (errNoMapKey) Error() string {
-	return "session map key does not exist"
-}
-
 // IsNoMapKeyError checks an error to see if it means that there was no session map key
 func IsNoMapKeyError(err error) bool {
 	_, ok := err.(noMapKeyInterface)
 	return ok
+}
+
+// timerTestHarness allows us to control the timer channels manually in the
+// disk and memory storer tests so that we can trigger cleans at will
+var timerTestHarness = func(d time.Duration) (timer, <-chan time.Time) {
+	t := time.NewTimer(d)
+	return t, t.C
 }
 
 // Put is a JSON helper used for storing key-value session values.
