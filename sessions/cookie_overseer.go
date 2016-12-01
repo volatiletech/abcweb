@@ -54,17 +54,12 @@ func MakeSecretKey() ([32]byte, error) {
 
 // Get a value from the cookie overseer
 func (c *CookieOverseer) Get(w http.ResponseWriter, r *http.Request) (string, error) {
-	val, ok := r.Context().Value(c.options.Name).(string)
-	if ok && len(val) != 0 {
-		return c.decode(val)
-	}
-
-	cookie, err := r.Cookie(c.options.Name)
+	val, err := c.options.getCookieValue(r)
 	if err != nil {
-		return "", errNoSession{}
+		return "", err
 	}
 
-	return c.decode(cookie.Value)
+	return c.decode(val)
 }
 
 // Put a value into the cookie overseer

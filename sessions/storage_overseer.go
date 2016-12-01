@@ -24,12 +24,12 @@ func NewStorageOverseer(opts CookieOptions, storer Storer) *StorageOverseer {
 
 // Get looks in the cookie for the session ID and retrieves the value string stored in the session.
 func (s *StorageOverseer) Get(w http.ResponseWriter, r *http.Request) (value string, err error) {
-	cookieID := s.getCookieID(r)
-	if len(cookieID) == 0 {
-		return "", errNoSession{}
+	sessID, err := s.options.getCookieValue(r)
+	if err != nil {
+		return "", err
 	}
 
-	val, err := s.storer.Get(cookieID)
+	val, err := s.storer.Get(sessID)
 	if err != nil {
 		return "", err
 	}
@@ -41,12 +41,13 @@ func (s *StorageOverseer) Get(w http.ResponseWriter, r *http.Request) (value str
 // If the session does not exist it creates a new one.
 func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value string) (*http.Request, error) {
 	// Reuse the existing cookie ID if it exists
-	cookieID := s.getCookieID(r)
-	if len(cookieID) == 0 {
-		cookieID = uuid.NewV4().String()
+	sessID, _ := s.options.getCookieValue(r)
+
+	if len(sessID) == 0 {
+		sessID = uuid.NewV4().String()
 	}
 
-	cookie := s.options.makeCookie(cookieID)
+	cookie := s.options.makeCookie(sessID)
 	http.SetCookie(w, cookie)
 
 	// Assign the cookie to the request context so that it can be used
@@ -54,16 +55,21 @@ func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value stri
 	// subsequent calls to put can locate the session ID that was generated
 	// for this cookie, otherwise you will get a new session every time Put()
 	// is called.
-	ctx := context.WithValue(r.Context(), s.options.Name, cookieID)
+	ctx := context.WithValue(r.Context(), s.options.Name, sessID)
 	r = r.WithContext(ctx)
 
-	err := s.storer.Put(cookieID, value)
+	err := s.storer.Put(sessID, value)
 	return r, err
 }
 
 // Del deletes the session if it exists and sets the session cookie to expire instantly.
 func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) error {
-	err := s.storer.Del(s.getCookieID(r))
+	sessID, err := s.options.getCookieValue(r)
+	if err != nil {
+		return nil
+	}
+
+	err = s.storer.Del(sessID)
 	if IsNoSessionError(err) {
 		return nil
 	} else if err != nil {
@@ -83,21 +89,4 @@ func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) error {
 
 	http.SetCookie(w, cookie)
 	return nil
-}
-
-// getCookie returns the cookie ID stored in the request context. If it does not
-// exist in the request context it will attempt to fetch it from the request
-// headers. If this fails it will return nil.
-func (s *StorageOverseer) getCookieID(r *http.Request) string {
-	cookieID, ok := r.Context().Value(s.options.Name).(string)
-	if ok && cookieID != "" {
-		return cookieID
-	}
-
-	reqCookie, err := r.Cookie(s.options.Name)
-	if err != nil {
-		return ""
-	}
-
-	return reqCookie.Value
 }
