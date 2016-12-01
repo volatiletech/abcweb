@@ -47,6 +47,11 @@ func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value stri
 		sessID = uuid.NewV4().String()
 	}
 
+	err := s.storer.Put(sessID, value)
+	if err != nil {
+		return r, err
+	}
+
 	cookie := s.options.makeCookie(sessID)
 	http.SetCookie(w, cookie)
 
@@ -56,10 +61,11 @@ func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value stri
 	// for this cookie, otherwise you will get a new session every time Put()
 	// is called.
 	ctx := context.WithValue(r.Context(), s.options.Name, sessID)
+	// Set sessWasDeleted to false to make it clear the session is valid
+	ctx = context.WithValue(ctx, sessDeletedFlag, false)
 	r = r.WithContext(ctx)
 
-	err := s.storer.Put(sessID, value)
-	return r, err
+	return r, nil
 }
 
 // Del deletes the session if it exists and sets the session cookie to expire instantly.
@@ -88,5 +94,12 @@ func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) (*http.Req
 	}
 
 	http.SetCookie(w, cookie)
+
+	// Reset the context so it doesn't re-use the old deleted session value
+	ctx := context.WithValue(r.Context(), s.options.Name, "")
+	// Set the sessWasDeleted flag to true
+	ctx = context.WithValue(ctx, sessDeletedFlag, true)
+	r = r.WithContext(ctx)
+
 	return r, nil
 }

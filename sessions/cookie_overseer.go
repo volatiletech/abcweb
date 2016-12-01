@@ -69,6 +69,8 @@ func (c *CookieOverseer) Put(w http.ResponseWriter, r *http.Request, value strin
 		return nil, err
 	}
 
+	http.SetCookie(w, c.options.makeCookie(ev))
+
 	// Store the cookie value in context so it can be retrieved from context
 	// in subsequent Put calls.
 	ctx := context.WithValue(r.Context(), c.options.Name, ev)
@@ -76,16 +78,22 @@ func (c *CookieOverseer) Put(w http.ResponseWriter, r *http.Request, value strin
 	ctx = context.WithValue(ctx, sessDeletedFlag, false)
 	r = r.WithContext(ctx)
 
-	http.SetCookie(w, c.options.makeCookie(ev))
-
 	return r, nil
 }
 
 // Del a value from the cookie overseer
 func (c *CookieOverseer) Del(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
-	cookie := c.options.makeCookie("")
-	cookie.MaxAge = -1
-	cookie.Expires = time.Now().UTC().AddDate(-1, 0, 0)
+	cookie := &http.Cookie{
+		// If the browser refuses to delete it, set value to "" so subsequent
+		// requests replace it when it does not point to a valid session id.
+		Value:    "",
+		Name:     c.options.Name,
+		MaxAge:   -1,
+		Expires:  time.Now().UTC().AddDate(-1, 0, 0),
+		HttpOnly: c.options.HTTPOnly,
+		Secure:   c.options.Secure,
+	}
+
 	http.SetCookie(w, cookie)
 
 	// Reset the context so it doesn't re-use the old deleted session value
