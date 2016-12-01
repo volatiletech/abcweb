@@ -63,17 +63,17 @@ func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value stri
 }
 
 // Del deletes the session if it exists and sets the session cookie to expire instantly.
-func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) error {
+func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
 	sessID, err := s.options.getCookieValue(r)
 	if err != nil {
-		return nil
+		return r, nil
 	}
 
 	err = s.storer.Del(sessID)
 	if IsNoSessionError(err) {
-		return nil
+		return r, nil
 	} else if err != nil {
-		return err
+		return r, err
 	}
 
 	cookie := &http.Cookie{
@@ -88,5 +88,5 @@ func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	http.SetCookie(w, cookie)
-	return nil
+	return r, nil
 }

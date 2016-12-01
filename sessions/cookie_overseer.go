@@ -64,24 +64,37 @@ func (c *CookieOverseer) Get(w http.ResponseWriter, r *http.Request) (string, er
 
 // Put a value into the cookie overseer
 func (c *CookieOverseer) Put(w http.ResponseWriter, r *http.Request, value string) (*http.Request, error) {
-	ct, err := c.encode(value)
+	ev, err := c.encode(value)
 	if err != nil {
 		return nil, err
 	}
 
-	r = r.WithContext(context.WithValue(r.Context(), c.options.Name, ct))
+	// Store the cookie value in context so it can be retrieved from context
+	// in subsequent Put calls.
+	ctx := context.WithValue(r.Context(), c.options.Name, ev)
+	// Set sessWasDeleted to false to make it clear the session is valid
+	ctx = context.WithValue(ctx, sessDeletedFlag, false)
+	r = r.WithContext(ctx)
 
-	http.SetCookie(w, c.options.makeCookie(ct))
+	http.SetCookie(w, c.options.makeCookie(ev))
+
 	return r, nil
 }
 
 // Del a value from the cookie overseer
-func (c *CookieOverseer) Del(w http.ResponseWriter, r *http.Request) error {
+func (c *CookieOverseer) Del(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
 	cookie := c.options.makeCookie("")
 	cookie.MaxAge = -1
 	cookie.Expires = time.Now().UTC().AddDate(-1, 0, 0)
 	http.SetCookie(w, cookie)
-	return nil
+
+	// Reset the context so it doesn't re-use the old deleted session value
+	ctx := context.WithValue(r.Context(), c.options.Name, "")
+	// Set the sessWasDeleted flag to true
+	ctx = context.WithValue(ctx, sessDeletedFlag, true)
+	r = r.WithContext(ctx)
+
+	return r, nil
 }
 
 // encode into base64'd aes-gcm

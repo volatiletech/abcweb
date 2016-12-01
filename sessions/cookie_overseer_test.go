@@ -124,7 +124,9 @@ func TestCookieOverseerDel(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", nil)
 
-	if err := c.Del(w, r); err != nil {
+	r, err := c.Del(w, r)
+
+	if err != nil {
 		t.Error(err)
 	}
 

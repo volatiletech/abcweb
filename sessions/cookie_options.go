@@ -17,6 +17,8 @@ type CookieOptions struct {
 	HTTPOnly bool
 }
 
+const sessDeletedFlag = "sessWasDeleted"
+
 // NewCookieOptions gives healthy defaults for session cookies
 func NewCookieOptions() CookieOptions {
 	return CookieOptions{
@@ -48,6 +50,11 @@ func (c CookieOptions) makeCookie(value string) *http.Cookie {
 // it will attempt to fetch it from the request headers.
 // If this fails it will return nil.
 func (c CookieOptions) getCookieValue(r *http.Request) (string, error) {
+	b, ok := r.Context().Value(sessDeletedFlag).(bool)
+	if b && ok {
+		return "", errNoSession{}
+	}
+
 	val, ok := r.Context().Value(c.Name).(string)
 	if ok && len(val) != 0 {
 		return val, nil

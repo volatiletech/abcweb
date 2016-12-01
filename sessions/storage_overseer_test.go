@@ -168,7 +168,7 @@ func TestStorageOverseerDel(t *testing.T) {
 		value: "whatever",
 	}
 
-	err := s.Del(w, r)
+	r, err := s.Del(w, r)
 	if err != nil {
 		t.Error(err)
 	}

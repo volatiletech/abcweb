@@ -18,7 +18,7 @@ type Storer interface {
 type Overseer interface {
 	Get(w http.ResponseWriter, r *http.Request) (value string, err error)
 	Put(w http.ResponseWriter, r *http.Request, value string) (cr *http.Request, err error)
-	Del(w http.ResponseWriter, r *http.Request) (err error)
+	Del(w http.ResponseWriter, r *http.Request) (cr *http.Request, err error)
 }
 
 // timer interface is used to mock the test harness for disk and memory storers
