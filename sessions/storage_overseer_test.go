@@ -192,7 +192,7 @@ func TestStorageOverseerMakeCookie(t *testing.T) {
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
-	c := s.makeCookie("hello")
+	c := s.options.makeCookie("hello")
 
 	if c.Name != s.options.Name {
 		t.Errorf("expected name to be session key, got: %v", c.Name)

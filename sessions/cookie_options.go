@@ -28,12 +28,17 @@ func NewCookieOptions() CookieOptions {
 }
 
 func (c CookieOptions) makeCookie(value string) *http.Cookie {
-	return &http.Cookie{
+	cookie := &http.Cookie{
 		Name:     c.Name,
 		Value:    value,
 		MaxAge:   int(c.MaxAge.Seconds()),
-		Expires:  time.Now().UTC().Add(c.MaxAge),
 		HttpOnly: c.HTTPOnly,
 		Secure:   c.Secure,
 	}
+
+	if c.MaxAge != 0 {
+		cookie.Expires = time.Now().UTC().Add(c.MaxAge)
+	}
+
+	return cookie
 }

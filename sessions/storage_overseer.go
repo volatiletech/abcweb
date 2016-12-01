@@ -46,7 +46,7 @@ func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value stri
 		cookieID = uuid.NewV4().String()
 	}
 
-	cookie := s.makeCookie(cookieID)
+	cookie := s.options.makeCookie(cookieID)
 	http.SetCookie(w, cookie)
 
 	// Assign the cookie to the request context so that it can be used
@@ -83,22 +83,6 @@ func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) error {
 
 	http.SetCookie(w, cookie)
 	return nil
-}
-
-func (s *StorageOverseer) makeCookie(cookieID string) *http.Cookie {
-	c := &http.Cookie{
-		Name:     s.options.Name,
-		Value:    cookieID,
-		MaxAge:   int(s.options.MaxAge.Seconds()),
-		HttpOnly: s.options.HTTPOnly,
-		Secure:   s.options.Secure,
-	}
-
-	if s.options.MaxAge != 0 {
-		c.Expires = time.Now().UTC().Add(s.options.MaxAge)
-	}
-
-	return c
 }
 
 // getCookie returns the cookie ID stored in the request context. If it does not
