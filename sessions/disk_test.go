@@ -1,19 +1,28 @@
 package sessions
 
 import (
+	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 	"time"
-
-	"github.com/spf13/afero"
 )
 
+var testpath string
+
 func TestMain(m *testing.M) {
-	// Use an in-memory filesystem for testing so we don't pollute the disk
-	fs = afero.NewMemMapFs()
+	testpath = path.Join(os.TempDir(), "disksesstest")
+	err := os.Mkdir(testpath, os.FileMode(int(0755)))
+	if err != nil {
+		panic(err)
+	}
 
 	retCode := m.Run()
+
+	err = os.RemoveAll(testpath)
+	if err != nil {
+		panic(err)
+	}
 
 	os.Exit(retCode)
 }
@@ -21,7 +30,7 @@ func TestMain(m *testing.M) {
 func TestDiskStorerNew(t *testing.T) {
 	t.Parallel()
 
-	d, err := NewDiskStorer("path", time.Hour*11, time.Hour*12)
+	d, err := NewDiskStorer(path.Join(testpath, "a"), time.Hour*11, time.Hour*12)
 	if err != nil {
 		t.Error(err)
 	}
@@ -29,23 +38,8 @@ func TestDiskStorerNew(t *testing.T) {
 	if d.maxAge != time.Hour*11 {
 		t.Errorf("expected max age to be %d", time.Hour*11)
 	}
-	if d.folderPath != "path" {
-		t.Errorf("expected folder path to be %q", "path")
-	}
-
-	d.wg.Wait()
-}
-
-func TestDiskStorerNewDefault(t *testing.T) {
-	t.Parallel()
-
-	d, err := NewDefaultDiskStorer()
-	if err != nil {
-		t.Error(err)
-	}
-
-	if d.maxAge != time.Hour*24*7 {
-		t.Error("expected max age to be a week")
+	if d.folderPath != testpath+"/a" {
+		t.Errorf("expected folder path to be %q", testpath+"/a")
 	}
 
 	d.wg.Wait()
@@ -54,7 +48,10 @@ func TestDiskStorerNewDefault(t *testing.T) {
 func TestDiskStorerGet(t *testing.T) {
 	t.Parallel()
 
-	d, _ := NewDiskStorer(path.Join(os.TempDir(), "a"), 0, 0)
+	d, err := NewDiskStorer(path.Join(testpath, "b"), 0, 0)
+	if err != nil {
+		t.Error(err)
+	}
 
 	val, err := d.Get("lol")
 	if !IsNoSessionError(err) {
@@ -75,9 +72,12 @@ func TestDiskStorerGet(t *testing.T) {
 func TestDiskStorerPut(t *testing.T) {
 	t.Parallel()
 
-	d, _ := NewDiskStorer(path.Join(os.TempDir(), "b"), 0, 0)
+	d, err := NewDiskStorer(path.Join(testpath, "c"), 0, 0)
+	if err != nil {
+		t.Error(err)
+	}
 
-	files, err := afero.ReadDir(fs, d.folderPath)
+	files, err := ioutil.ReadDir(d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -89,7 +89,7 @@ func TestDiskStorerPut(t *testing.T) {
 	d.Put("hi", "whatsup")
 	d.Put("yo", "friend")
 
-	files, err = afero.ReadDir(fs, d.folderPath)
+	files, err = ioutil.ReadDir(d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -117,9 +117,12 @@ func TestDiskStorerPut(t *testing.T) {
 func TestDiskStorerDel(t *testing.T) {
 	t.Parallel()
 
-	d, _ := NewDiskStorer(path.Join(os.TempDir(), "c"), 0, 0)
+	d, err := NewDiskStorer(path.Join(testpath, "d"), 0, 0)
+	if err != nil {
+		t.Error(err)
+	}
 
-	files, err := afero.ReadDir(fs, d.folderPath)
+	files, err := ioutil.ReadDir(d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -131,7 +134,7 @@ func TestDiskStorerDel(t *testing.T) {
 	d.Put("hi", "whatsup")
 	d.Put("yo", "friend")
 
-	files, err = afero.ReadDir(fs, d.folderPath)
+	files, err = ioutil.ReadDir(d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -149,7 +152,7 @@ func TestDiskStorerDel(t *testing.T) {
 		t.Errorf("Expected get hi to fail")
 	}
 
-	files, err = afero.ReadDir(fs, d.folderPath)
+	files, err = ioutil.ReadDir(d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -171,7 +174,10 @@ func (diskTestTimer) Stop() bool {
 }
 
 func TestDiskStorerCleaner(t *testing.T) {
-	d, _ := NewDiskStorer(path.Join(os.TempDir(), "d"), time.Hour, time.Hour)
+	d, err := NewDiskStorer(path.Join(testpath, "e"), time.Hour, time.Hour)
+	if err != nil {
+		t.Error(err)
+	}
 
 	tm := diskTestTimer{}
 	ch := make(chan time.Time)
@@ -179,7 +185,7 @@ func TestDiskStorerCleaner(t *testing.T) {
 		return tm, ch
 	}
 
-	err := d.Put("testid1", "test1")
+	err = d.Put("testid1", "test1")
 	if err != nil {
 		t.Error(err)
 	}
@@ -189,13 +195,13 @@ func TestDiskStorerCleaner(t *testing.T) {
 	}
 
 	// Change the mod time of testid2 file to yesterday so we can test it gets deleted
-	fs.Chtimes(path.Join(d.folderPath, "testid2"),
+	os.Chtimes(path.Join(d.folderPath, "testid2"),
 		time.Now().AddDate(0, 0, -1),
 		time.Now().AddDate(0, 0, -1),
 	)
 
 	// Ensure there are currently 2 files, as expected
-	files, err := afero.ReadDir(fs, d.folderPath)
+	files, err := ioutil.ReadDir(d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -212,7 +218,7 @@ func TestDiskStorerCleaner(t *testing.T) {
 	// Stop the cleaner, this will block until the cleaner has finished its operations
 	d.StopCleaner()
 
-	files, err = afero.ReadDir(fs, d.folderPath)
+	files, err = ioutil.ReadDir(d.folderPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -220,7 +226,7 @@ func TestDiskStorerCleaner(t *testing.T) {
 		for _, f := range files {
 			t.Log(f.Name())
 		}
-		t.Fatalf("Expected len 1, got %d: %#v", len(files), files)
+		t.Errorf("Expected len 1, got %d: %#v", len(files), files)
 
 	}
 	if files[0].Name() != "testid1" {

@@ -7,7 +7,7 @@ import (
 
 // CookieOptions for the session cookies themselves
 type CookieOptions struct {
-	// Name for the session cookie
+	// Name for the session cookie, defaults to "id"
 	Name string
 	// MaxAge sets the max-age and the expires fields of a cookie
 	MaxAge time.Duration

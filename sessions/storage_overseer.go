@@ -22,6 +22,7 @@ func NewStorageOverseer(opts CookieOptions, storer Storer) *StorageOverseer {
 	}
 }
 
+// Get looks in the cookie for the session ID and retrieves the value string stored in the session.
 func (s *StorageOverseer) Get(w http.ResponseWriter, r *http.Request) (value string, err error) {
 	cookieID := s.getCookieID(r)
 	if len(cookieID) == 0 {
@@ -36,60 +37,68 @@ func (s *StorageOverseer) Get(w http.ResponseWriter, r *http.Request) (value str
 	return val, nil
 }
 
+// Put looks in the cookie for the session ID and modifies the session with the new value.
+// If the session does not exist it creates a new one.
 func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value string) (*http.Request, error) {
+	// Reuse the existing cookie ID if it exists
 	cookieID := s.getCookieID(r)
 	if len(cookieID) == 0 {
 		cookieID = uuid.NewV4().String()
-		cookie := s.makeCookie(cookieID)
-		http.SetCookie(w, cookie)
-
-		// Assign the cookie to the request context so that it can be used
-		// again in subsequent calls to Put(). This is required so that
-		// subsequent calls to put can locate the session ID that was generated
-		// for this cookie, otherwise you will get a new session every time Put()
-		// is called.
-		ctx := context.WithValue(r.Context(), s.options.Name, cookieID)
-		r = r.WithContext(ctx)
 	}
+
+	cookie := s.makeCookie(cookieID)
+	http.SetCookie(w, cookie)
+
+	// Assign the cookie to the request context so that it can be used
+	// again in subsequent calls to Put(). This is required so that
+	// subsequent calls to put can locate the session ID that was generated
+	// for this cookie, otherwise you will get a new session every time Put()
+	// is called.
+	ctx := context.WithValue(r.Context(), s.options.Name, cookieID)
+	r = r.WithContext(ctx)
 
 	err := s.storer.Put(cookieID, value)
 	return r, err
 }
 
+// Del deletes the session if it exists and sets the session cookie to expire instantly.
 func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) error {
-	cookie, err := r.Cookie(s.options.Name)
-	if err != nil {
+	err := s.storer.Del(s.getCookieID(r))
+	if IsNoSessionError(err) {
+		return nil
+	} else if err != nil {
 		return err
 	}
 
-	// Set cookie to expire on browser side
-	id := cookie.Value
-	// If the browser refuses to delete it, set value to "" so subsequent
-	// requests replace it when it does not point to a valid session id.
-	cookie.Value = ""
-	cookie.MaxAge = -1
-	cookie.Expires = time.Now().UTC().AddDate(-1, 0, 0)
-	cookie.HttpOnly = s.options.HTTPOnly
-	cookie.Secure = s.options.Secure
-	http.SetCookie(w, cookie)
-
-	// id is expected to be the session id
-	if id == "" {
-		return nil
-	}
-
-	return s.storer.Del(id)
-}
-
-func (s *StorageOverseer) makeCookie(cookieID string) *http.Cookie {
-	return &http.Cookie{
+	cookie := &http.Cookie{
+		// If the browser refuses to delete it, set value to "" so subsequent
+		// requests replace it when it does not point to a valid session id.
+		Value:    "",
 		Name:     s.options.Name,
-		Value:    cookieID,
-		MaxAge:   int(s.options.MaxAge.Seconds()),
-		Expires:  time.Now().UTC().Add(s.options.MaxAge),
+		MaxAge:   -1,
+		Expires:  time.Now().UTC().AddDate(-1, 0, 0),
 		HttpOnly: s.options.HTTPOnly,
 		Secure:   s.options.Secure,
 	}
+
+	http.SetCookie(w, cookie)
+	return nil
+}
+
+func (s *StorageOverseer) makeCookie(cookieID string) *http.Cookie {
+	c := &http.Cookie{
+		Name:     s.options.Name,
+		Value:    cookieID,
+		MaxAge:   int(s.options.MaxAge.Seconds()),
+		HttpOnly: s.options.HTTPOnly,
+		Secure:   s.options.Secure,
+	}
+
+	if s.options.MaxAge != 0 {
+		c.Expires = time.Now().UTC().Add(s.options.MaxAge)
+	}
+
+	return c
 }
 
 // getCookie returns the cookie ID stored in the request context. If it does not

@@ -43,6 +43,12 @@ func TestStorageOverseerNew(t *testing.T) {
 	}
 }
 
+func TestStorageOverseerComplexOne(t *testing.T) {
+	t.Parallel()
+
+	t.Error("not implemented")
+}
+
 func TestStorageOverseerGet(t *testing.T) {
 	t.Parallel()
 
@@ -208,4 +214,5 @@ func TestStorageOverseerMakeCookie(t *testing.T) {
 func TestStorageOverseerGetCookieID(t *testing.T) {
 	t.Parallel()
 
+	t.Error("not implemented")
 }

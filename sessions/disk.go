@@ -1,12 +1,13 @@
 package sessions
 
 import (
+	"io/ioutil"
 	"os"
 	"path"
 	"sync"
 	"time"
 
-	"github.com/spf13/afero"
+	"github.com/djherbis/times"
 )
 
 // DiskStorer is a session storer implementation for saving sessions
@@ -25,11 +26,6 @@ type DiskStorer struct {
 	// quit channel for exiting the cleaner loop
 	quit chan struct{}
 }
-
-// fs is a filesystem pointer. This is used in favor of os and ioutil directly
-// so that we can point it to a mock filesystem in the tests to avoid polluting
-// the disk when testing.
-var fs = afero.NewOsFs()
 
 // NewDefaultDiskStorer returns a DiskStorer object with default values.
 // The default values are:
@@ -59,9 +55,9 @@ func NewDiskStorer(folderPath string, maxAge, cleanInterval time.Duration) (*Dis
 	}
 
 	// Create the storage folder if it does not exist
-	_, err := fs.Stat(folderPath)
+	_, err := os.Stat(folderPath)
 	if os.IsNotExist(err) {
-		err := fs.Mkdir(folderPath, os.FileMode(int(0755)))
+		err := os.Mkdir(folderPath, os.FileMode(int(0755)))
 		if err != nil {
 			return nil, err
 		}
@@ -78,14 +74,14 @@ func (d *DiskStorer) Get(key string) (value string, err error) {
 	d.mut.RLock()
 	defer d.mut.RUnlock()
 
-	_, err = fs.Stat(filePath)
+	_, err = os.Stat(filePath)
 	if os.IsNotExist(err) {
 		return "", errNoSession{}
 	} else if err != nil {
 		return "", err
 	}
 
-	contents, err := afero.ReadFile(fs, filePath)
+	contents, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
@@ -100,7 +96,7 @@ func (d *DiskStorer) Put(key, value string) error {
 	d.mut.Lock()
 	defer d.mut.Unlock()
 
-	return afero.WriteFile(fs, filePath, []byte(value), 0600)
+	return ioutil.WriteFile(filePath, []byte(value), 0600)
 }
 
 // Del the session pointed to by the session id key and remove it.
@@ -110,14 +106,14 @@ func (d *DiskStorer) Del(key string) error {
 	d.mut.Lock()
 	defer d.mut.Unlock()
 
-	_, err := fs.Stat(filePath)
+	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		return nil
 	} else if err != nil {
 		return err
 	}
 
-	return fs.Remove(filePath)
+	return os.Remove(filePath)
 }
 
 // StopCleaner stops the cleaner go routine
@@ -167,7 +163,7 @@ func (d *DiskStorer) Clean() {
 	t := time.Now().UTC()
 
 	d.mut.RLock()
-	files, err := afero.ReadDir(fs, d.folderPath)
+	files, err := ioutil.ReadDir(d.folderPath)
 	d.mut.RUnlock()
 
 	if err != nil {
@@ -175,15 +171,19 @@ func (d *DiskStorer) Clean() {
 	}
 
 	for _, file := range files {
+		tspec := times.Get(file)
+
 		// File is expired
-		if file.ModTime().UTC().Add(d.maxAge).Before(t) {
+		if tspec.AccessTime().UTC().UTC().Add(d.maxAge).Before(t) {
 			filePath := path.Join(d.folderPath, file.Name())
 
 			d.mut.Lock()
-			_, err := fs.Stat(filePath)
+			_, err := os.Stat(filePath)
 			// If the file has been deleted manually from the server
 			// in between the time we read the directory and now, it will
 			// fail here with a ErrNotExist. If so, continue gracefully.
+			// It would be innefficient to hold a lock for the duration of
+			// the loop, so we only lock when we find an expired file.
 			if os.IsNotExist(err) {
 				d.mut.Unlock()
 				continue
@@ -191,7 +191,7 @@ func (d *DiskStorer) Clean() {
 				panic(err)
 			}
 
-			err = fs.Remove(filePath)
+			err = os.Remove(filePath)
 			d.mut.Unlock()
 			if err != nil {
 				panic(err)
