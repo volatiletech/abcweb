@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestPutAndGet(t *testing.T) {
+func TestSetAndGet(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
@@ -15,7 +15,7 @@ func TestPutAndGet(t *testing.T) {
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
 
-	r, err := Put(s, w, r, "hi", "hello")
+	r, err := Set(s, w, r, "hi", "hello")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestPutAndGet(t *testing.T) {
 	}
 
 	// Test reassigning existing key value
-	r, err = Put(s, w, r, "hi", "spiders")
+	r, err = Set(s, w, r, "hi", "spiders")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestDel(t *testing.T) {
 		t.Error("Expected no session error")
 	}
 
-	r, err = Put(s, w, r, "hi", "hello")
+	r, err = Set(s, w, r, "hi", "hello")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ type TestSessJSON struct {
 	Test string
 }
 
-func TestPutAndGetObj(t *testing.T) {
+func TestSetAndGetObj(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
@@ -122,7 +122,7 @@ func TestPutAndGetObj(t *testing.T) {
 		Test: "hello",
 	}
 
-	r, err = PutObj(s, w, r, val)
+	r, err = SetObj(s, w, r, val)
 	if err != nil {
 		t.Error(err)
 	}
@@ -142,7 +142,7 @@ func TestPutAndGetObj(t *testing.T) {
 		t.Errorf("Expected len 1, got %d", len(m.sessions))
 	}
 
-	r, err = PutObj(s, w, r, val)
+	r, err = SetObj(s, w, r, val)
 	if err != nil {
 		t.Error(err)
 	}

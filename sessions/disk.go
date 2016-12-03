@@ -66,6 +66,22 @@ func NewDiskStorer(folderPath string, maxAge, cleanInterval time.Duration) (*Dis
 	return d, nil
 }
 
+// All keys in the disk store
+func (d *DiskStorer) All() ([]string, error) {
+	files, err := ioutil.ReadDir(d.folderPath)
+	if err != nil {
+		return []string{}, err
+	}
+
+	sessions := make([]string, len(files))
+
+	for i := 0; i < len(files); i++ {
+		sessions[i] = files[i].Name()
+	}
+
+	return sessions, nil
+}
+
 // Get returns the value string saved in the session pointed to by the
 // session id key.
 func (d *DiskStorer) Get(key string) (value string, err error) {
@@ -89,8 +105,8 @@ func (d *DiskStorer) Get(key string) (value string, err error) {
 	return string(contents), nil
 }
 
-// Put saves the value string to the session pointed to by the session id key.
-func (d *DiskStorer) Put(key, value string) error {
+// Set saves the value string to the session pointed to by the session id key.
+func (d *DiskStorer) Set(key, value string) error {
 	filePath := path.Join(d.folderPath, key)
 
 	d.mut.Lock()
@@ -120,6 +136,11 @@ func (d *DiskStorer) Del(key string) error {
 func (d *DiskStorer) StopCleaner() {
 	close(d.quit)
 	d.wg.Wait()
+}
+
+// ResetExpiry resets the expiry of the key
+func (d *DiskStorer) ResetExpiry(key string) error {
+	return nil
 }
 
 // StartCleaner starts the disk session cleaner go routine. This go routine
@@ -162,9 +183,7 @@ func (d *DiskStorer) cleanerLoop() {
 func (d *DiskStorer) Clean() {
 	t := time.Now().UTC()
 
-	d.mut.RLock()
 	files, err := ioutil.ReadDir(d.folderPath)
-	d.mut.RUnlock()
 
 	if err != nil {
 		panic(err)

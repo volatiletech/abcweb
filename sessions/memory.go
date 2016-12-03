@@ -55,6 +55,22 @@ func NewMemoryStorer(maxAge, cleanInterval time.Duration) (*MemoryStorer, error)
 	return m, nil
 }
 
+// All keys in the memory store
+func (m *MemoryStorer) All() ([]string, error) {
+	m.mut.RLock()
+	defer m.mut.RUnlock()
+
+	sessions := make([]string, len(m.sessions))
+
+	i := 0
+	for id := range m.sessions {
+		sessions[i] = id
+		i++
+	}
+
+	return sessions, nil
+}
+
 // Get returns the value string saved in the session pointed to by the
 // session id key.
 func (m *MemoryStorer) Get(key string) (value string, err error) {
@@ -68,8 +84,8 @@ func (m *MemoryStorer) Get(key string) (value string, err error) {
 	return session.value, nil
 }
 
-// Put saves the value string to the session pointed to by the session id key.
-func (m *MemoryStorer) Put(key, value string) error {
+// Set saves the value string to the session pointed to by the session id key.
+func (m *MemoryStorer) Set(key, value string) error {
 	m.mut.Lock()
 	m.sessions[key] = memorySession{
 		expires: time.Now().UTC().Add(m.maxAge),
@@ -86,6 +102,11 @@ func (m *MemoryStorer) Del(key string) error {
 	delete(m.sessions, key)
 	m.mut.Unlock()
 
+	return nil
+}
+
+// ResetExpiry resets the expiry of the key
+func (m *MemoryStorer) ResetExpiry(key string) error {
 	return nil
 }
 

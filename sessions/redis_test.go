@@ -52,6 +52,12 @@ func TestRedisStorerNewDefault(t *testing.T) {
 	}
 }
 
+func TestRedisStorerAll(t *testing.T) {
+	t.Parallel()
+
+	t.Error("not implemented")
+}
+
 func TestRedisStorerGet(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping long test")
@@ -67,7 +73,7 @@ func TestRedisStorerGet(t *testing.T) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 
-	storer.Put("fruit", "banana")
+	storer.Set("fruit", "banana")
 
 	val, err = storer.Get("fruit")
 	if err != nil {
@@ -78,7 +84,7 @@ func TestRedisStorerGet(t *testing.T) {
 	}
 }
 
-func TestRedisStorerPut(t *testing.T) {
+func TestRedisStorerSet(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping long test")
 	}
@@ -88,9 +94,9 @@ func TestRedisStorerPut(t *testing.T) {
 		t.Error(err)
 	}
 
-	storer.Put("hi", "hello")
-	storer.Put("hi", "whatsup")
-	storer.Put("yo", "friend")
+	storer.Set("hi", "hello")
+	storer.Set("hi", "whatsup")
+	storer.Set("yo", "friend")
 
 	val, err := storer.Get("hi")
 	if err != nil {
@@ -119,9 +125,9 @@ func TestRedisStorerDel(t *testing.T) {
 		t.Error(err)
 	}
 
-	storer.Put("hi", "hello")
-	storer.Put("hi", "whatsup")
-	storer.Put("yo", "friend")
+	storer.Set("hi", "hello")
+	storer.Set("hi", "whatsup")
+	storer.Set("yo", "friend")
 
 	err = storer.Del("hi")
 	if err != nil {
@@ -132,4 +138,10 @@ func TestRedisStorerDel(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected get hi to fail")
 	}
+}
+
+func TestRedisStorerResetExpiry(t *testing.T) {
+	t.Parallel()
+
+	t.Error("not implemented")
 }

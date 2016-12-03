@@ -6,19 +6,31 @@ import (
 	"time"
 )
 
-// Storer provides methods to retrieve, add and delete session keys
-// and their corresponding values.
+// Storer provides methods to retrieve, add and delete sessions.
 type Storer interface {
+	// All returns all keys in the store
+	All() (keys []string, err error)
 	Get(key string) (value string, err error)
-	Put(key, value string) error
+	Set(key, value string) error
 	Del(key string) error
+	ResetExpiry(key string) error
 }
 
 // Overseer of session cookies
 type Overseer interface {
+	// Get the value stored in a session
 	Get(w http.ResponseWriter, r *http.Request) (value string, err error)
-	Put(w http.ResponseWriter, r *http.Request, value string) (cr *http.Request, err error)
+	// Set creates or updates a session with value
+	Set(w http.ResponseWriter, r *http.Request, value string) (cr *http.Request, err error)
+	// Delete a session
 	Del(w http.ResponseWriter, r *http.Request) (cr *http.Request, err error)
+	// Regenerate a new session id for your session
+	Regenerate(w http.ResponseWriter, r *http.Request) (cr *http.Request, err error)
+	// SessionID returns the session id for your session
+	SessionID(r *http.Request) (id string, err error)
+	// ResetExpiry resets the age of the session to time.Now(), so that
+	// MaxAge calculations are renewed
+	ResetExpiry(w http.ResponseWriter, r *http.Request) error
 }
 
 // timer interface is used to mock the test harness for disk and memory storers
@@ -67,9 +79,9 @@ var timerTestHarness = func(d time.Duration) (timer, <-chan time.Time) {
 	return t, t.C
 }
 
-// Put is a JSON helper used for storing key-value session values.
-// Put modifies the marshalled map stored in the session to include the key value pair passed in.
-func Put(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value string) (*http.Request, error) {
+// Set is a JSON helper used for storing key-value session values.
+// Set modifies the marshalled map stored in the session to include the key value pair passed in.
+func Set(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value string) (*http.Request, error) {
 	sessMap := map[string]string{}
 	err := GetObj(overseer, w, r, &sessMap)
 	// If it's a no session error because a session hasn't been created yet
@@ -84,7 +96,7 @@ func Put(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, 
 		return nil, err
 	}
 
-	return overseer.Put(w, r, string(ret))
+	return overseer.Set(w, r, string(ret))
 }
 
 // Get is a JSON helper used for retrieving key-value session values.
@@ -125,19 +137,19 @@ func Del(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) 
 		return err
 	}
 
-	_, err = overseer.Put(w, r, string(ret))
+	_, err = overseer.Set(w, r, string(ret))
 	return err
 }
 
-// PutObj is a JSON helper used for storing object or variable session values.
-// Put stores in the session a marshaled version of the passed in value pointed to by v.
-func PutObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interface{}) (*http.Request, error) {
+// SetObj is a JSON helper used for storing object or variable session values.
+// Set stores in the session a marshaled version of the passed in value pointed to by v.
+func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interface{}) (*http.Request, error) {
 	ret, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
 	}
 
-	return overseer.Put(w, r, string(ret))
+	return overseer.Set(w, r, string(ret))
 }
 
 // GetObj is a JSON helper used for retrieving object or variable session values.

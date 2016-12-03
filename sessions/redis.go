@@ -46,6 +46,21 @@ func NewRedisStorer(opts redis.Options, maxAge time.Duration) (*RedisStorer, err
 	return r, nil
 }
 
+// All keys in the redis store
+func (r *RedisStorer) All() ([]string, error) {
+	var sessions []string
+
+	iter := r.client.Scan(0, "", 0).Iterator()
+	for iter.Next() {
+		sessions = append(sessions, iter.Val())
+	}
+	if err := iter.Err(); err != nil {
+		return sessions, err
+	}
+
+	return sessions, nil
+}
+
 // Get returns the value string saved in the session pointed to by the
 // session id key.
 func (r *RedisStorer) Get(key string) (value string, err error) {
@@ -59,12 +74,17 @@ func (r *RedisStorer) Get(key string) (value string, err error) {
 	return val, nil
 }
 
-// Put saves the value string to the session pointed to by the session id key.
-func (r *RedisStorer) Put(key, value string) error {
+// Set saves the value string to the session pointed to by the session id key.
+func (r *RedisStorer) Set(key, value string) error {
 	return r.client.Set(key, value, r.maxAge).Err()
 }
 
 // Del the session pointed to by the session id key and remove it.
 func (r *RedisStorer) Del(key string) error {
 	return r.client.Del(key).Err()
+}
+
+// ResetExpiry resets the expiry of the key
+func (r *RedisStorer) ResetExpiry(key string) error {
+	return nil
 }

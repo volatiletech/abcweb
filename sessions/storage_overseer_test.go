@@ -7,9 +7,17 @@ import (
 	"testing"
 )
 
-var rgxDelCookie = regexp.MustCompile(`id=; Expires=[^;]*; Max-Age=0; HttpOnly; Secure`)
+var (
+	rgxDelCookie = regexp.MustCompile(`id=; Expires=[^;]*; Max-Age=0; HttpOnly; Secure`)
+	rgxSetCookie = regexp.MustCompile(`id=[A-Za-z0-9\-]+; HttpOnly; Secure`)
+)
 
-var _ Overseer = &StorageOverseer{}
+func TestStorageImplements(t *testing.T) {
+	t.Parallel()
+
+	// Do assign to nothing to check if implementation of StorageOverseer is complete
+	var _ Overseer = &StorageOverseer{}
+}
 
 func TestStorageOverseerNew(t *testing.T) {
 	t.Parallel()
@@ -43,10 +51,8 @@ func TestStorageOverseerNew(t *testing.T) {
 	}
 }
 
-func TestStorageOverseerComplexOne(t *testing.T) {
+func TestStorageOverseerGetSessionID(t *testing.T) {
 	t.Parallel()
-
-	t.Error("not implemented")
 }
 
 func TestStorageOverseerGet(t *testing.T) {
@@ -86,7 +92,7 @@ func TestStorageOverseerGet(t *testing.T) {
 	}
 }
 
-func TestStorageOverseerPut(t *testing.T) {
+func TestStorageOverseerSet(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
@@ -100,7 +106,7 @@ func TestStorageOverseerPut(t *testing.T) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 
-	r, err = s.Put(w, r, "whatever")
+	r, err = s.Set(w, r, "whatever")
 	if err != nil {
 		t.Error(err)
 	}
@@ -122,7 +128,7 @@ func TestStorageOverseerPut(t *testing.T) {
 	}
 
 	// make sure it re-uses the same session cookie by utilizing context storage
-	r, err = s.Put(w, r, "hello")
+	r, err = s.Set(w, r, "hello")
 	if err != nil {
 		t.Error(err)
 	}
@@ -211,7 +217,98 @@ func TestStorageOverseerMakeCookie(t *testing.T) {
 	}
 }
 
-func TestStorageOverseerGetCookieID(t *testing.T) {
+func TestStorageOverseerRegenerate(t *testing.T) {
+	t.Parallel()
+
+	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := httptest.NewRecorder()
+
+	m, _ := NewDefaultMemoryStorer()
+	s := NewStorageOverseer(NewCookieOptions(), m)
+
+	_, err := s.SessionID(r)
+	if !IsNoSessionError(err) {
+		t.Error("Expected to get a error back")
+	}
+
+	r, err = s.Set(w, r, "test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	id, err := s.SessionID(r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	r, err = s.Regenerate(w, r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(m.sessions) != 1 {
+		t.Errorf("Expected sessions len 1, got %d", len(m.sessions))
+	}
+	for k, v := range m.sessions {
+		if k == id {
+			t.Errorf("Expected id %q to NOT equal %q", id, k)
+		}
+		if v.value != "test" {
+			t.Errorf("Expected val %q to be %q", "test", v.value)
+		}
+	}
+
+	setCookie := w.Header().Get("Set-Cookie")
+	if setCookie == "" {
+		t.Errorf("expected set cookie to be set")
+	}
+	if len(m.sessions) != 1 {
+		t.Errorf("Expected sessions len 1, got %d", len(m.sessions))
+	}
+	if !rgxSetCookie.MatchString(setCookie) {
+		t.Errorf("Expected to match regexp, got: %s", setCookie)
+	}
+
+}
+
+func TestStorageOverseerSessionID(t *testing.T) {
+	t.Parallel()
+
+	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := httptest.NewRecorder()
+
+	m, _ := NewDefaultMemoryStorer()
+	s := NewStorageOverseer(NewCookieOptions(), m)
+
+	_, err := s.SessionID(r)
+	if !IsNoSessionError(err) {
+		t.Error("Expected to get a error back")
+	}
+
+	r, err = s.Set(w, r, "test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	id, err := s.SessionID(r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(m.sessions) != 1 {
+		t.Errorf("Expected sessions len 1, got %d", len(m.sessions))
+	}
+	for k, v := range m.sessions {
+		if k != id {
+			t.Errorf("Expected id %q to be %q", id, k)
+		}
+		if v.value != "test" {
+			t.Errorf("Expected val %q to be %q", "test", v.value)
+		}
+	}
+}
+
+func TestStorageOverseerResetExpiry(t *testing.T) {
 	t.Parallel()
 
 	t.Error("not implemented")

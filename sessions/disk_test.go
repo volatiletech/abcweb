@@ -45,6 +45,12 @@ func TestDiskStorerNew(t *testing.T) {
 	d.wg.Wait()
 }
 
+func TestDiskStorerAll(t *testing.T) {
+	t.Parallel()
+
+	t.Error("not implemented")
+}
+
 func TestDiskStorerGet(t *testing.T) {
 	t.Parallel()
 
@@ -58,7 +64,7 @@ func TestDiskStorerGet(t *testing.T) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 
-	d.Put("hi", "hello")
+	d.Set("hi", "hello")
 
 	val, err = d.Get("hi")
 	if err != nil {
@@ -69,7 +75,7 @@ func TestDiskStorerGet(t *testing.T) {
 	}
 }
 
-func TestDiskStorerPut(t *testing.T) {
+func TestDiskStorerSet(t *testing.T) {
 	t.Parallel()
 
 	d, err := NewDiskStorer(path.Join(testpath, "c"), 0, 0)
@@ -85,9 +91,9 @@ func TestDiskStorerPut(t *testing.T) {
 		t.Errorf("Expected len 0, got %d", len(files))
 	}
 
-	d.Put("hi", "hello")
-	d.Put("hi", "whatsup")
-	d.Put("yo", "friend")
+	d.Set("hi", "hello")
+	d.Set("hi", "whatsup")
+	d.Set("yo", "friend")
 
 	files, err = ioutil.ReadDir(d.folderPath)
 	if err != nil {
@@ -130,9 +136,9 @@ func TestDiskStorerDel(t *testing.T) {
 		t.Errorf("Expected len 0, got %d", len(files))
 	}
 
-	d.Put("hi", "hello")
-	d.Put("hi", "whatsup")
-	d.Put("yo", "friend")
+	d.Set("hi", "hello")
+	d.Set("hi", "whatsup")
+	d.Set("yo", "friend")
 
 	files, err = ioutil.ReadDir(d.folderPath)
 	if err != nil {
@@ -185,11 +191,11 @@ func TestDiskStorerCleaner(t *testing.T) {
 		return tm, ch
 	}
 
-	err = d.Put("testid1", "test1")
+	err = d.Set("testid1", "test1")
 	if err != nil {
 		t.Error(err)
 	}
-	err = d.Put("testid2", "test2")
+	err = d.Set("testid2", "test2")
 	if err != nil {
 		t.Error(err)
 	}
@@ -232,4 +238,10 @@ func TestDiskStorerCleaner(t *testing.T) {
 	if files[0].Name() != "testid1" {
 		t.Errorf("expected testid2 to be deleted, but is present")
 	}
+}
+
+func TestDiskStorerResetExpiry(t *testing.T) {
+	t.Parallel()
+
+	t.Error("not implemented")
 }

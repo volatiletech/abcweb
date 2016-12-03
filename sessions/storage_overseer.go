@@ -37,9 +37,9 @@ func (s *StorageOverseer) Get(w http.ResponseWriter, r *http.Request) (value str
 	return val, nil
 }
 
-// Put looks in the cookie for the session ID and modifies the session with the new value.
+// Set looks in the cookie for the session ID and modifies the session with the new value.
 // If the session does not exist it creates a new one.
-func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value string) (*http.Request, error) {
+func (s *StorageOverseer) Set(w http.ResponseWriter, r *http.Request, value string) (*http.Request, error) {
 	// Reuse the existing cookie ID if it exists
 	sessID, _ := s.options.getCookieValue(r)
 
@@ -47,7 +47,7 @@ func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value stri
 		sessID = uuid.NewV4().String()
 	}
 
-	err := s.storer.Put(sessID, value)
+	err := s.storer.Set(sessID, value)
 	if err != nil {
 		return r, err
 	}
@@ -56,14 +56,11 @@ func (s *StorageOverseer) Put(w http.ResponseWriter, r *http.Request, value stri
 	http.SetCookie(w, cookie)
 
 	// Assign the cookie to the request context so that it can be used
-	// again in subsequent calls to Put(). This is required so that
+	// again in subsequent calls to Set(). This is required so that
 	// subsequent calls to put can locate the session ID that was generated
-	// for this cookie, otherwise you will get a new session every time Put()
+	// for this cookie, otherwise you will get a new session every time Set()
 	// is called.
-	ctx := context.WithValue(r.Context(), s.options.Name, sessID)
-	// Set sessWasDeleted to false to make it clear the session is valid
-	ctx = context.WithValue(ctx, sessDeletedFlag, false)
-	r = r.WithContext(ctx)
+	r = r.WithContext(context.WithValue(r.Context(), s.options.Name, sessID))
 
 	return r, nil
 }
@@ -96,10 +93,56 @@ func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) (*http.Req
 	http.SetCookie(w, cookie)
 
 	// Reset the context so it doesn't re-use the old deleted session value
-	ctx := context.WithValue(r.Context(), s.options.Name, "")
-	// Set the sessWasDeleted flag to true
-	ctx = context.WithValue(ctx, sessDeletedFlag, true)
-	r = r.WithContext(ctx)
+	r = r.WithContext(context.WithValue(r.Context(), s.options.Name, ""))
 
 	return r, nil
+}
+
+// Regenerate a new session ID for your current session
+func (s *StorageOverseer) Regenerate(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
+	id, err := s.options.getCookieValue(r)
+	if err != nil {
+		return r, err
+	}
+
+	val, err := s.storer.Get(id)
+	if err != nil {
+		return r, err
+	}
+
+	// Delete the old session
+	_ = s.storer.Del(id)
+
+	// Generate a new ID
+	id = uuid.NewV4().String()
+
+	// Create a new session with the old value
+	if err = s.storer.Set(id, val); err != nil {
+		return r, err
+	}
+
+	// Override the old cookie with the new cookie
+	cookie := s.options.makeCookie(id)
+	http.SetCookie(w, cookie)
+
+	// Assign the session ID to the request context so that it can be used
+	// again in subsequent calls to Set(). This is required so that
+	// subsequent calls to put can locate the session ID that was generated
+	// for this cookie, otherwise you will get a new session every time Set()
+	// is called.
+	r = r.WithContext(context.WithValue(r.Context(), s.options.Name, id))
+
+	return r, nil
+}
+
+// SessionID returns the session ID stored in the cookie's value field.
+// It will return a errNoSession error if no session exists.
+func (s *StorageOverseer) SessionID(r *http.Request) (string, error) {
+	return s.options.getCookieValue(r)
+}
+
+// ResetExpiry resets the age of the session to time.Now(), so that
+// MaxAge calculations are renewed
+func (s *StorageOverseer) ResetExpiry(w http.ResponseWriter, r *http.Request) error {
+	return nil
 }

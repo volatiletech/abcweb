@@ -33,6 +33,12 @@ func TestMemoryStorerNewDefault(t *testing.T) {
 	m.wg.Wait()
 }
 
+func TestMemoryStorerAll(t *testing.T) {
+	t.Parallel()
+
+	t.Error("not implemented")
+}
+
 func TestMemoryStorerGet(t *testing.T) {
 	t.Parallel()
 
@@ -43,7 +49,7 @@ func TestMemoryStorerGet(t *testing.T) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 
-	m.Put("hi", "hello")
+	m.Set("hi", "hello")
 
 	val, err = m.Get("hi")
 	if err != nil {
@@ -54,7 +60,7 @@ func TestMemoryStorerGet(t *testing.T) {
 	}
 }
 
-func TestMemoryStorerPut(t *testing.T) {
+func TestMemoryStorerSet(t *testing.T) {
 	t.Parallel()
 
 	m, _ := NewDefaultMemoryStorer()
@@ -63,9 +69,9 @@ func TestMemoryStorerPut(t *testing.T) {
 		t.Errorf("Expected len 0, got %d", len(m.sessions))
 	}
 
-	m.Put("hi", "hello")
-	m.Put("hi", "whatsup")
-	m.Put("yo", "friend")
+	m.Set("hi", "hello")
+	m.Set("hi", "whatsup")
+	m.Set("yo", "friend")
 
 	if len(m.sessions) != 2 {
 		t.Errorf("Expected len 2, got %d", len(m.sessions))
@@ -97,9 +103,9 @@ func TestMemoryStorerDel(t *testing.T) {
 		t.Errorf("Expected len 0, got %d", len(m.sessions))
 	}
 
-	m.Put("hi", "hello")
-	m.Put("hi", "whatsup")
-	m.Put("yo", "friend")
+	m.Set("hi", "hello")
+	m.Set("hi", "whatsup")
+	m.Set("yo", "friend")
 
 	if len(m.sessions) != 2 {
 		t.Errorf("Expected len 2, got %d", len(m.sessions))
@@ -174,4 +180,10 @@ func TestMemoryStorerCleaner(t *testing.T) {
 	if ok {
 		t.Error("expected testid2 to be deleted, but was not")
 	}
+}
+
+func TestMemoryStorerResetExpiry(t *testing.T) {
+	t.Parallel()
+
+	t.Error("not implemented")
 }

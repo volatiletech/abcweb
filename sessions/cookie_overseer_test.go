@@ -12,7 +12,13 @@ import (
 )
 
 var testCookieKey, _ = MakeSecretKey()
-var _ Overseer = &CookieOverseer{}
+
+func TestCookieImplements(t *testing.T) {
+	t.Parallel()
+
+	// Do assign to nothing to check if implementation of CookieOverseer is complete
+	var _ Overseer = &CookieOverseer{}
+}
 
 func TestCookieOverseerNew(t *testing.T) {
 	t.Parallel()
@@ -96,7 +102,7 @@ func TestCookieOverseerNoSession(t *testing.T) {
 	}
 }
 
-func TestCookieOverseerPut(t *testing.T) {
+func TestCookieOverseerSet(t *testing.T) {
 	t.Parallel()
 
 	c := NewCookieOverseer(NewCookieOptions(), testCookieKey)
@@ -104,7 +110,7 @@ func TestCookieOverseerPut(t *testing.T) {
 	r := httptest.NewRequest("GET", "/", nil)
 
 	var err error
-	r, err = c.Put(w, r, "hello world")
+	r, err = c.Set(w, r, "hello world")
 	if err != nil {
 		t.Error(err)
 	}
@@ -172,4 +178,10 @@ func TestCookieOverseerCrypto(t *testing.T) {
 	if pt != "hello world" {
 		t.Error("plaintext was wrong:", pt)
 	}
+}
+
+func TestCookieOverseerResetExpiry(t *testing.T) {
+	t.Parallel()
+
+	t.Error("not implemented")
 }
