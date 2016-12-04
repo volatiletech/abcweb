@@ -114,6 +114,16 @@ func (c *CookieOverseer) SessionID(r *http.Request) (string, error) {
 // ResetExpiry resets the age of the session to time.Now(), so that
 // MaxAge calculations are renewed
 func (c *CookieOverseer) ResetExpiry(w http.ResponseWriter, r *http.Request) error {
+	val, err := c.options.getCookieValue(r)
+	if err != nil {
+		return err
+	}
+
+	if c.options.MaxAge != 0 {
+		cookie := c.options.makeCookie(val)
+		http.SetCookie(w, cookie)
+	}
+
 	return nil
 }
 

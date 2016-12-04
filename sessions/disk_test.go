@@ -48,13 +48,41 @@ func TestDiskStorerNew(t *testing.T) {
 func TestDiskStorerAll(t *testing.T) {
 	t.Parallel()
 
-	t.Error("not implemented")
+	d, err := NewDiskStorer(path.Join(testpath, "b"), 0, 0)
+	if err != nil {
+		t.Error(err)
+	}
+
+	list, err := d.All()
+	if err != nil {
+		t.Error("expected no error on empty list")
+	}
+	if len(list) > 0 {
+		t.Error("Expected len 0")
+	}
+
+	d.Set("hi", "hello")
+	d.Set("yo", "friend")
+
+	list, err = d.All()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(list) != 2 {
+		t.Errorf("Expected len 2, got %d", len(list))
+	}
+	if (list[0] != "hi" && list[0] != "yo") || list[0] == list[1] {
+		t.Errorf("Expected list[0] to be %q or %q, got %q", "yo", "hi", list[0])
+	}
+	if (list[1] != "yo" && list[1] != "hi") || list[1] == list[0] {
+		t.Errorf("Expected list[1] to be %q or %q, got %q", "hi", "yo", list[1])
+	}
 }
 
 func TestDiskStorerGet(t *testing.T) {
 	t.Parallel()
 
-	d, err := NewDiskStorer(path.Join(testpath, "b"), 0, 0)
+	d, err := NewDiskStorer(path.Join(testpath, "c"), 0, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -78,7 +106,7 @@ func TestDiskStorerGet(t *testing.T) {
 func TestDiskStorerSet(t *testing.T) {
 	t.Parallel()
 
-	d, err := NewDiskStorer(path.Join(testpath, "c"), 0, 0)
+	d, err := NewDiskStorer(path.Join(testpath, "d"), 0, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -123,7 +151,7 @@ func TestDiskStorerSet(t *testing.T) {
 func TestDiskStorerDel(t *testing.T) {
 	t.Parallel()
 
-	d, err := NewDiskStorer(path.Join(testpath, "d"), 0, 0)
+	d, err := NewDiskStorer(path.Join(testpath, "e"), 0, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -180,7 +208,7 @@ func (diskTestTimer) Stop() bool {
 }
 
 func TestDiskStorerCleaner(t *testing.T) {
-	d, err := NewDiskStorer(path.Join(testpath, "e"), time.Hour, time.Hour)
+	d, err := NewDiskStorer(path.Join(testpath, "f"), time.Hour, time.Hour)
 	if err != nil {
 		t.Error(err)
 	}

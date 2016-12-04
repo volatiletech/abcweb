@@ -36,7 +36,32 @@ func TestMemoryStorerNewDefault(t *testing.T) {
 func TestMemoryStorerAll(t *testing.T) {
 	t.Parallel()
 
-	t.Error("not implemented")
+	m, _ := NewDefaultMemoryStorer()
+
+	list, err := m.All()
+	if err != nil {
+		t.Error("expected no error on empty list")
+	}
+	if len(list) > 0 {
+		t.Error("Expected len 0")
+	}
+
+	m.Set("hi", "hello")
+	m.Set("yo", "friend")
+
+	list, err = m.All()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(list) != 2 {
+		t.Errorf("Expected len 2, got %d", len(list))
+	}
+	if (list[0] != "hi" && list[0] != "yo") || list[0] == list[1] {
+		t.Errorf("Expected list[0] to be %q or %q, got %q", "yo", "hi", list[0])
+	}
+	if (list[1] != "yo" && list[1] != "hi") || list[1] == list[0] {
+		t.Errorf("Expected list[1] to be %q or %q, got %q", "hi", "yo", list[1])
+	}
 }
 
 func TestMemoryStorerGet(t *testing.T) {

@@ -38,7 +38,7 @@ func TestRedisStorerNewDefault(t *testing.T) {
 		t.Skip("skipping long test")
 	}
 
-	storer, err := NewDefaultRedisStorer("", "", 0)
+	storer, err := NewDefaultRedisStorer("", "", 13)
 	if err != nil {
 		t.Error(err)
 	}
@@ -55,7 +55,39 @@ func TestRedisStorerNewDefault(t *testing.T) {
 func TestRedisStorerAll(t *testing.T) {
 	t.Parallel()
 
-	t.Error("not implemented")
+	s, err := NewDefaultRedisStorer("", "", 13)
+	if err != nil {
+		t.Error(err)
+	}
+
+	list, err := s.All()
+	if err != nil {
+		t.Error("expected no error on empty list")
+	}
+	if len(list) > 0 {
+		t.Error("Expected len 0")
+	}
+
+	s.Set("hi", "hello")
+	s.Set("yo", "friend")
+
+	list, err = s.All()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(list) != 2 {
+		t.Errorf("Expected len 2, got %d", len(list))
+	}
+	if (list[0] != "hi" && list[0] != "yo") || list[0] == list[1] {
+		t.Errorf("Expected list[0] to be %q or %q, got %q", "yo", "hi", list[0])
+	}
+	if (list[1] != "yo" && list[1] != "hi") || list[1] == list[0] {
+		t.Errorf("Expected list[1] to be %q or %q, got %q", "hi", "yo", list[1])
+	}
+
+	// Cleanup
+	s.Del("hi")
+	s.Del("yo")
 }
 
 func TestRedisStorerGet(t *testing.T) {
@@ -63,7 +95,7 @@ func TestRedisStorerGet(t *testing.T) {
 		t.Skip("skipping long test")
 	}
 
-	storer, err := NewDefaultRedisStorer("", "", 0)
+	storer, err := NewDefaultRedisStorer("", "", 13)
 	if err != nil {
 		t.Error(err)
 	}
@@ -82,6 +114,9 @@ func TestRedisStorerGet(t *testing.T) {
 	if val != "banana" {
 		t.Errorf("Expected %q, got %q", "banana", val)
 	}
+
+	// Cleanup
+	storer.Del("fruit")
 }
 
 func TestRedisStorerSet(t *testing.T) {
@@ -89,7 +124,7 @@ func TestRedisStorerSet(t *testing.T) {
 		t.Skip("skipping long test")
 	}
 
-	storer, err := NewDefaultRedisStorer("", "", 0)
+	storer, err := NewDefaultRedisStorer("", "", 13)
 	if err != nil {
 		t.Error(err)
 	}
@@ -113,6 +148,10 @@ func TestRedisStorerSet(t *testing.T) {
 	if val != "friend" {
 		t.Errorf("Expected %q, got %q", "friend", val)
 	}
+
+	// Cleanup
+	storer.Del("hi")
+	storer.Del("yo")
 }
 
 func TestRedisStorerDel(t *testing.T) {
@@ -120,7 +159,7 @@ func TestRedisStorerDel(t *testing.T) {
 		t.Skip("skipping long test")
 	}
 
-	storer, err := NewDefaultRedisStorer("", "", 0)
+	storer, err := NewDefaultRedisStorer("", "", 13)
 	if err != nil {
 		t.Error(err)
 	}
@@ -138,6 +177,10 @@ func TestRedisStorerDel(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected get hi to fail")
 	}
+
+	// Cleanup
+	storer.Del("hi")
+	storer.Del("yo")
 }
 
 func TestRedisStorerResetExpiry(t *testing.T) {

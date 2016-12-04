@@ -144,5 +144,17 @@ func (s *StorageOverseer) SessionID(r *http.Request) (string, error) {
 // ResetExpiry resets the age of the session to time.Now(), so that
 // MaxAge calculations are renewed
 func (s *StorageOverseer) ResetExpiry(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	sessID, err := s.options.getCookieValue(r)
+	if err != nil {
+		return err
+	}
+
+	// Reset the expiry in the client-side cookie
+	if s.options.MaxAge != 0 {
+		cookie := s.options.makeCookie(sessID)
+		http.SetCookie(w, cookie)
+	}
+
+	// Reset the expiry of the server-side session
+	return s.storer.ResetExpiry(sessID)
 }

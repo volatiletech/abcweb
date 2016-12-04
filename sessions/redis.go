@@ -86,5 +86,5 @@ func (r *RedisStorer) Del(key string) error {
 
 // ResetExpiry resets the expiry of the key
 func (r *RedisStorer) ResetExpiry(key string) error {
-	return nil
+	return r.client.Expire(key, r.maxAge).Err()
 }

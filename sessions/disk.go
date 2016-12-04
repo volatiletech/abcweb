@@ -140,7 +140,9 @@ func (d *DiskStorer) StopCleaner() {
 
 // ResetExpiry resets the expiry of the key
 func (d *DiskStorer) ResetExpiry(key string) error {
-	return nil
+	filePath := path.Join(d.folderPath, key)
+	nowTime := time.Now().UTC()
+	return os.Chtimes(filePath, nowTime, nowTime)
 }
 
 // StartCleaner starts the disk session cleaner go routine. This go routine

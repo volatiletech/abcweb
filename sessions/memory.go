@@ -107,6 +107,9 @@ func (m *MemoryStorer) Del(key string) error {
 
 // ResetExpiry resets the expiry of the key
 func (m *MemoryStorer) ResetExpiry(key string) error {
+	obj := m.sessions[key]
+	obj.expires = time.Now().UTC().Add(m.maxAge)
+	m.sessions[key] = obj
 	return nil
 }
 
