@@ -2,13 +2,10 @@ package sessions
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"regexp"
-	"strconv"
-	"strings"
 	"testing"
 	"time"
 )
@@ -55,31 +52,6 @@ func TestCookieOverseerGetFromCookie(t *testing.T) {
 		Name:  c.options.Name,
 		Value: ct,
 	})
-
-	value, err := c.Get(w, r)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if value != "hello world" {
-		t.Error("value was wrong:", value)
-	}
-}
-
-func TestCookieOverseerGetFromWritten(t *testing.T) {
-	t.Parallel()
-
-	opts := NewCookieOptions()
-	c := NewCookieOverseer(opts, testCookieKey)
-	w := newResponse(httptest.NewRecorder())
-	r := httptest.NewRequest("GET", "/", nil)
-
-	ct, err := c.encode("hello world")
-	if err != nil {
-		t.Error(err)
-	}
-
-	r = r.WithContext(context.WithValue(r.Context(), c.options.Name, ct))
 
 	value, err := c.Get(w, r)
 	if err != nil {
@@ -153,25 +125,18 @@ func TestCookieOverseerDel(t *testing.T) {
 		t.Error(err)
 	}
 
-	header := w.Header().Get("Set-Cookie")
-
-	year := strconv.Itoa(time.Now().UTC().AddDate(-1, 0, 0).Year())
-	foundYear := false
-	foundMaxAge := false
-	for _, s := range strings.Split(header, "; ") {
-		if strings.Contains(s, "Expires=") && strings.Contains(s, year) {
-			foundYear = true
-		}
-		if s == "Max-Age=0" {
-			foundMaxAge = true
-		}
+	cookie := w.cookies[opts.Name]
+	if !cookie.Expires.UTC().Before(time.Now().UTC().AddDate(0, 0, -1)) {
+		t.Error("Expected cookie expires to be set to a year ago, but was not:", cookie.Expires.String())
 	}
-
-	if !foundYear {
-		t.Error("could not find year", header)
+	if cookie.MaxAge != -1 {
+		t.Error("Expected -1, got:", cookie.MaxAge)
 	}
-	if !foundMaxAge {
-		t.Error("could not find maxage", header)
+	if cookie.Value != "" {
+		t.Error("Expected no value, got:", cookie.Value)
+	}
+	if cookie.Name != opts.Name {
+		t.Errorf("Expected cookie Name to be %q, got %q", opts.Name, cookie.Name)
 	}
 }
 

@@ -5,10 +5,10 @@ import (
 	"net/http/httptest"
 	"regexp"
 	"testing"
+	"time"
 )
 
 var (
-	rgxDelCookie = regexp.MustCompile(`id=; Expires=[^;]*; Max-Age=0; HttpOnly; Secure`)
 	rgxSetCookie = regexp.MustCompile(`id=[A-Za-z0-9\-]+; HttpOnly; Secure`)
 )
 
@@ -157,8 +157,9 @@ func TestStorageOverseerDel(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://localhost", nil)
 	w := newResponse(httptest.NewRecorder())
 
+	opts := NewCookieOptions()
 	m, _ := NewDefaultMemoryStorer()
-	s := NewStorageOverseer(NewCookieOptions(), m)
+	s := NewStorageOverseer(opts, m)
 
 	if ln := len(r.Cookies()); ln != 0 {
 		t.Errorf("Expected cookie len 0, got %d", ln)
@@ -184,12 +185,18 @@ func TestStorageOverseerDel(t *testing.T) {
 		t.Error(err)
 	}
 
-	setCookie := w.Header().Get("Set-Cookie")
-	if setCookie == "" {
-		t.Errorf("expected del cookie to be set")
+	cookie := w.cookies[opts.Name]
+	if !cookie.Expires.UTC().Before(time.Now().UTC().AddDate(0, 0, -1)) {
+		t.Error("Expected cookie expires to be set to a year ago, but was not:", cookie.Expires.String())
 	}
-	if !rgxDelCookie.MatchString(setCookie) {
-		t.Errorf("Expected to match regexp, got: %s", setCookie)
+	if cookie.MaxAge != -1 {
+		t.Error("Expected -1, got:", cookie.MaxAge)
+	}
+	if cookie.Value != "" {
+		t.Error("Expected no value, got:", cookie.Value)
+	}
+	if cookie.Name != opts.Name {
+		t.Errorf("Expected cookie Name to be %q, got %q", opts.Name, cookie.Name)
 	}
 	m.mut.RLock()
 	if len(m.sessions) != 0 {
@@ -228,8 +235,9 @@ func TestStorageOverseerRegenerate(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://localhost", nil)
 	w := newResponse(httptest.NewRecorder())
 
+	opts := NewCookieOptions()
 	m, _ := NewDefaultMemoryStorer()
-	s := NewStorageOverseer(NewCookieOptions(), m)
+	s := NewStorageOverseer(opts, m)
 
 	_, err := s.SessionID(w, r)
 	if !IsNoSessionError(err) {
@@ -263,17 +271,19 @@ func TestStorageOverseerRegenerate(t *testing.T) {
 		}
 	}
 
-	setCookie := w.Header().Get("Set-Cookie")
-	if setCookie == "" {
-		t.Errorf("expected set cookie to be set")
+	cookie := w.cookies[opts.Name]
+	if cookie.Expires.String() != (time.Time{}).String() {
+		t.Error("Expected cookie Expires to be zero value, but got:", cookie.Expires.String())
 	}
-	if len(m.sessions) != 1 {
-		t.Errorf("Expected sessions len 1, got %d", len(m.sessions))
+	if cookie.MaxAge != 0 {
+		t.Error("Expected 0, got:", cookie.MaxAge)
 	}
-	if !rgxSetCookie.MatchString(setCookie) {
-		t.Errorf("Expected to match regexp, got: %s", setCookie)
+	if cookie.Value == "" {
+		t.Error("Expected value to be random id, got:", cookie.Value)
 	}
-
+	if cookie.Name != opts.Name {
+		t.Errorf("Expected cookie Name to be %q, got %q", opts.Name, cookie.Name)
+	}
 }
 
 func TestStorageOverseerSessionID(t *testing.T) {

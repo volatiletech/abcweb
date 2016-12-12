@@ -1,7 +1,7 @@
 package sessions
 
 import (
-	"context"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -65,7 +65,7 @@ func TestGetCookieValue(t *testing.T) {
 		t.Error("Expected to get error back")
 	}
 
-	rwithctx := r.WithContext(context.WithValue(r.Context(), "id", "idvalue"))
+	w.SetCookie(&http.Cookie{Name: "id", Value: "idvalue"})
 	val, err := o.getCookieValue(w, r)
 	if err != nil {
 		t.Error(err)
@@ -73,6 +73,9 @@ func TestGetCookieValue(t *testing.T) {
 	if val != "idvalue" {
 		t.Errorf("Expected %q, got %q", "idvalue", val)
 	}
+
+	// Init a new map to clear out all cookies
+	w.cookies = make(map[string]*http.Cookie)
 
 	r.AddCookie(o.makeCookie("cookievalue"))
 	val, err = o.getCookieValue(w, r)
@@ -83,7 +86,8 @@ func TestGetCookieValue(t *testing.T) {
 		t.Errorf("Expected %q, got %q", "cookievalue", val)
 	}
 
-	rwithctx.AddCookie(o.makeCookie("cookievaluetwo"))
+	// Ensure "idvalue" (cache storage) takes precedence over "cookievalue" (request cookie)
+	w.SetCookie(&http.Cookie{Name: "id", Value: "idvalue"})
 	val, err = o.getCookieValue(w, r)
 	if err != nil {
 		t.Error(err)
