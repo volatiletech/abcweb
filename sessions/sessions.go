@@ -18,6 +18,7 @@ type Storer interface {
 
 // Overseer of session cookies
 type Overseer interface {
+	Resetter
 	// Get the value stored in a session
 	Get(w http.ResponseWriter, r *http.Request) (value string, err error)
 	// Set creates or updates a session with value
@@ -28,9 +29,15 @@ type Overseer interface {
 	Regenerate(w http.ResponseWriter, r *http.Request) (cr *http.Request, err error)
 	// SessionID returns the session id for your session
 	SessionID(r *http.Request) (id string, err error)
+}
+
+// Resetter has reset functions
+type Resetter interface {
 	// ResetExpiry resets the age of the session to time.Now(), so that
 	// MaxAge calculations are renewed
 	ResetExpiry(w http.ResponseWriter, r *http.Request) error
+	// ResetMiddleware will reset the users session expiry on every request
+	ResetMiddleware(next http.Handler) http.Handler
 }
 
 // timer interface is used to mock the test harness for disk and memory storers

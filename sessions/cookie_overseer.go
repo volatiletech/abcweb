@@ -22,6 +22,8 @@ type CookieOverseer struct {
 
 	secretKey    [32]byte
 	gcmBlockMode cipher.AEAD
+
+	resetExpiryMiddleware
 }
 
 // NewCookieOverseer creates an overseer from cookie options and a secret key
@@ -40,11 +42,15 @@ func NewCookieOverseer(opts CookieOptions, secretKey [32]byte) *CookieOverseer {
 		panic(err)
 	}
 
-	return &CookieOverseer{
+	o := &CookieOverseer{
 		options:      opts,
 		secretKey:    secretKey,
 		gcmBlockMode: gcm,
 	}
+
+	o.resetExpiryMiddleware.resetter = o
+
+	return o
 }
 
 // MakeSecretKey creates a randomized key securely for use with the AES-GCM

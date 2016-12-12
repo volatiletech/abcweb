@@ -3,7 +3,7 @@ package sessions
 import (
 	"io/ioutil"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -11,8 +11,8 @@ import (
 var testpath string
 
 func TestMain(m *testing.M) {
-	testpath = path.Join(os.TempDir(), "disksesstest")
-	err := os.Mkdir(testpath, os.FileMode(int(0755)))
+	var err error
+	testpath, err = ioutil.TempDir("", "disksesstest")
 	if err != nil {
 		panic(err)
 	}
@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 func TestDiskStorerNew(t *testing.T) {
 	t.Parallel()
 
-	d, err := NewDiskStorer(path.Join(testpath, "a"), time.Hour*11, time.Hour*12)
+	d, err := NewDiskStorer(filepath.Join(testpath, "a"), time.Hour*11, time.Hour*12)
 	if err != nil {
 		t.Error(err)
 	}
@@ -48,7 +48,7 @@ func TestDiskStorerNew(t *testing.T) {
 func TestDiskStorerAll(t *testing.T) {
 	t.Parallel()
 
-	d, err := NewDiskStorer(path.Join(testpath, "b"), 0, 0)
+	d, err := NewDiskStorer(filepath.Join(testpath, "b"), 0, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -82,7 +82,7 @@ func TestDiskStorerAll(t *testing.T) {
 func TestDiskStorerGet(t *testing.T) {
 	t.Parallel()
 
-	d, err := NewDiskStorer(path.Join(testpath, "c"), 0, 0)
+	d, err := NewDiskStorer(filepath.Join(testpath, "c"), 0, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -106,7 +106,7 @@ func TestDiskStorerGet(t *testing.T) {
 func TestDiskStorerSet(t *testing.T) {
 	t.Parallel()
 
-	d, err := NewDiskStorer(path.Join(testpath, "d"), 0, 0)
+	d, err := NewDiskStorer(filepath.Join(testpath, "d"), 0, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -151,7 +151,7 @@ func TestDiskStorerSet(t *testing.T) {
 func TestDiskStorerDel(t *testing.T) {
 	t.Parallel()
 
-	d, err := NewDiskStorer(path.Join(testpath, "e"), 0, 0)
+	d, err := NewDiskStorer(filepath.Join(testpath, "e"), 0, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -208,7 +208,7 @@ func (diskTestTimer) Stop() bool {
 }
 
 func TestDiskStorerCleaner(t *testing.T) {
-	d, err := NewDiskStorer(path.Join(testpath, "f"), time.Hour, time.Hour)
+	d, err := NewDiskStorer(filepath.Join(testpath, "f"), time.Hour, time.Hour)
 	if err != nil {
 		t.Error(err)
 	}
@@ -229,7 +229,7 @@ func TestDiskStorerCleaner(t *testing.T) {
 	}
 
 	// Change the mod time of testid2 file to yesterday so we can test it gets deleted
-	os.Chtimes(path.Join(d.folderPath, "testid2"),
+	os.Chtimes(filepath.Join(d.folderPath, "testid2"),
 		time.Now().AddDate(0, 0, -1),
 		time.Now().AddDate(0, 0, -1),
 	)

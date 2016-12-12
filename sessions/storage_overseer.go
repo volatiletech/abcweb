@@ -12,6 +12,7 @@ import (
 type StorageOverseer struct {
 	storer  Storer
 	options CookieOptions
+	resetExpiryMiddleware
 }
 
 // NewStorageOverseer returns a new storage overseer
@@ -20,10 +21,14 @@ func NewStorageOverseer(opts CookieOptions, storer Storer) *StorageOverseer {
 		panic("cookie name must be provided")
 	}
 
-	return &StorageOverseer{
+	o := &StorageOverseer{
 		storer:  storer,
 		options: opts,
 	}
+
+	o.resetExpiryMiddleware.resetter = o
+
+	return o
 }
 
 // Get looks in the cookie for the session ID and retrieves the value string stored in the session.
@@ -43,7 +48,7 @@ func (s *StorageOverseer) Get(w http.ResponseWriter, r *http.Request) (value str
 
 // Set looks in the cookie for the session ID and modifies the session with the new value.
 // If the session does not exist it creates a new one.
-func (s *StorageOverseer) Set(w http.ResponseWriter, r *http.Request, value string) (*http.Request, error) {
+func (s *StorageOverseer) Set(w http.ResponseWriter, r *http.Request, value string) error {
 	// Reuse the existing cookie ID if it exists
 	sessID, _ := s.options.getCookieValue(r)
 
@@ -57,7 +62,7 @@ func (s *StorageOverseer) Set(w http.ResponseWriter, r *http.Request, value stri
 	}
 
 	cookie := s.options.makeCookie(sessID)
-	http.SetCookie(w, cookie)
+	w.(cookieWriter).SetCookie(cookie)
 
 	// Assign the cookie to the request context so that it can be used
 	// again in subsequent calls to Set(). This is required so that
