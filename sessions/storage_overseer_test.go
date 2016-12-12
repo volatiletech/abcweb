@@ -60,7 +60,7 @@ func TestStorageOverseerGet(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -97,7 +97,7 @@ func TestStorageOverseerSet(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -107,15 +107,15 @@ func TestStorageOverseerSet(t *testing.T) {
 		t.Errorf("Expected ErrNoSession, got: %v", err)
 	}
 
-	r, err = s.Set(w, r, "whatever")
+	err = s.Set(w, r, "whatever")
 	if err != nil {
 		t.Error(err)
 	}
 
-	setCookie := w.Header().Get("Set-Cookie")
-	if setCookie == "" {
+	if len(w.cookies) != 1 {
 		t.Errorf("expected set cookie to be set")
 	}
+
 	if len(m.sessions) != 1 {
 		t.Errorf("Expected sessions len 1, got %d", len(m.sessions))
 	}
@@ -128,14 +128,18 @@ func TestStorageOverseerSet(t *testing.T) {
 		t.Errorf("Expected %q, got %q", "whatever", id1)
 	}
 
-	// make sure it re-uses the same session cookie by utilizing context storage
-	r, err = s.Set(w, r, "hello")
+	// make sure it re-uses the same session cookie by utilizing cookies storage
+	err = s.Set(w, r, "hello")
 	if err != nil {
 		t.Error(err)
 	}
 
 	if len(m.sessions) != 1 {
 		t.Errorf("Expected sessions len 1, got %d", len(m.sessions))
+	}
+
+	if len(w.cookies) != 1 {
+		t.Errorf("expected set cookie to be set")
 	}
 
 	id2, err := s.Get(w, r)
@@ -151,7 +155,7 @@ func TestStorageOverseerDel(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -175,7 +179,7 @@ func TestStorageOverseerDel(t *testing.T) {
 		value: "whatever",
 	}
 
-	r, err := s.Del(w, r)
+	err := s.Del(w, r)
 	if err != nil {
 		t.Error(err)
 	}
@@ -222,27 +226,27 @@ func TestStorageOverseerRegenerate(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
 
-	_, err := s.SessionID(r)
+	_, err := s.SessionID(w, r)
 	if !IsNoSessionError(err) {
 		t.Error("Expected to get a error back")
 	}
 
-	r, err = s.Set(w, r, "test")
+	err = s.Set(w, r, "test")
 	if err != nil {
 		t.Error(err)
 	}
 
-	id, err := s.SessionID(r)
+	id, err := s.SessionID(w, r)
 	if err != nil {
 		t.Error(err)
 	}
 
-	r, err = s.Regenerate(w, r)
+	err = s.Regenerate(w, r)
 	if err != nil {
 		t.Error(err)
 	}
@@ -276,22 +280,22 @@ func TestStorageOverseerSessionID(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
 
-	_, err := s.SessionID(r)
+	_, err := s.SessionID(w, r)
 	if !IsNoSessionError(err) {
 		t.Error("Expected to get a error back")
 	}
 
-	r, err = s.Set(w, r, "test")
+	err = s.Set(w, r, "test")
 	if err != nil {
 		t.Error(err)
 	}
 
-	id, err := s.SessionID(r)
+	id, err := s.SessionID(w, r)
 	if err != nil {
 		t.Error(err)
 	}

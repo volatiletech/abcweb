@@ -44,13 +44,13 @@ func (c CookieOptions) makeCookie(value string) *http.Cookie {
 }
 
 // getCookieValue returns the cookie value (usually the ID of the session)
-// stored in the request context. If it does not exist in the request context
+// stored in the cookies cache. If it does not exist in the cookies cache
 // it will attempt to fetch it from the request headers.
 // If this fails it will return nil.
-func (c CookieOptions) getCookieValue(r *http.Request) (string, error) {
-	val, ok := r.Context().Value(c.Name).(string)
-	if ok && len(val) != 0 {
-		return val, nil
+func (c CookieOptions) getCookieValue(w http.ResponseWriter, r *http.Request) (string, error) {
+	cookie := w.(cookieWriter).GetCookie(c.Name)
+	if cookie != nil {
+		return cookie.Value, nil
 	}
 
 	reqCookie, err := r.Cookie(c.Name)

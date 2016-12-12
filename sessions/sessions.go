@@ -22,13 +22,13 @@ type Overseer interface {
 	// Get the value stored in a session
 	Get(w http.ResponseWriter, r *http.Request) (value string, err error)
 	// Set creates or updates a session with value
-	Set(w http.ResponseWriter, r *http.Request, value string) (cr *http.Request, err error)
+	Set(w http.ResponseWriter, r *http.Request, value string) error
 	// Delete a session
-	Del(w http.ResponseWriter, r *http.Request) (cr *http.Request, err error)
+	Del(w http.ResponseWriter, r *http.Request) error
 	// Regenerate a new session id for your session
-	Regenerate(w http.ResponseWriter, r *http.Request) (cr *http.Request, err error)
+	Regenerate(w http.ResponseWriter, r *http.Request) error
 	// SessionID returns the session id for your session
-	SessionID(r *http.Request) (id string, err error)
+	SessionID(w http.ResponseWriter, r *http.Request) (id string, err error)
 }
 
 // Resetter has reset functions
@@ -88,19 +88,19 @@ var timerTestHarness = func(d time.Duration) (timer, <-chan time.Time) {
 
 // Set is a JSON helper used for storing key-value session values.
 // Set modifies the marshalled map stored in the session to include the key value pair passed in.
-func Set(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value string) (*http.Request, error) {
+func Set(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value string) error {
 	sessMap := map[string]string{}
 	err := GetObj(overseer, w, r, &sessMap)
 	// If it's a no session error because a session hasn't been created yet
 	// then we can skip this return statement and create a fresh map
 	if err != nil && !IsNoSessionError(err) {
-		return nil, err
+		return err
 	}
 
 	sessMap[key] = value
 	ret, err := json.Marshal(sessMap)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	return overseer.Set(w, r, string(ret))
@@ -144,16 +144,15 @@ func Del(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) 
 		return err
 	}
 
-	_, err = overseer.Set(w, r, string(ret))
-	return err
+	return overseer.Set(w, r, string(ret))
 }
 
 // SetObj is a JSON helper used for storing object or variable session values.
 // Set stores in the session a marshaled version of the passed in value pointed to by v.
-func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interface{}) (*http.Request, error) {
+func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interface{}) error {
 	ret, err := json.Marshal(v)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	return overseer.Set(w, r, string(ret))

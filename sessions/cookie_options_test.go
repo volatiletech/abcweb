@@ -38,7 +38,7 @@ func TestMakeCookie(t *testing.T) {
 		t.Errorf("Expected value %q to match %q", c.Value, "test")
 	}
 	if c.MaxAge != int(o.MaxAge.Seconds()) {
-		t.Errorf("Expected maxage %d to match %d", c.MaxAge, o.MaxAge.Seconds())
+		t.Errorf("Expected maxage %v to match %v", c.MaxAge, o.MaxAge.Seconds())
 	}
 	if c.HttpOnly != o.HTTPOnly {
 		t.Errorf("expected httponly %t to match %t", c.HttpOnly, o.HTTPOnly)
@@ -57,15 +57,16 @@ func TestGetCookieValue(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := newResponse(httptest.NewRecorder())
 	o := NewCookieOptions()
 
-	_, err := o.getCookieValue(r)
+	_, err := o.getCookieValue(w, r)
 	if err == nil {
 		t.Error("Expected to get error back")
 	}
 
 	rwithctx := r.WithContext(context.WithValue(r.Context(), "id", "idvalue"))
-	val, err := o.getCookieValue(rwithctx)
+	val, err := o.getCookieValue(w, r)
 	if err != nil {
 		t.Error(err)
 	}
@@ -74,7 +75,7 @@ func TestGetCookieValue(t *testing.T) {
 	}
 
 	r.AddCookie(o.makeCookie("cookievalue"))
-	val, err = o.getCookieValue(r)
+	val, err = o.getCookieValue(w, r)
 	if err != nil {
 		t.Error(err)
 	}
@@ -83,7 +84,7 @@ func TestGetCookieValue(t *testing.T) {
 	}
 
 	rwithctx.AddCookie(o.makeCookie("cookievaluetwo"))
-	val, err = o.getCookieValue(rwithctx)
+	val, err = o.getCookieValue(w, r)
 	if err != nil {
 		t.Error(err)
 	}

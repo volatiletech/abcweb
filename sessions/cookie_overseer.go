@@ -1,16 +1,13 @@
 package sessions
 
 import (
-	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 )
 
@@ -66,7 +63,7 @@ func MakeSecretKey() ([32]byte, error) {
 
 // Get a value from the cookie overseer
 func (c *CookieOverseer) Get(w http.ResponseWriter, r *http.Request) (string, error) {
-	val, err := c.options.getCookieValue(r)
+	val, err := c.options.getCookieValue(w, r)
 	if err != nil {
 		return "", err
 	}
@@ -75,23 +72,19 @@ func (c *CookieOverseer) Get(w http.ResponseWriter, r *http.Request) (string, er
 }
 
 // Set a value into the cookie overseer
-func (c *CookieOverseer) Set(w http.ResponseWriter, r *http.Request, value string) (*http.Request, error) {
+func (c *CookieOverseer) Set(w http.ResponseWriter, r *http.Request, value string) error {
 	ev, err := c.encode(value)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	http.SetCookie(w, c.options.makeCookie(ev))
+	w.(cookieWriter).SetCookie(c.options.makeCookie(ev))
 
-	// Store the cookie value in context so it can be retrieved from context
-	// in subsequent Set calls.
-	r = r.WithContext(context.WithValue(r.Context(), c.options.Name, ev))
-
-	return r, nil
+	return nil
 }
 
 // Del a value from the cookie overseer
-func (c *CookieOverseer) Del(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
+func (c *CookieOverseer) Del(w http.ResponseWriter, r *http.Request) error {
 	cookie := &http.Cookie{
 		// If the browser refuses to delete it, set value to "" so subsequent
 		// requests replace it when it does not point to a valid session id.
@@ -103,23 +96,20 @@ func (c *CookieOverseer) Del(w http.ResponseWriter, r *http.Request) (*http.Requ
 		Secure:   c.options.Secure,
 	}
 
-	http.SetCookie(w, cookie)
+	w.(cookieWriter).SetCookie(cookie)
 
-	// Reset the context so it doesn't re-use the old deleted session value
-	r = r.WithContext(context.WithValue(r.Context(), c.options.Name, ""))
-
-	return r, nil
+	return nil
 }
 
 // Regenerate for the cookie overseer will panic because cookie sessions
 // do not have session IDs, only values.
-func (c *CookieOverseer) Regenerate(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
+func (c *CookieOverseer) Regenerate(w http.ResponseWriter, r *http.Request) error {
 	panic("cookie sessions do not use session ids")
 }
 
 // SessionID for the cookie overseer will panic because cookie sessions
 // do not have session IDs, only values.
-func (c *CookieOverseer) SessionID(r *http.Request) (string, error) {
+func (c *CookieOverseer) SessionID(w http.ResponseWriter, r *http.Request) (string, error) {
 	panic("cookie sessions do not use session ids")
 }
 
@@ -130,17 +120,12 @@ func (c *CookieOverseer) ResetExpiry(w http.ResponseWriter, r *http.Request) err
 		return nil
 	}
 
-	val, err := c.options.getCookieValue(r)
+	val, err := c.options.getCookieValue(w, r)
 	if err != nil {
 		return err
 	}
 
-	spew.Dump(w)
-	cookie := c.options.makeCookie(val)
-	fmt.Printf("\n\n%#v\n\n", cookie)
-	http.SetCookie(w, cookie)
-
-	spew.Dump(w)
+	w.(cookieWriter).SetCookie(c.options.makeCookie(val))
 
 	return nil
 }

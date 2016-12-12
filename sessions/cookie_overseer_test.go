@@ -44,7 +44,7 @@ func TestCookieOverseerGetFromCookie(t *testing.T) {
 	t.Parallel()
 
 	c := NewCookieOverseer(NewCookieOptions(), testCookieKey)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	ct, err := c.encode("hello world")
@@ -71,7 +71,7 @@ func TestCookieOverseerGetFromWritten(t *testing.T) {
 
 	opts := NewCookieOptions()
 	c := NewCookieOverseer(opts, testCookieKey)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	ct, err := c.encode("hello world")
@@ -96,7 +96,7 @@ func TestCookieOverseerNoSession(t *testing.T) {
 
 	opts := NewCookieOptions()
 	c := NewCookieOverseer(opts, testCookieKey)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	_, err := c.Get(w, r)
@@ -109,11 +109,11 @@ func TestCookieOverseerSet(t *testing.T) {
 	t.Parallel()
 
 	c := NewCookieOverseer(NewCookieOptions(), testCookieKey)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	var err error
-	r, err = c.Set(w, r, "hello world")
+	err = c.Set(w, r, "hello world")
 	if err != nil {
 		t.Error(err)
 	}
@@ -124,8 +124,17 @@ func TestCookieOverseerSet(t *testing.T) {
 		t.Error("value was wrong:", val)
 	}
 
-	setCookie := w.Header().Get("Set-Cookie")
-	if setCookie == "" {
+	if len(w.cookies) != 1 {
+		t.Errorf("expected set cookie to be set")
+	}
+
+	// make sure it re-uses the same session cookie by utilizing cookies storage
+	err = c.Set(w, r, "test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(w.cookies) != 1 {
 		t.Errorf("expected set cookie to be set")
 	}
 }
@@ -135,10 +144,10 @@ func TestCookieOverseerDel(t *testing.T) {
 
 	opts := NewCookieOptions()
 	c := NewCookieOverseer(opts, testCookieKey)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
-	r, err := c.Del(w, r)
+	err := c.Del(w, r)
 
 	if err != nil {
 		t.Error(err)
@@ -199,7 +208,7 @@ func TestCookieOverseerResetExpiry(t *testing.T) {
 	opts.MaxAge = time.Hour * 1
 
 	c := NewCookieOverseer(opts, testCookieKey)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	err := c.ResetExpiry(w, r)
@@ -207,21 +216,16 @@ func TestCookieOverseerResetExpiry(t *testing.T) {
 		t.Errorf("expected no session error, got %v", err)
 	}
 
-	r, err = c.Set(w, r, "hello")
+	err = c.Set(w, r, "hello")
 	if err != nil {
 		t.Error(err)
 	}
 
-	if w.Header().Get("Set-Cookie") == "" {
-		t.Errorf("expected set cookie to be set")
+	if len(w.cookies) != 1 {
+		t.Errorf("Expected cookies len 1, got %d", len(w.cookies))
 	}
 
-	cookies := w.Result().Cookies()
-	if len(cookies) != 1 {
-		t.Errorf("Expected cookies len 1, got %d", len(cookies))
-	}
-
-	oldCookie := cookies[0]
+	oldCookie := w.cookies[opts.Name]
 
 	// Sleep for a ms to offset time
 	time.Sleep(time.Second * 1)
@@ -231,16 +235,11 @@ func TestCookieOverseerResetExpiry(t *testing.T) {
 		t.Error(err)
 	}
 
-	if w.Header().Get("Set-Cookie") == "" {
-		t.Errorf("expected set cookie to be set")
+	if len(w.cookies) != 1 {
+		t.Errorf("Expected cookies len 1, got %d", len(w.cookies))
 	}
 
-	cookies = w.Result().Cookies()
-	if len(cookies) != 1 {
-		t.Errorf("Expected cookies len 1, got %d", len(cookies))
-	}
-
-	newCookie := cookies[0]
+	newCookie := w.cookies[opts.Name]
 
 	if reflect.DeepEqual(newCookie, oldCookie) {
 		t.Errorf("Expected oldcookie and newcookie to be different, got:\n\n%#v\n%#v", oldCookie, newCookie)

@@ -10,12 +10,12 @@ func TestSetAndGet(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
 
-	r, err := Set(s, w, r, "hi", "hello")
+	err := Set(s, w, r, "hi", "hello")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestSetAndGet(t *testing.T) {
 	}
 
 	// Test reassigning existing key value
-	r, err = Set(s, w, r, "hi", "spiders")
+	err = Set(s, w, r, "hi", "spiders")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestSetAndGet(t *testing.T) {
 
 func TestDel(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -68,7 +68,7 @@ func TestDel(t *testing.T) {
 		t.Error("Expected no session error")
 	}
 
-	r, err = Set(s, w, r, "hi", "hello")
+	err = Set(s, w, r, "hi", "hello")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +106,7 @@ func TestSetAndGetObj(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := httptest.NewRecorder()
+	w := newResponse(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -122,7 +122,7 @@ func TestSetAndGetObj(t *testing.T) {
 		Test: "hello",
 	}
 
-	r, err = SetObj(s, w, r, val)
+	err = SetObj(s, w, r, val)
 	if err != nil {
 		t.Error(err)
 	}
@@ -142,7 +142,7 @@ func TestSetAndGetObj(t *testing.T) {
 		t.Errorf("Expected len 1, got %d", len(m.sessions))
 	}
 
-	r, err = SetObj(s, w, r, val)
+	err = SetObj(s, w, r, val)
 	if err != nil {
 		t.Error(err)
 	}
