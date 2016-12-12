@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"regexp"
 	"testing"
 	"time"
@@ -193,7 +192,7 @@ func TestCookieOverseerResetExpiry(t *testing.T) {
 	oldCookie := w.cookies[opts.Name]
 
 	// Sleep for a ms to offset time
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Nanosecond * 1)
 
 	err = c.ResetExpiry(w, r)
 	if err != nil {
@@ -206,7 +205,28 @@ func TestCookieOverseerResetExpiry(t *testing.T) {
 
 	newCookie := w.cookies[opts.Name]
 
-	if reflect.DeepEqual(newCookie, oldCookie) {
-		t.Errorf("Expected oldcookie and newcookie to be different, got:\n\n%#v\n%#v", oldCookie, newCookie)
+	if !newCookie.Expires.After(oldCookie.Expires) || newCookie.Expires == oldCookie.Expires {
+		t.Errorf("Expected oldcookie and newcookie expires to be different, got:\n\n%#v\n%#v", oldCookie, newCookie)
+	}
+	if newCookie.Value != oldCookie.Value {
+		t.Errorf("did not expect cookie values to change, got %q and %q", newCookie.Value, oldCookie.Value)
+	}
+	if newCookie.Name != oldCookie.Name {
+		t.Errorf("did not expect cookie names to change, got %q and %q", newCookie.Name, oldCookie.Name)
+	}
+	if newCookie.MaxAge != oldCookie.MaxAge {
+		t.Errorf("expected maxages to match, got %v and %v", newCookie.MaxAge, oldCookie.MaxAge)
+	}
+	if newCookie.Secure != oldCookie.Secure {
+		t.Errorf("expected secures to match, got %v and %v", newCookie.Secure, oldCookie.Secure)
+	}
+	if newCookie.HttpOnly != oldCookie.HttpOnly {
+		t.Errorf("expected httponlys to match, got %v and %v", newCookie.HttpOnly, oldCookie.HttpOnly)
+	}
+	if newCookie.Domain != oldCookie.Domain {
+		t.Errorf("expected domains to match, got %v and %v", newCookie.Domain, oldCookie.Domain)
+	}
+	if newCookie.Path != oldCookie.Path {
+		t.Errorf("expected paths to match, got %v and %v", newCookie.Path, oldCookie.Path)
 	}
 }

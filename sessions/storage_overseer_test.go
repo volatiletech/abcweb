@@ -326,5 +326,70 @@ func TestStorageOverseerSessionID(t *testing.T) {
 func TestStorageOverseerResetExpiry(t *testing.T) {
 	t.Parallel()
 
-	t.Error("not implemented")
+	opts := NewCookieOptions()
+	opts.MaxAge = time.Hour * 1
+
+	mem, err := NewDefaultMemoryStorer()
+	if err != nil {
+		t.Error(err)
+	}
+
+	c := NewStorageOverseer(opts, mem)
+	w := newResponse(httptest.NewRecorder())
+	r := httptest.NewRequest("GET", "/", nil)
+
+	err = c.ResetExpiry(w, r)
+	if !IsNoSessionError(err) {
+		t.Errorf("expected no session error, got %v", err)
+	}
+
+	err = c.Set(w, r, "hello")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(w.cookies) != 1 {
+		t.Errorf("Expected cookies len 1, got %d", len(w.cookies))
+	}
+
+	oldCookie := w.cookies[opts.Name]
+
+	// Sleep for a ms to offset time
+	time.Sleep(time.Nanosecond * 1)
+
+	err = c.ResetExpiry(w, r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(w.cookies) != 1 {
+		t.Errorf("Expected cookies len 1, got %d", len(w.cookies))
+	}
+
+	newCookie := w.cookies[opts.Name]
+
+	if !newCookie.Expires.After(oldCookie.Expires) || newCookie.Expires == oldCookie.Expires {
+		t.Errorf("Expected oldcookie and newcookie expires to be different, got:\n\n%#v\n%#v", oldCookie, newCookie)
+	}
+	if newCookie.Value != oldCookie.Value {
+		t.Errorf("did not expect cookie values to change, got %q and %q", newCookie.Value, oldCookie.Value)
+	}
+	if newCookie.Name != oldCookie.Name {
+		t.Errorf("did not expect cookie names to change, got %q and %q", newCookie.Name, oldCookie.Name)
+	}
+	if newCookie.MaxAge != oldCookie.MaxAge {
+		t.Errorf("expected maxages to match, got %v and %v", newCookie.MaxAge, oldCookie.MaxAge)
+	}
+	if newCookie.Secure != oldCookie.Secure {
+		t.Errorf("expected secures to match, got %v and %v", newCookie.Secure, oldCookie.Secure)
+	}
+	if newCookie.HttpOnly != oldCookie.HttpOnly {
+		t.Errorf("expected httponlys to match, got %v and %v", newCookie.HttpOnly, oldCookie.HttpOnly)
+	}
+	if newCookie.Domain != oldCookie.Domain {
+		t.Errorf("expected domains to match, got %v and %v", newCookie.Domain, oldCookie.Domain)
+	}
+	if newCookie.Path != oldCookie.Path {
+		t.Errorf("expected paths to match, got %v and %v", newCookie.Path, oldCookie.Path)
+	}
 }
