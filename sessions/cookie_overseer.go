@@ -6,9 +6,11 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 )
 
@@ -25,6 +27,10 @@ type CookieOverseer struct {
 // NewCookieOverseer creates an overseer from cookie options and a secret key
 // for use in encryption. Panic's on any errors that deal with cryptography.
 func NewCookieOverseer(opts CookieOptions, secretKey [32]byte) *CookieOverseer {
+	if len(opts.Name) == 0 {
+		panic("cookie name must be provided")
+	}
+
 	block, err := aes.NewCipher(secretKey[:])
 	if err != nil {
 		panic(err)
@@ -114,15 +120,21 @@ func (c *CookieOverseer) SessionID(r *http.Request) (string, error) {
 // ResetExpiry resets the age of the session to time.Now(), so that
 // MaxAge calculations are renewed
 func (c *CookieOverseer) ResetExpiry(w http.ResponseWriter, r *http.Request) error {
+	if c.options.MaxAge == 0 {
+		return nil
+	}
+
 	val, err := c.options.getCookieValue(r)
 	if err != nil {
 		return err
 	}
 
-	if c.options.MaxAge != 0 {
-		cookie := c.options.makeCookie(val)
-		http.SetCookie(w, cookie)
-	}
+	spew.Dump(w)
+	cookie := c.options.makeCookie(val)
+	fmt.Printf("\n\n%#v\n\n", cookie)
+	http.SetCookie(w, cookie)
+
+	spew.Dump(w)
 
 	return nil
 }

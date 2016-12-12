@@ -16,6 +16,10 @@ type StorageOverseer struct {
 
 // NewStorageOverseer returns a new storage overseer
 func NewStorageOverseer(opts CookieOptions, storer Storer) *StorageOverseer {
+	if len(opts.Name) == 0 {
+		panic("cookie name must be provided")
+	}
+
 	return &StorageOverseer{
 		storer:  storer,
 		options: opts,

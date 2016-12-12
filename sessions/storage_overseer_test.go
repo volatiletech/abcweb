@@ -26,6 +26,7 @@ func TestStorageOverseerNew(t *testing.T) {
 		MaxAge:   2,
 		Secure:   true,
 		HTTPOnly: true,
+		Name:     "id",
 	}
 
 	mem, err := NewDefaultMemoryStorer()

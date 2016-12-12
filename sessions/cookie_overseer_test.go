@@ -5,6 +5,8 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -12,6 +14,7 @@ import (
 )
 
 var testCookieKey, _ = MakeSecretKey()
+var rgxCookieExpires = regexp.MustCompile(`.*Expires=([^;]*);.*`)
 
 func TestCookieImplements(t *testing.T) {
 	t.Parallel()
@@ -120,6 +123,11 @@ func TestCookieOverseerSet(t *testing.T) {
 	} else if val != "hello world" {
 		t.Error("value was wrong:", val)
 	}
+
+	setCookie := w.Header().Get("Set-Cookie")
+	if setCookie == "" {
+		t.Errorf("expected set cookie to be set")
+	}
 }
 
 func TestCookieOverseerDel(t *testing.T) {
@@ -161,7 +169,11 @@ func TestCookieOverseerDel(t *testing.T) {
 func TestCookieOverseerCrypto(t *testing.T) {
 	t.Parallel()
 
-	c := NewCookieOverseer(CookieOptions{}, testCookieKey)
+	opts := CookieOptions{
+		Name: "id",
+	}
+
+	c := NewCookieOverseer(opts, testCookieKey)
 	if c == nil {
 		t.Error("c should not be nil")
 	}
@@ -183,5 +195,54 @@ func TestCookieOverseerCrypto(t *testing.T) {
 func TestCookieOverseerResetExpiry(t *testing.T) {
 	t.Parallel()
 
-	t.Error("not implemented")
+	opts := NewCookieOptions()
+	opts.MaxAge = time.Hour * 1
+
+	c := NewCookieOverseer(opts, testCookieKey)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+
+	err := c.ResetExpiry(w, r)
+	if !IsNoSessionError(err) {
+		t.Errorf("expected no session error, got %v", err)
+	}
+
+	r, err = c.Set(w, r, "hello")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if w.Header().Get("Set-Cookie") == "" {
+		t.Errorf("expected set cookie to be set")
+	}
+
+	cookies := w.Result().Cookies()
+	if len(cookies) != 1 {
+		t.Errorf("Expected cookies len 1, got %d", len(cookies))
+	}
+
+	oldCookie := cookies[0]
+
+	// Sleep for a ms to offset time
+	time.Sleep(time.Second * 1)
+
+	err = c.ResetExpiry(w, r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if w.Header().Get("Set-Cookie") == "" {
+		t.Errorf("expected set cookie to be set")
+	}
+
+	cookies = w.Result().Cookies()
+	if len(cookies) != 1 {
+		t.Errorf("Expected cookies len 1, got %d", len(cookies))
+	}
+
+	newCookie := cookies[0]
+
+	if reflect.DeepEqual(newCookie, oldCookie) {
+		t.Errorf("Expected oldcookie and newcookie to be different, got:\n\n%#v\n%#v", oldCookie, newCookie)
+	}
 }
