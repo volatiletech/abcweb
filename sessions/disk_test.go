@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/djherbis/times"
 )
 
 var testpath string
@@ -271,5 +273,60 @@ func TestDiskStorerCleaner(t *testing.T) {
 func TestDiskStorerResetExpiry(t *testing.T) {
 	t.Parallel()
 
-	t.Error("not implemented")
+	d, err := NewDiskStorer(filepath.Join(testpath, "g"), 0, 0)
+	if err != nil {
+		t.Error(err)
+	}
+
+	files, err := ioutil.ReadDir(d.folderPath)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(files) != 0 {
+		t.Errorf("Expected len 0, got %d", len(files))
+	}
+
+	err = d.Set("test", "val")
+	if err != nil {
+		t.Error(err)
+	}
+
+	files, err = ioutil.ReadDir(d.folderPath)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(files) != 1 {
+		t.Errorf("Expected len 1, got %d", len(files))
+	}
+
+	ts, err := times.Stat(filepath.Join(d.folderPath, "test"))
+	if err != nil {
+		t.Error(err)
+	}
+	oldExpires := ts.AccessTime()
+
+	time.Sleep(time.Nanosecond * 1)
+
+	err = d.ResetExpiry("test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	files, err = ioutil.ReadDir(d.folderPath)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(files) != 1 {
+		t.Errorf("Expected len 1, got %d", len(files))
+	}
+
+	ts, err = times.Stat(filepath.Join(d.folderPath, "test"))
+	if err != nil {
+		t.Error(err)
+	}
+	newExpires := ts.AccessTime()
+
+	if !newExpires.After(oldExpires) || newExpires == oldExpires {
+		t.Errorf("Expected newexpires to be newer than old expires, got: %#v, %#v", oldExpires, newExpires)
+	}
 }

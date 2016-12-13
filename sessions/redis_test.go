@@ -186,5 +186,43 @@ func TestRedisStorerDel(t *testing.T) {
 func TestRedisStorerResetExpiry(t *testing.T) {
 	t.Parallel()
 
-	t.Error("not implemented")
+	storer, err := NewDefaultRedisStorer("", "", 13)
+	if err != nil {
+		t.Error(err)
+	}
+	// Set maxage duration to 1 hour
+	storer.maxAge = time.Hour * 1
+
+	err = storer.Set("test", "test1")
+	if err != nil {
+		t.Error(err)
+	}
+
+	oldDur, err := storer.client.TTL("test").Result()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Make sure the duration is roughly 1 hour and no greater
+	if oldDur > time.Hour*1 || oldDur < time.Minute*59 {
+		t.Errorf("expected TTL in Redis to be set to 1 hour, but got: %v", oldDur.String())
+	}
+
+	// Adjust the duration to something else so we can ensure it was reset
+	storer.maxAge = time.Hour * 24
+
+	err = storer.ResetExpiry("test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	newDur, err := storer.client.TTL("test").Result()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Make sure the new reset duration is roughly 1 day and no less
+	if newDur > time.Hour*24 || newDur < time.Hour*23 {
+		t.Errorf("expected TTL in Redis to be set to 24 hours, but got: %v", newDur.String())
+	}
 }

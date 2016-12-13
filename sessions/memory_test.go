@@ -210,5 +210,30 @@ func TestMemoryStorerCleaner(t *testing.T) {
 func TestMemoryStorerResetExpiry(t *testing.T) {
 	t.Parallel()
 
-	t.Error("not implemented")
+	m, err := NewDefaultMemoryStorer()
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = m.Set("test", "val")
+	if err != nil {
+		t.Error(err)
+	}
+
+	sess := m.sessions["test"]
+	oldExpires := sess.expires
+
+	time.Sleep(time.Nanosecond * 1)
+
+	err = m.ResetExpiry("test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	sess = m.sessions["test"]
+	newExpires := sess.expires
+
+	if !newExpires.After(oldExpires) || newExpires == oldExpires {
+		t.Errorf("Expected newexpires to be newer than old expires, got: %#v, %#v", oldExpires, newExpires)
+	}
 }
