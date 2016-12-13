@@ -184,7 +184,9 @@ func TestRedisStorerDel(t *testing.T) {
 }
 
 func TestRedisStorerResetExpiry(t *testing.T) {
-	t.Parallel()
+	if testing.Short() {
+		t.Skip("skipping long test")
+	}
 
 	storer, err := NewDefaultRedisStorer("", "", 13)
 	if err != nil {
@@ -225,4 +227,7 @@ func TestRedisStorerResetExpiry(t *testing.T) {
 	if newDur > time.Hour*24 || newDur < time.Hour*23 {
 		t.Errorf("expected TTL in Redis to be set to 24 hours, but got: %v", newDur.String())
 	}
+
+	// Cleanup
+	storer.Del("test")
 }

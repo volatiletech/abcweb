@@ -5,8 +5,13 @@ import (
 	"time"
 )
 
-// CookieOptions for the session cookies themselves
+// CookieOptions for the session cookies themselves.
+// See https://tools.ietf.org/html/rfc6265 for details.
 type CookieOptions struct {
+	// Domain is the domain name the cookie is for
+	Domain string
+	// Path is the URI path the cookie is for
+	Path string
 	// Name for the session cookie, defaults to "id"
 	Name string
 	// MaxAge sets the max-age and the expires fields of a cookie
@@ -29,6 +34,8 @@ func NewCookieOptions() CookieOptions {
 
 func (c CookieOptions) makeCookie(value string) *http.Cookie {
 	cookie := &http.Cookie{
+		Domain:   c.Domain,
+		Path:     c.Path,
 		Name:     c.Name,
 		Value:    value,
 		MaxAge:   int(c.MaxAge.Seconds()),

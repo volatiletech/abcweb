@@ -88,6 +88,8 @@ func (c *CookieOverseer) Del(w http.ResponseWriter, r *http.Request) error {
 	cookie := &http.Cookie{
 		// If the browser refuses to delete it, set value to "" so subsequent
 		// requests replace it when it does not point to a valid session id.
+		Path:     c.options.Path,
+		Domain:   c.options.Domain,
 		Value:    "",
 		Name:     c.options.Name,
 		MaxAge:   -1,
