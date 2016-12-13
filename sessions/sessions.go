@@ -173,3 +173,32 @@ func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interfa
 
 	return nil
 }
+
+// AddFlash adds a flash message to the session that will be deleted when it is retrieved with GetFlash
+func AddFlash(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value string) error {
+	return Set(overseer, w, r, key, value)
+}
+
+// GetFlash retrieves a flash message from the session then deletes it
+func GetFlash(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) (string, error) {
+	val, err := Get(overseer, w, r, key)
+	if err != nil {
+		return val, err
+	}
+
+	if err := Del(overseer, w, r, key); err != nil {
+		return "", err
+	}
+
+	return val, nil
+}
+
+// AddFlashObj adds a flash message to the session that will be deleted when it is retrieved with GetFlash
+func AddFlashObj(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, v interface{}) error {
+	return nil
+}
+
+// GetFlashObj retrieves a flash message from the session then deletes it
+func GetFlashObj(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) (interface{}, error) {
+	return nil, nil
+}

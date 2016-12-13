@@ -159,3 +159,70 @@ func TestSetAndGetObj(t *testing.T) {
 		t.Errorf("Expected len 1, got %d", len(m.sessions))
 	}
 }
+
+func TestAddFlash(t *testing.T) {
+	t.Parallel()
+
+	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := newResponse(httptest.NewRecorder())
+
+	m, _ := NewDefaultMemoryStorer()
+	s := NewStorageOverseer(NewCookieOptions(), m)
+
+	err := AddFlash(s, w, r, "test", "flashvalue")
+	if err != nil {
+		t.Error(err)
+	}
+
+	var sess memorySession
+	for _, v := range m.sessions {
+		sess = v
+	}
+	if sess.value != `{"test":"flashvalue"}` {
+		t.Errorf("expected session value to be %q, but got %q", `{"test":"flashvalue"}`, sess.value)
+	}
+	if len(w.cookies) != 1 {
+		t.Error("expected cookies len 1, got:", len(w.cookies))
+	}
+}
+
+func TestGetFlash(t *testing.T) {
+	t.Parallel()
+
+	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := newResponse(httptest.NewRecorder())
+
+	m, _ := NewDefaultMemoryStorer()
+	s := NewStorageOverseer(NewCookieOptions(), m)
+
+	// Ensure fails when appropriate
+	_, err := GetFlash(s, w, r, "test")
+	if err == nil {
+		t.Error("expected err to be an error")
+	}
+
+	err = AddFlash(s, w, r, "test", "flashvalue")
+	if err != nil {
+		t.Error(err)
+	}
+
+	val, err := GetFlash(s, w, r, "test")
+	if val != "flashvalue" {
+		t.Errorf("Expected value to be %q but got %q", "flashvalue", val)
+	}
+	// Ensure len cookies and sessions are still present
+	if len(w.cookies) != 1 {
+		t.Error("expected cookies len to be 1, got:", len(w.cookies))
+	}
+	if len(m.sessions) != 1 {
+		t.Error("expected sessions len to be 1, got:", len(m.sessions))
+	}
+	// Ensure key is deleted from JSON
+	var sess memorySession
+	for _, v := range m.sessions {
+		sess = v
+	}
+	if sess.value != `{}` {
+		t.Errorf("expected session value to be %q, but got %q", `{}`, sess.value)
+	}
+}
