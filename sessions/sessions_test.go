@@ -57,6 +57,8 @@ func TestSetAndGet(t *testing.T) {
 }
 
 func TestDel(t *testing.T) {
+	t.Parallel()
+
 	r := httptest.NewRequest("GET", "http://localhost", nil)
 	w := newResponse(httptest.NewRecorder())
 
@@ -178,7 +180,7 @@ func TestAddFlash(t *testing.T) {
 	for _, v := range m.sessions {
 		sess = v
 	}
-	if sess.value != `{"Value":{"test":"flashvalue"},"Flash":null}` {
+	if sess.value != `{"Value":null,"Flash":{"test":"flashvalue"}}` {
 		t.Errorf("expected session value to be %q, but got %q", `{"test":"flashvalue"}`, sess.value)
 	}
 	if len(w.cookies) != 1 {
@@ -222,7 +224,220 @@ func TestGetFlash(t *testing.T) {
 	for _, v := range m.sessions {
 		sess = v
 	}
-	if sess.value != `{"Value":{},"Flash":null}` {
+	if sess.value != `{"Value":null,"Flash":{}}` {
 		t.Errorf("expected session value to be %q, but got %q", `{"Value":{},"Flash":null}`, sess.value)
+	}
+
+	val, err = GetFlash(s, w, r, "test")
+	if val != "" {
+		t.Errorf("Expected value to be nothing but got %q", val)
+	}
+	if err == nil {
+		t.Error("Expected an error, but did not get one")
+	}
+}
+
+type TestFlashObj struct {
+	Name  string
+	Valid bool
+}
+
+func TestFlashAddAndGetObj(t *testing.T) {
+	t.Parallel()
+
+	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := newResponse(httptest.NewRecorder())
+
+	m, _ := NewDefaultMemoryStorer()
+	s := NewStorageOverseer(NewCookieOptions(), m)
+
+	var testObj TestFlashObj
+	err := GetFlashObj(s, w, r, "test", &testObj)
+	if err == nil {
+		t.Error("expected an error, but got none")
+	}
+
+	myObj := TestFlashObj{Name: "test", Valid: true}
+	err = AddFlashObj(s, w, r, "test", myObj)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = GetFlashObj(s, w, r, "test", &testObj)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if testObj.Name != "test" {
+		t.Errorf("expected obj Name to be %q, got %q", "test", testObj.Name)
+	}
+	if testObj.Valid != true {
+		t.Error("expected obj Name to be true, got false")
+	}
+
+	var testObjTwo TestFlashObj
+	err = GetFlashObj(s, w, r, "test", &testObjTwo)
+	if err == nil {
+		t.Error("expected error, but got none")
+	}
+}
+
+func TestFlashCombined(t *testing.T) {
+	t.Parallel()
+
+	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := newResponse(httptest.NewRecorder())
+
+	m, _ := NewDefaultMemoryStorer()
+	s := NewStorageOverseer(NewCookieOptions(), m)
+
+	var testObj TestFlashObj
+	err := Set(s, w, r, "thing", "stuff")
+	if err != nil {
+		t.Error(err)
+	}
+
+	myObj := TestFlashObj{Name: "test", Valid: true}
+	err = AddFlashObj(s, w, r, "test", myObj)
+	if err != nil {
+		t.Error(err)
+	}
+
+	result, err := Get(s, w, r, "thing")
+	if result != "stuff" {
+		t.Errorf("Expected %q, got %q", "stuff", result)
+	}
+
+	err = GetFlashObj(s, w, r, "test", &testObj)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if testObj.Name != "test" {
+		t.Errorf("expected obj Name to be %q, got %q", "test", testObj.Name)
+	}
+	if testObj.Valid != true {
+		t.Error("expected obj Name to be true, got false")
+	}
+
+}
+
+func TestFlashCombinedTwo(t *testing.T) {
+	t.Parallel()
+
+	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := newResponse(httptest.NewRecorder())
+
+	m, _ := NewDefaultMemoryStorer()
+	s := NewStorageOverseer(NewCookieOptions(), m)
+
+	var testObj TestFlashObj
+
+	myObj := TestFlashObj{Name: "test", Valid: true}
+	err := AddFlashObj(s, w, r, "test", myObj)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = Set(s, w, r, "thing", "stuff")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = GetFlashObj(s, w, r, "test", &testObj)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if testObj.Name != "test" {
+		t.Errorf("expected obj Name to be %q, got %q", "test", testObj.Name)
+	}
+	if testObj.Valid != true {
+		t.Error("expected obj Name to be true, got false")
+	}
+
+	result, err := Get(s, w, r, "thing")
+	if result != "stuff" {
+		t.Errorf("Expected %q, got %q", "stuff", result)
+	}
+}
+
+func TestAddFlashAndSetCombined(t *testing.T) {
+	t.Parallel()
+
+	r := httptest.NewRequest("GET", "http://localhost", nil)
+	w := newResponse(httptest.NewRecorder())
+
+	m, _ := NewDefaultMemoryStorer()
+	s := NewStorageOverseer(NewCookieOptions(), m)
+
+	err := AddFlash(s, w, r, "flashone", "fmone")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = AddFlash(s, w, r, "flashtwo", "fmtwo")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = Set(s, w, r, "testone", "stuffone")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = Set(s, w, r, "testtwo", "stufftwo")
+	if err != nil {
+		t.Error(err)
+	}
+
+	res, err := s.Get(w, r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if res != `{"Value":{"testone":"stuffone","testtwo":"stufftwo"},"Flash":{"flashone":"fmone","flashtwo":"fmtwo"}}` {
+		t.Errorf("json serialized value is not as expected in session: %s", res)
+	}
+
+	res, err = GetFlash(s, w, r, "flashone")
+	if err != nil {
+		t.Error(err)
+	}
+	if res != "fmone" {
+		t.Errorf("Expected %q, got %q", "fmone", res)
+	}
+
+	res, err = Get(s, w, r, "testone")
+	if err != nil {
+		t.Error(err)
+	}
+	if res != "stuffone" {
+		t.Errorf("Expected %q, got %q", "stuffone", res)
+	}
+
+	res, err = GetFlash(s, w, r, "flashtwo")
+	if err != nil {
+		t.Error(err)
+	}
+	if res != "fmtwo" {
+		t.Errorf("Expected %q, got %q", "fmtwo", res)
+	}
+
+	res, err = Get(s, w, r, "testtwo")
+	if err != nil {
+		t.Error(err)
+	}
+	if res != "stufftwo" {
+		t.Errorf("Expected %q, got %q", "stufftwo", res)
+	}
+
+	res, err = s.Get(w, r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if res != `{"Value":{"testone":"stuffone","testtwo":"stufftwo"},"Flash":{}}` {
+		t.Errorf("json serialized value is not as expected in session: %s", res)
 	}
 }

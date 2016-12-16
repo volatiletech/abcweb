@@ -13,7 +13,7 @@ type session struct {
 	// flash is the key/value storage for flash messages. Depending on whether
 	// you're calling Get/SetFlash or Get/SetFlashObj it will either store
 	// a json string or a json object.
-	Flash map[string]json.RawMessage
+	Flash map[string]*json.RawMessage
 }
 
 // Storer provides methods to retrieve, add and delete sessions.
@@ -100,23 +100,25 @@ var timerTestHarness = func(d time.Duration) (timer, <-chan time.Time) {
 // Set modifies the marshalled map stored in the session to include the key value pair passed in.
 func Set(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value string) error {
 	var sess session
-	var sessMap map[string]string
+	sessMap := make(map[string]string)
 
 	val, err := overseer.Get(w, r)
 	if err != nil && !IsNoSessionError(err) {
 		return err
-	} else if !IsNoSessionError(err) {
+	}
+
+	if !IsNoSessionError(err) {
 		err = json.Unmarshal([]byte(val), &sess)
 		if err != nil {
 			return err
 		}
 
-		err = json.Unmarshal(*sess.Value, &sessMap)
-		if err != nil {
-			return err
+		if sess.Value != nil {
+			err = json.Unmarshal(*sess.Value, &sessMap)
+			if err != nil {
+				return err
+			}
 		}
-	} else {
-		sessMap = make(map[string]string)
 	}
 
 	sessMap[key] = value
@@ -200,8 +202,8 @@ func Del(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) 
 }
 
 // SetObj is a JSON helper used for storing object or variable session values.
-// Set stores in the session a marshaled version of the passed in value pointed to by v.
-func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interface{}) error {
+// Set stores in the session a marshaled version of the passed in value pointed to by value.
+func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, value interface{}) error {
 	val, err := overseer.Get(w, r)
 	// If it's a no session error because a session hasn't been created yet
 	// then we can skip this return statement and create a fresh map
@@ -222,7 +224,7 @@ func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interfa
 
 	}
 
-	mv, err := json.Marshal(v)
+	mv, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
@@ -237,8 +239,8 @@ func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interfa
 }
 
 // GetObj is a JSON helper used for retrieving object or variable session values.
-// GetObj unmarshals the session value into the value pointed to by v.
-func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interface{}) error {
+// GetObj unmarshals the session value into the value pointed to by value.
+func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, value interface{}) error {
 	val, err := overseer.Get(w, r)
 	if err != nil {
 		return err
@@ -252,7 +254,7 @@ func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interfa
 	}
 
 	// json unmarshal the RawMessage value into the users pointer
-	err = json.Unmarshal(*sess.Value, v)
+	err = json.Unmarshal(*sess.Value, value)
 	if err != nil {
 		return err
 	}
@@ -262,29 +264,93 @@ func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interfa
 
 // AddFlash adds a flash message to the session that will be deleted when it is retrieved with GetFlash
 func AddFlash(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value string) error {
-	return Set(overseer, w, r, key, value)
+	var sess session
+
+	val, err := overseer.Get(w, r)
+	if err != nil && !IsNoSessionError(err) {
+		return err
+	} else if !IsNoSessionError(err) {
+		err = json.Unmarshal([]byte(val), &sess)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sess.Flash == nil {
+		sess.Flash = make(map[string]*json.RawMessage)
+	}
+
+	mv, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	sess.Flash[key] = (*json.RawMessage)(&mv)
+
+	ret, err := json.Marshal(sess)
+	if err != nil {
+		return err
+	}
+
+	return overseer.Set(w, r, string(ret))
 }
 
 // GetFlash retrieves a flash message from the session then deletes it
 func GetFlash(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) (string, error) {
-	val, err := Get(overseer, w, r, key)
-	if err != nil {
-		return val, err
-	}
+	var sess session
 
-	if err := Del(overseer, w, r, key); err != nil {
+	val, err := overseer.Get(w, r)
+	if err != nil {
 		return "", err
 	}
 
-	return val, nil
+	err = json.Unmarshal([]byte(val), &sess)
+	if err != nil {
+		return "", err
+	}
+
+	fv, ok := sess.Flash[key]
+	if !ok {
+		return "", errNoMapKey{}
+	}
+
+	var ret string
+	err = json.Unmarshal(*fv, &ret)
+	if err != nil {
+		return ret, err
+	}
+
+	delete(sess.Flash, key)
+
+	mv, err := json.Marshal(sess)
+	if err != nil {
+		return ret, err
+	}
+
+	err = overseer.Set(w, r, string(mv))
+	if err != nil {
+		return ret, err
+	}
+
+	return ret, nil
 }
 
 // AddFlashObj adds a flash message to the session that will be deleted when it is retrieved with GetFlash
-func AddFlashObj(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, v interface{}) error {
-	return nil
+func AddFlashObj(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value interface{}) error {
+	mv, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	return AddFlash(overseer, w, r, key, string(mv))
 }
 
-// GetFlashObj retrieves a flash message from the session then deletes it
-func GetFlashObj(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) (interface{}, error) {
-	return nil, nil
+// GetFlashObj unmarshals a flash message from the session into the users pointer
+// then deletes it from the session.
+func GetFlashObj(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, pointer interface{}) error {
+	val, err := GetFlash(overseer, w, r, key)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal([]byte(val), pointer)
 }
