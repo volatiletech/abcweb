@@ -92,7 +92,7 @@ func TestDel(t *testing.T) {
 	}
 
 	for _, v := range m.sessions {
-		if v.value != "{}" {
+		if v.value != `{"Value":{},"Flash":null}` {
 			t.Errorf("Expected value to be empty json map, but was: %#v", v.value)
 		}
 	}
@@ -132,7 +132,7 @@ func TestSetAndGetObj(t *testing.T) {
 		t.Error(err)
 	}
 	if !reflect.DeepEqual(val, testptr) {
-		t.Errorf("Expected testptr to match val, got: %#v", testptr)
+		t.Errorf("Expected testptr to match val, got:\n%#v\n%#v", testptr, val)
 	}
 
 	// Run the same tests again to ensure it overrides instead of creates
@@ -152,7 +152,7 @@ func TestSetAndGetObj(t *testing.T) {
 		t.Error(err)
 	}
 	if !reflect.DeepEqual(val, testptr) {
-		t.Errorf("Expected testptr to match val, got: %#v", testptr)
+		t.Errorf("Expected testptr to match val, got:\n%#v\n%#v", testptr, val)
 	}
 
 	if len(m.sessions) != 1 {
@@ -178,7 +178,7 @@ func TestAddFlash(t *testing.T) {
 	for _, v := range m.sessions {
 		sess = v
 	}
-	if sess.value != `{"test":"flashvalue"}` {
+	if sess.value != `{"Value":{"test":"flashvalue"},"Flash":null}` {
 		t.Errorf("expected session value to be %q, but got %q", `{"test":"flashvalue"}`, sess.value)
 	}
 	if len(w.cookies) != 1 {
@@ -222,7 +222,7 @@ func TestGetFlash(t *testing.T) {
 	for _, v := range m.sessions {
 		sess = v
 	}
-	if sess.value != `{}` {
-		t.Errorf("expected session value to be %q, but got %q", `{}`, sess.value)
+	if sess.value != `{"Value":{},"Flash":null}` {
+		t.Errorf("expected session value to be %q, but got %q", `{"Value":{},"Flash":null}`, sess.value)
 	}
 }

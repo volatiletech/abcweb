@@ -6,6 +6,16 @@ import (
 	"time"
 )
 
+// session holds the session value and the flash messages key/value mapping
+type session struct {
+	// value is the session value stored as a json encoded string
+	Value *json.RawMessage
+	// flash is the key/value storage for flash messages. Depending on whether
+	// you're calling Get/SetFlash or Get/SetFlashObj it will either store
+	// a json string or a json object.
+	Flash map[string]json.RawMessage
+}
+
 // Storer provides methods to retrieve, add and delete sessions.
 type Storer interface {
 	// All returns all keys in the store
@@ -89,16 +99,35 @@ var timerTestHarness = func(d time.Duration) (timer, <-chan time.Time) {
 // Set is a JSON helper used for storing key-value session values.
 // Set modifies the marshalled map stored in the session to include the key value pair passed in.
 func Set(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value string) error {
-	sessMap := map[string]string{}
-	err := GetObj(overseer, w, r, &sessMap)
-	// If it's a no session error because a session hasn't been created yet
-	// then we can skip this return statement and create a fresh map
+	var sess session
+	var sessMap map[string]string
+
+	val, err := overseer.Get(w, r)
 	if err != nil && !IsNoSessionError(err) {
 		return err
+	} else if !IsNoSessionError(err) {
+		err = json.Unmarshal([]byte(val), &sess)
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal(*sess.Value, &sessMap)
+		if err != nil {
+			return err
+		}
+	} else {
+		sessMap = make(map[string]string)
 	}
 
 	sessMap[key] = value
-	ret, err := json.Marshal(sessMap)
+
+	mv, err := json.Marshal(sessMap)
+	if err != nil {
+		return err
+	}
+	sess.Value = (*json.RawMessage)(&mv)
+
+	ret, err := json.Marshal(sess)
 	if err != nil {
 		return err
 	}
@@ -109,18 +138,24 @@ func Set(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, 
 // Get is a JSON helper used for retrieving key-value session values.
 // Get returns the value pointed to by the key of the marshalled map stored in the session.
 func Get(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) (string, error) {
-	var ret map[string]string
 	val, err := overseer.Get(w, r)
 	if err != nil {
 		return "", err
 	}
 
-	err = json.Unmarshal([]byte(val), &ret)
+	var sess session
+	err = json.Unmarshal([]byte(val), &sess)
 	if err != nil {
 		return "", err
 	}
 
-	mapVal, ok := ret[key]
+	var sessMap map[string]string
+	err = json.Unmarshal(*sess.Value, &sessMap)
+	if err != nil {
+		return "", err
+	}
+
+	mapVal, ok := sessMap[key]
 	if !ok {
 		return "", errNoMapKey{}
 	}
@@ -131,15 +166,32 @@ func Get(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) 
 // Del is a JSON helper used for deleting keys from a key-value session values store.
 // Del is a noop on nonexistent keys, but will error if the session does not exist.
 func Del(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) error {
-	sessMap := map[string]string{}
-	err := GetObj(overseer, w, r, &sessMap)
+	val, err := overseer.Get(w, r)
+	if err != nil {
+		return err
+	}
+
+	var sess session
+	err = json.Unmarshal([]byte(val), &sess)
+	if err != nil {
+		return err
+	}
+
+	var sessMap map[string]string
+	err = json.Unmarshal(*sess.Value, &sessMap)
 	if err != nil {
 		return err
 	}
 
 	delete(sessMap, key)
 
-	ret, err := json.Marshal(sessMap)
+	mv, err := json.Marshal(sessMap)
+	if err != nil {
+		return err
+	}
+	sess.Value = (*json.RawMessage)(&mv)
+
+	ret, err := json.Marshal(sess)
 	if err != nil {
 		return err
 	}
@@ -150,7 +202,33 @@ func Del(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) 
 // SetObj is a JSON helper used for storing object or variable session values.
 // Set stores in the session a marshaled version of the passed in value pointed to by v.
 func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interface{}) error {
-	ret, err := json.Marshal(v)
+	val, err := overseer.Get(w, r)
+	// If it's a no session error because a session hasn't been created yet
+	// then we can skip this return statement and create a fresh map
+	if err != nil && !IsNoSessionError(err) {
+		return err
+	}
+
+	var sess session
+
+	// If there's an existing session then unmarshal it so we can copy over
+	// the flash messages to the new marshalled session
+	if !IsNoSessionError(err) {
+		// json unmarshal the outter session struct
+		err = json.Unmarshal([]byte(val), &sess)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	mv, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	sess.Value = (*json.RawMessage)(&mv)
+
+	ret, err := json.Marshal(sess)
 	if err != nil {
 		return err
 	}
@@ -166,7 +244,15 @@ func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, v interfa
 		return err
 	}
 
-	err = json.Unmarshal([]byte(val), v)
+	var sess session
+	// json unmarshal the outter session struct
+	err = json.Unmarshal([]byte(val), &sess)
+	if err != nil {
+		return err
+	}
+
+	// json unmarshal the RawMessage value into the users pointer
+	err = json.Unmarshal(*sess.Value, v)
 	if err != nil {
 		return err
 	}
