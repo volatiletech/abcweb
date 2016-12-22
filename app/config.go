@@ -3,17 +3,17 @@ package app
 import (
 	"time"
 
+	"github.com/nullbio/abcweb/rendering"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
 	"github.com/uber-go/zap"
-	"github.com/unrolled/render"
 )
 
 type State struct {
 	Config *Config
 	Log    zap.Logger
 	Router *chi.Mux
-	Render *render.Render
+	Render rendering.Renderer
 	Root   *cobra.Command
 }
 

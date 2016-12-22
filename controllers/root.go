@@ -1,9 +1,9 @@
 package controllers
 
 import (
+	"github.com/nullbio/abcweb/rendering"
 	"github.com/nullbio/abcweb/sessions"
 	"github.com/uber-go/zap"
-	"github.com/unrolled/render"
 )
 
 // Root struct exposes useful variables to every controller route handler.
@@ -12,6 +12,6 @@ import (
 // instance of controller is created.
 type Root struct {
 	Log     zap.Logger
-	Render  *render.Render
+	Render  rendering.Renderer
 	Session sessions.Overseer
 }

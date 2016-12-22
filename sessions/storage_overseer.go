@@ -9,7 +9,7 @@ import (
 
 // StorageOverseer holds cookie related variables and a session storer
 type StorageOverseer struct {
-	storer  Storer
+	Storer  Storer
 	options CookieOptions
 	resetExpiryMiddleware
 }
@@ -21,7 +21,7 @@ func NewStorageOverseer(opts CookieOptions, storer Storer) *StorageOverseer {
 	}
 
 	o := &StorageOverseer{
-		storer:  storer,
+		Storer:  storer,
 		options: opts,
 	}
 
@@ -37,7 +37,7 @@ func (s *StorageOverseer) Get(w http.ResponseWriter, r *http.Request) (value str
 		return "", err
 	}
 
-	val, err := s.storer.Get(sessID)
+	val, err := s.Storer.Get(sessID)
 	if err != nil {
 		return "", err
 	}
@@ -55,7 +55,7 @@ func (s *StorageOverseer) Set(w http.ResponseWriter, r *http.Request, value stri
 		sessID = uuid.NewV4().String()
 	}
 
-	err := s.storer.Set(sessID, value)
+	err := s.Storer.Set(sessID, value)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (s *StorageOverseer) Del(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	err = s.storer.Del(sessID)
+	err = s.Storer.Del(sessID)
 	if IsNoSessionError(err) {
 		return nil
 	} else if err != nil {
@@ -104,19 +104,19 @@ func (s *StorageOverseer) Regenerate(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	val, err := s.storer.Get(id)
+	val, err := s.Storer.Get(id)
 	if err != nil {
 		return err
 	}
 
 	// Delete the old session
-	_ = s.storer.Del(id)
+	_ = s.Storer.Del(id)
 
 	// Generate a new ID
 	id = uuid.NewV4().String()
 
 	// Create a new session with the old value
-	if err = s.storer.Set(id, val); err != nil {
+	if err = s.Storer.Set(id, val); err != nil {
 		return err
 	}
 
@@ -146,5 +146,5 @@ func (s *StorageOverseer) ResetExpiry(w http.ResponseWriter, r *http.Request) er
 	}
 
 	// Reset the expiry of the server-side session
-	return s.storer.ResetExpiry(sessID)
+	return s.Storer.ResetExpiry(sessID)
 }

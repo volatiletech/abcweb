@@ -127,12 +127,6 @@ func (m *MemoryStorer) Clean() {
 	m.mut.Unlock()
 }
 
-// StopCleaner stops the cleaner go routine
-func (m *MemoryStorer) StopCleaner() {
-	close(m.quit)
-	m.wg.Wait()
-}
-
 // StartCleaner starts the memory session cleaner go routine. This go routine
 // will delete expired sessions from the memory map on the cleanInterval interval.
 func (m *MemoryStorer) StartCleaner() {
@@ -148,6 +142,12 @@ func (m *MemoryStorer) StartCleaner() {
 	// Start the cleaner infinite loop go routine.
 	// StopCleaner() can be used to kill this go routine.
 	go m.cleanerLoop()
+}
+
+// StopCleaner stops the cleaner go routine
+func (m *MemoryStorer) StopCleaner() {
+	close(m.quit)
+	m.wg.Wait()
 }
 
 // cleanerLoop executes the Clean() method every time cleanInterval elapses.

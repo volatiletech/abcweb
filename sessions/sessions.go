@@ -239,8 +239,8 @@ func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, value int
 }
 
 // GetObj is a JSON helper used for retrieving object or variable session values.
-// GetObj unmarshals the session value into the value pointed to by value.
-func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, value interface{}) error {
+// GetObj unmarshals the session value into the pointer pointed to by pointer.
+func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, pointer interface{}) error {
 	val, err := overseer.Get(w, r)
 	if err != nil {
 		return err
@@ -254,7 +254,7 @@ func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, value int
 	}
 
 	// json unmarshal the RawMessage value into the users pointer
-	err = json.Unmarshal(*sess.Value, value)
+	err = json.Unmarshal(*sess.Value, pointer)
 	if err != nil {
 		return err
 	}

@@ -76,7 +76,7 @@ type resetExpiryMiddleware struct {
 	resetter Resetter
 }
 
-// ResetExpiry resets the users session expiry on each request
+// ResetMiddleware resets the users session expiry on each request
 func (m resetExpiryMiddleware) ResetMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		m.resetter.ResetExpiry(w, r)

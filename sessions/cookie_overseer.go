@@ -17,7 +17,7 @@ import (
 type CookieOverseer struct {
 	options CookieOptions
 
-	secretKey    [32]byte
+	secretKey    []byte
 	gcmBlockMode cipher.AEAD
 
 	resetExpiryMiddleware
@@ -25,12 +25,12 @@ type CookieOverseer struct {
 
 // NewCookieOverseer creates an overseer from cookie options and a secret key
 // for use in encryption. Panic's on any errors that deal with cryptography.
-func NewCookieOverseer(opts CookieOptions, secretKey [32]byte) *CookieOverseer {
+func NewCookieOverseer(opts CookieOptions, secretKey []byte) *CookieOverseer {
 	if len(opts.Name) == 0 {
 		panic("cookie name must be provided")
 	}
 
-	block, err := aes.NewCipher(secretKey[:])
+	block, err := aes.NewCipher(secretKey)
 	if err != nil {
 		panic(err)
 	}
@@ -48,17 +48,6 @@ func NewCookieOverseer(opts CookieOptions, secretKey [32]byte) *CookieOverseer {
 	o.resetExpiryMiddleware.resetter = o
 
 	return o
-}
-
-// MakeSecretKey creates a randomized key securely for use with the AES-GCM
-// algorithm the size of the key is 32 bytes in order to use AES-256. It must
-// be persisted somewhere in order to re-use it across restarts of the app.
-func MakeSecretKey() ([32]byte, error) {
-	var key [32]byte
-	if _, err := rand.Read(key[:]); err != nil {
-		return key, err
-	}
-	return key, nil
 }
 
 // Get a value from the cookie overseer

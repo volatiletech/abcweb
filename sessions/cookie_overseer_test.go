@@ -9,7 +9,8 @@ import (
 	"time"
 )
 
-var testCookieKey, _ = MakeSecretKey()
+var testCookieKey = []byte("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+
 var rgxCookieExpires = regexp.MustCompile(`.*Expires=([^;]*);.*`)
 
 func TestCookieImplements(t *testing.T) {
@@ -31,7 +32,7 @@ func TestCookieOverseerNew(t *testing.T) {
 		t.Error("block mode should be instantiated")
 	}
 
-	if bytes.Compare(c.secretKey[:], testCookieKey[:]) != 0 {
+	if bytes.Compare(c.secretKey, testCookieKey) != 0 {
 		t.Error("key was not copied")
 	}
 }
