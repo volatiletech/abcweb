@@ -8,6 +8,8 @@
 ### API Operations
 
 Note, you should avoid mixing and matching API calls for key-value versus object.
+Stick to one mode for every app you generate (either simple sessions using key-value
+strings and the regular helpers or a custom sessions struct using the object helpers).
 
 #### Key-Value string API
 
