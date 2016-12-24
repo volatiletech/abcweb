@@ -15,6 +15,7 @@ type CookieOptions struct {
 	// Name for the session cookie, defaults to "id"
 	Name string
 	// MaxAge sets the max-age and the expires fields of a cookie
+	// A value of 0 means the browser will expire the session on browser close
 	MaxAge time.Duration
 	// Secure ensures the cookie is only given on https connections
 	Secure bool

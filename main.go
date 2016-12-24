@@ -37,11 +37,14 @@ func main() {
 	// Create a new router
 	state.Router = chi.NewRouter()
 
-	// Enable middleware for the router (app/middleware.go)
-	state.InitMiddleware()
+	// Configure the sessions overseer (app/sessions.go)
+	state.InitSessions()
 
 	// Configure the renderer (app/render.go)
 	state.InitRenderer()
+
+	// Enable middleware for the router (app/middleware.go)
+	state.InitMiddleware()
 
 	// Initialize the routes with the renderer (app/routes.go)
 	state.InitRoutes()

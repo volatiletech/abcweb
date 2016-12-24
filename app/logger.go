@@ -7,7 +7,7 @@ import (
 	"github.com/uber-go/zap"
 )
 
-// Initialize a zap logger
+// InitLogger initializes a zap logger
 func (s State) InitLogger() {
 	// JSON logging for production. Should be coupled with a log analyzer
 	// like newrelic, elk, logstash etc.

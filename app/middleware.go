@@ -1,12 +1,13 @@
 package app
 
-// initMiddleware enables useful middleware for the router.
 import (
 	"github.com/nullbio/abcweb/middleware"
+	"github.com/nullbio/abcweb/sessions"
 	chimiddleware "github.com/pressly/chi/middleware"
 )
 
-// See https://github.com/pressly/chi#middlewares for additional middleware.
+// InitMiddleware initializes the router middleware
+// See https://github.com/pressly/chi#middlewares and abcweb readme for extra middleware
 func (s State) InitMiddleware() {
 	m := middleware.Middleware{
 		Log: s.Log,
@@ -58,4 +59,12 @@ func (s State) InitMiddleware() {
 	// Note: If you're getting CORS related errors you may need to adjust the
 	// default settings by calling cors.New() with your own cors.Options struct.
 	// s.Router.Use(cors.Default().Handler)
+
+	// Resets the expiry of the active session on each web request
+	s.Router.Use(s.Session.ResetMiddleware)
+
+	// Convert the ResponseWriter object to a SessionsResponse for buffering
+	// session cookies across session API requests.
+	// Note: This is a mandatory middleware when using the sessions library.
+	s.Router.Use(sessions.Middleware)
 }

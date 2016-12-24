@@ -16,6 +16,7 @@ type DiskStorer struct {
 	// Path to the session files folder
 	folderPath string
 	// How long sessions take to expire on disk
+	// Note that this is seperate to the cookie maxAge
 	maxAge time.Duration
 	// How often the disk should be polled for maxAge expired sessions
 	cleanInterval time.Duration
@@ -30,11 +31,11 @@ type DiskStorer struct {
 // NewDefaultDiskStorer returns a DiskStorer object with default values.
 // The default values are:
 // FolderPath: system tmp dir + random folder
-// maxAge: 1 week (clear session stored on server after 1 week)
-// cleanInterval: 2 hours (delete sessions older than maxAge every 2 hours)
-func NewDefaultDiskStorer() (*DiskStorer, error) {
-	folderPath := path.Join(os.TempDir(), "UNIQUEIDHERE")
-	return NewDiskStorer(folderPath, time.Hour*24*7, time.Hour*2)
+// maxAge: 2 days (clear session stored on server after 2 days)
+// cleanInterval: 1 hour (delete sessions older than maxAge every 1 hour)
+func NewDefaultDiskStorer(tmpSubFolder string) (*DiskStorer, error) {
+	folderPath := path.Join(os.TempDir(), tmpSubFolder)
+	return NewDiskStorer(folderPath, time.Hour*24*2, time.Hour)
 }
 
 // NewDiskStorer initializes and returns a new DiskStorer object.
@@ -180,7 +181,7 @@ func (d *DiskStorer) cleanerLoop() {
 }
 
 // Clean checks all session files on disk to see if they are older than
-// maxAge by checking their modtime. If it finds an expired session file
+// maxAge by checking their access time. If it finds an expired session file
 // it will remove it from disk.
 func (d *DiskStorer) Clean() {
 	t := time.Now().UTC()

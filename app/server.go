@@ -65,7 +65,8 @@ func (s State) Redirect() {
 		ErrorLog:     log.New(serverErrLogger{s.Log}, "", 0),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Remove port if it exists so we can replace it with https port
-			httpHost, _, err := net.SplitHostPort(r.Host)
+			var httpHost string
+			httpHost, _, err = net.SplitHostPort(r.Host)
 			if err != nil {
 				s.Log.Fatal("failed to get http host from request", zap.Error(err))
 			}

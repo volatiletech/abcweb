@@ -133,9 +133,18 @@ CookieOverseer is used for client-side only cookie sessions.
 Disk sessions store the session as a text file on disk. By default they store in 
 the systems temp directory under a folder that is randomly generated when you 
 generate your app using abcweb app generator command. The file names are the UUIDs 
-of the session. Each time the file is accessed (using Get, Set, or manually on 
-disk) it will reset the access time of the file, which will push back the 
-expiration defined by maxAge.
+of the session. Each time the file is accessed (using Get, Set, manually on 
+disk, or by using the ResetMiddleware) it will reset the access time of the file, 
+which will push back the expiration defined by maxAge. For example, if your
+maxAge is set to 1 week, and your cleanInterval is set to 2 hours, then every 2
+hours the cleaner will find all disk sessions files that have not been accessed 
+for over 1 week and delete them. If the user refreshes a website and you're using
+the ResetMiddleware then that 1 week timer will be reset. If your maxAge and 
+cleanInterval is set to 0 then these disk session files will permanently persist, 
+however the browser will still expire sessions depending on your cookieOptions 
+maxAge configuration. In a typical (default) setup, cookieOptions will be set to 
+maxAge 0 (expire on browser close), your DiskStorer maxAge will be set to 2 days,
+and your DiskStorer cleanInterval will be set to 1 hour.
 
 #### Memory
 

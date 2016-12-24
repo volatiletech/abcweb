@@ -6,13 +6,13 @@ import (
 	"github.com/nullbio/abcweb/controllers"
 )
 
+// InitRoutes initializes the webserver routing and controllers
 func (s State) InitRoutes() {
 	// The state for each route handler
 	root := controllers.Root{
-		Log:    s.Log,
-		Render: s.Render,
-		// create session storer (secure & httpsonly bool/false for https, 0 for default clientexpiry),
-		// true, true, 0
+		Log:     s.Log,
+		Render:  s.Render,
+		Session: s.Session,
 	}
 
 	// Serve static assets

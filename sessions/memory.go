@@ -29,10 +29,10 @@ type memorySession struct {
 
 // NewDefaultMemoryStorer returns a MemoryStorer object with default values.
 // The default values are:
-// maxAge: 1 week (clear session stored on server after 1 week)
+// maxAge: 2 days (clear session stored on server after 2 days)
 // cleanInterval: 1 hour (delete sessions older than maxAge every hour)
 func NewDefaultMemoryStorer() (*MemoryStorer, error) {
-	return NewMemoryStorer(time.Hour*24*7, time.Hour)
+	return NewMemoryStorer(time.Hour*24*2, time.Hour)
 }
 
 // NewMemoryStorer initializes and returns a new MemoryStorer object.

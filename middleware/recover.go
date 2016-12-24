@@ -8,6 +8,7 @@ import (
 	chimiddleware "github.com/pressly/chi/middleware"
 )
 
+// Recover middleware recovers panics that occur and gracefully logs their error
 func (m Middleware) Recover(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
@@ -23,9 +24,13 @@ func (m Middleware) Recover(next http.Handler) http.Handler {
 				fmt.Fprintf(buf, `"%s `, r.Method)
 
 				if r.TLS == nil {
-					buf.WriteString(`http`)
+					if _, err := buf.WriteString(`http`); err != nil {
+						panic(err)
+					}
 				} else {
-					buf.WriteString(`https`)
+					if _, err := buf.WriteString(`https`); err != nil {
+						panic(err)
+					}
 				}
 
 				fmt.Fprintf(buf, "://%s%s %s\" from %s -- panic:\n%+v", r.Host, r.RequestURI, r.Proto, r.RemoteAddr, err)

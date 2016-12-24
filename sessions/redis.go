@@ -20,7 +20,7 @@ type RedisStorer struct {
 // Addr: localhost:6379
 // Password: no password
 // DB: First database (0) to be selected after connecting to Redis
-// maxAge: 1 week (clear session stored in Redis after 1 week)
+// maxAge: 2 days (clear session stored in Redis after 2 days)
 func NewDefaultRedisStorer(addr, password string, db int) (*RedisStorer, error) {
 	if addr == "" {
 		addr = "localhost:6379"
@@ -30,7 +30,7 @@ func NewDefaultRedisStorer(addr, password string, db int) (*RedisStorer, error) 
 		Password: password,
 		DB:       db,
 	}
-	return NewRedisStorer(opts, time.Hour*24*7)
+	return NewRedisStorer(opts, time.Hour*24*2)
 }
 
 // NewRedisStorer initializes and returns a new RedisStorer object.
@@ -54,11 +54,8 @@ func (r *RedisStorer) All() ([]string, error) {
 	for iter.Next() {
 		sessions = append(sessions, iter.Val())
 	}
-	if err := iter.Err(); err != nil {
-		return sessions, err
-	}
-
-	return sessions, nil
+	err := iter.Err()
+	return sessions, err
 }
 
 // Get returns the value string saved in the session pointed to by the

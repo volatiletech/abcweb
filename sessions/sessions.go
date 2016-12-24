@@ -255,11 +255,7 @@ func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, pointer i
 
 	// json unmarshal the RawMessage value into the users pointer
 	err = json.Unmarshal(*sess.Value, pointer)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // AddFlash adds a flash message to the session that will be deleted when it is retrieved with GetFlash
@@ -327,11 +323,7 @@ func GetFlash(overseer Overseer, w http.ResponseWriter, r *http.Request, key str
 	}
 
 	err = overseer.Set(w, r, string(mv))
-	if err != nil {
-		return ret, err
-	}
-
-	return ret, nil
+	return ret, err
 }
 
 // AddFlashObj adds a flash message to the session that will be deleted when it is retrieved with GetFlash

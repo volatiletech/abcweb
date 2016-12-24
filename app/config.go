@@ -4,19 +4,24 @@ import (
 	"time"
 
 	"github.com/nullbio/abcweb/rendering"
+	"github.com/nullbio/abcweb/sessions"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
 	"github.com/uber-go/zap"
 )
 
+// State is the configuration state for the entire app.
+// The controllers are passed variables from this object when initialized.
 type State struct {
-	Config *Config
-	Log    zap.Logger
-	Router *chi.Mux
-	Render rendering.Renderer
-	Root   *cobra.Command
+	Config  *Config
+	Log     zap.Logger
+	Router  *chi.Mux
+	Render  rendering.Renderer
+	Root    *cobra.Command
+	Session sessions.Overseer
 }
 
+// Config for the app
 type Config struct {
 	// LiveReload enabled or disabled
 	LiveReload bool `toml:"live_reload"`
@@ -56,8 +61,11 @@ type Config struct {
 	// This should be used in development mode so no server restart is required
 	// on template file changes.
 	RenderRecompile bool `toml:"render_recompile"`
+	// Use the development mode sessions storer opposed to production mode storer
+	SessionsDevStorer bool `toml:"sessions_dev_storer"`
 }
 
+// RegisterFlags registers the configuration flag defaults and help strings
 func (s State) RegisterFlags() {
 	s.Root.PersistentFlags().BoolP("livereload", "", false, "Enable or disable LiveReload")
 	s.Root.PersistentFlags().BoolP("logjson", "", true, "Log messages in JSON format")
@@ -79,8 +87,10 @@ func (s State) RegisterFlags() {
 	// This should be used in development mode to avoid having to reload the
 	// server on every template file modification.
 	s.Root.PersistentFlags().BoolP("renderrecompile", "", false, "Enable recompilation of the template on each render")
+	s.Root.PersistentFlags().BoolP("sessionsdevstorer", "", false, "Use the development mode sessions storer")
 }
 
+// LoadConfig loads the configuration object
 func (s State) LoadConfig() error {
 	//shift.LoadConfig(&cfg, )
 
