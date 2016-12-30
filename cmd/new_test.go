@@ -5,17 +5,17 @@ import "testing"
 func TestGetAppPath(t *testing.T) {
 	t.Parallel()
 
-	_, _, err := getAppPath([]string{"."})
+	appPath, appName, err := getAppPath([]string{"."})
 	if err == nil {
-		t.Error("expected error, but got none")
+		t.Errorf("expected error, but got none: %s - %s", appPath, appName)
 	}
 
-	_, _, err = getAppPath([]string{"/"})
+	appPath, appName, err = getAppPath([]string{"/"})
 	if err == nil {
-		t.Error("expected error, but got none")
+		t.Errorf("expected error, but got none: %s - %s", appPath, appName)
 	}
 
-	appPath, appName, err := getAppPath([]string{"/test"})
+	appPath, appName, err = getAppPath([]string{"/test"})
 	if err != nil {
 		t.Error(err)
 	}

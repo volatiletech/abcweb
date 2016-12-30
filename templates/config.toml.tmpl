@@ -1,13 +1,13 @@
 [dev]
-	live_reload = true
-	log_json = false
-	log_level = "info"
 	bind = ":3999"
 	tls_bind = ":4000"
 	{{if not .NoSSHKeys -}}
 	tls_certificate = "server.pem"
 	tls_key_file = "server.key"
 	{{- end}}
+	live_reload = true
+	log_json = false
+	log_level = "info"
 	assets_no_minify = true
 	assets_no_hash = true
 	assets_no_compress = true
@@ -15,6 +15,7 @@
 	render_recompile = true
 	sessions_dev_storer = true
 [prod]
+	bind = ":80"
 	tls_bind = ":443"
 	{{if not .NoSSHKeys -}}
 	tls_certificate = "server.pem"
