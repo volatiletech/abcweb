@@ -6,7 +6,5 @@ import (
 )
 
 var templateFuncs = template.FuncMap{
-	"titleCase": func(s string) string {
-		return strings.ToUpper(s)
-	},
+	"titleCase": func(s string) string { return strings.ToUpper(s) },
 }
