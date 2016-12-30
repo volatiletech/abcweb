@@ -1,7 +1,12 @@
 package cmd
 
-var templateFuncs = templates.FuncMap{
+import (
+	"strings"
+	"text/template"
+)
+
+var templateFuncs = template.FuncMap{
 	"titleCase": func(s string) string {
-		strconv.UpperCase(s)
-	}
+		return strings.ToUpper(s)
+	},
 }
