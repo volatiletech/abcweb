@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"go/build"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -29,6 +30,11 @@ type newConfig struct {
 	forceOverwrite bool
 }
 
+const (
+	templatesDirectory = "templates"
+	basePackage        = "github.com/nullbio/abcweb"
+)
+
 var newCmdConfig newConfig
 
 var skipDirs = []string{
@@ -48,16 +54,17 @@ default directory structure and configuration at the path you specify.`,
 }
 
 func newCmdRun(cmd *cobra.Command, args []string) error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
+	// Get base path containing templates folder and source files
+	p, _ := build.Default.Import(basePackage, "", build.FindOnly)
+	if p == nil || len(p.Dir) == 0 {
+		return errors.New("cannot locate base path containing templates folder")
 	}
-	return filepath.Walk(filepath.Join(wd, "templates"), newCmdWalk)
+	return filepath.Walk(filepath.Join(p.Dir, "templates"), newCmdWalk)
 }
 
-func newCmdWalk(path string, info os.FileInfo, err error) error {
+func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error {
 	// Ignore the root folder
-	if path == "templates" && info.IsDir() {
+	if path == basePath && info.IsDir() {
 		return nil
 	}
 
@@ -71,15 +78,26 @@ func newCmdWalk(path string, info os.FileInfo, err error) error {
 	}
 
 	chunks := strings.Split(path, string(os.PathSeparator))
+	var newChunks []string
 
-	// Make cleanPath
-	chunks[0] = newCmdConfig.appName
-	chunks[len(chunks)-1] = strings.TrimSuffix(chunks[len(chunks)-1], ".tmpl")
-	cleanPath := strings.Join(chunks, string(os.PathSeparator))
+	var found int
+	for i := 0; i < len(chunks); i++ {
+		if chunks[i] == templatesDirectory {
+			found = i
+			break
+		}
+	}
 
-	// Make fullPath
-	chunks[0] = newCmdConfig.appPath
-	fullPath := strings.Join(chunks, string(os.PathSeparator))
+	newChunks = append(newChunks, chunks[found:])
+
+	// Make cleanPath for results output
+	newChunks[0] = newCmdConfig.appName
+	newChunks[len(newChunks)-1] = strings.TrimSuffix(newChunks[len(newChunks)-1], ".tmpl")
+	cleanPath := strings.Join(newChunks, string(os.PathSeparator))
+
+	// Make fullPath for destination save
+	newChunks[0] = newCmdConfig.appPath
+	fullPath := strings.Join(newChunks, string(os.PathSeparator))
 
 	var fileContents *bytes.Buffer
 
