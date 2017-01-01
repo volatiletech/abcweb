@@ -1,52 +1,55 @@
 package cmd
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func TestGetAppPath(t *testing.T) {
 	t.Parallel()
 
-	appPath, appName, err := getAppPath([]string{"."})
+	gopath := os.Getenv("GOPATH")
+	os.Setenv("GOPATH", "testpath/test")
+
+	appPath, importPath, appName, err := getAppPath([]string{"."})
 	if err == nil {
 		t.Errorf("expected error, but got none: %s - %s", appPath, appName)
 	}
 
-	appPath, appName, err = getAppPath([]string{"/"})
+	appPath, importPath, appName, err = getAppPath([]string{"/"})
 	if err == nil {
 		t.Errorf("expected error, but got none: %s - %s", appPath, appName)
 	}
 
-	appPath, appName, err = getAppPath([]string{"/test"})
+	appPath, importPath, appName, err = getAppPath([]string{"/test"})
 	if err != nil {
 		t.Error(err)
 	}
-	if appPath != "/test" {
+	if appPath != "testpath/test/src/test" {
 		t.Errorf("mismatch, got %s", appPath)
 	}
 	if appName != "test" {
 		t.Errorf("mismatch, got %s", appName)
 	}
+	if importPath != "/test" {
+		t.Errorf("mismatch, got %s", importPath)
+	}
 
-	appPath, appName, err = getAppPath([]string{"./stuff/test"})
+	appPath, importPath, appName, err = getAppPath([]string{"./stuff/test"})
 	if err != nil {
 		t.Error(err)
 	}
-	if appPath != "stuff/test" {
+	if appPath != "testpath/test/src/stuff/test" {
 		t.Errorf("mismatch, got %s", appPath)
 	}
 	if appName != "test" {
 		t.Errorf("mismatch, got %s", appName)
 	}
+	if importPath != "stuff/test" {
+		t.Errorf("mismatch, got %s", importPath)
+	}
 
-	appPath, appName, err = getAppPath([]string{"~/test/thing/"})
-	if err != nil {
-		t.Error(err)
-	}
-	if appPath != "~/test/thing" {
-		t.Errorf("mismatch, got %s", appPath)
-	}
-	if appName != "thing" {
-		t.Errorf("mismatch, got %s", appName)
-	}
+	os.Setenv("GOPATH", gopath)
 }
 
 func TestGetProcessedPaths(t *testing.T) {

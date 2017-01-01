@@ -22,6 +22,7 @@ import (
 
 type newConfig struct {
 	AppPath        string
+	ImportPath     string
 	AppName        string
 	ProdStorer     string
 	DevStorer      string
@@ -71,7 +72,7 @@ var newCmd = &cobra.Command{
 	Use:   "new <import_path> [flags]",
 	Short: "Generate a new ABCWeb application.",
 	Long: `The 'abcweb new' command generates a new ABCWeb application with a 
-default directory structure and configuration at the Go src path you specify.
+default directory structure and configuration at the Go src import path you specify.
 
 The app will generate in $GOPATH/src/<import_path>.
 `,
@@ -90,7 +91,7 @@ func init() {
 	newCmd.Flags().BoolP("no-ssl-certs", "s", false, "Skip generation of self-signed SSL cert files")
 	newCmd.Flags().BoolP("no-readme", "r", false, "Skip README.md files")
 	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml file")
-	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in app_path")
+	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("ssl-certs-only", "", false, "Only generate self-signed SSL cert files")
 
 	RootCmd.AddCommand(newCmd)
@@ -114,12 +115,20 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		DevStorer:      viper.GetString("sessions-dev-storer"),
 	}
 
-	newCmdConfig.AppPath, newCmdConfig.AppName, err = getAppPath(args)
+	newCmdConfig.AppPath, newCmdConfig.ImportPath, newCmdConfig.AppName, err = getAppPath(args)
 	return err
 }
 
 func newCmdRun(cmd *cobra.Command, args []string) error {
-	fmt.Println("Generating application in:", newCmdConfig.AppPath)
+	fmt.Println("Generating in:", newCmdConfig.AppPath)
+
+	// Make the app directory if it doesnt already exist.
+	// Can get dir not exist errors on --ssl-cert-only runs if we don't do this.
+	err := os.MkdirAll(newCmdConfig.AppPath, 0755)
+	if err != nil {
+		return err
+	}
+
 	if !newCmdConfig.SSLCertsOnly {
 		// Get base path containing templates folder and source files
 		p, _ := build.Default.Import(basePackage, "", build.FindOnly)
@@ -139,9 +148,13 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Generate SSL certs if requested
 	if !newCmdConfig.NoSSLCerts {
-		return generateSSLCerts()
+		err := generateSSLCerts()
+		if err != nil {
+			return err
+		}
 	}
 
+	fmt.Println("\tresult -> Finished")
 	return nil
 }
 
@@ -228,6 +241,8 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 
 	// Dirs only get created if they don't already exist
 	if info.IsDir() {
+		// Don't bother trying to create the folder if it already exists.
+		// Return now so we don't get "created" output
 		if outputExists {
 			return nil
 		}
@@ -260,7 +275,10 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 			}
 		}
 
-		ioutil.WriteFile(fullPath, fileContents.Bytes(), 0644)
+		err = ioutil.WriteFile(fullPath, fileContents.Bytes(), 0644)
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("\tcreate -> %s\n", cleanPath)
@@ -317,32 +335,33 @@ func processSkips(basePath string, path string, info os.FileInfo) (skip bool, er
 	return false, nil
 }
 
-func getAppPath(args []string) (appPath string, appName string, err error) {
+func getAppPath(args []string) (appPath string, importPath string, appName string, err error) {
 	if len(args) == 0 {
-		return "", "", errors.New("must provide an app path")
+		return "", "", "", errors.New("must provide an app path")
 	}
 
 	appPath = filepath.Clean(args[0])
+	importPath = appPath
 
 	// Somewhat validate provided app path, valid paths will have at least 2 components
-	appPathChunks := strings.Split(appPath, os.PathSeparator)
+	appPathChunks := strings.Split(appPath, string(os.PathSeparator))
 	if len(appPathChunks) < 2 {
-		return "", "", errors.New("invalid app path provided, see --help for example")
+		return "", "", "", errors.New("invalid app path provided, see --help for example")
 	}
 
 	_, appName = filepath.Split(appPath)
 
 	if appName == "" || appName == "." || appName == "/" {
-		return appPath, "", errors.New("app path must contain an output folder name")
+		return "", "", "", errors.New("app path must contain an output folder name")
 	}
 
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
-		return "", "", errors.New("cannot get GOPATH from environment variables")
+		return "", "", "", errors.New("cannot get GOPATH from environment variables")
 	}
 
 	// If GOPATH has more than one directory, prompt user to choose which one
-	goPathChunks := strings.Split(appPath, os.PathListSeparator)
+	goPathChunks := strings.Split(gopath, string(os.PathListSeparator))
 	if len(goPathChunks) > 1 {
 		fmt.Println("Your GOPATH has multiple paths, select your desired GOPATH:")
 		for pos, chunk := range goPathChunks {
@@ -352,16 +371,16 @@ func getAppPath(args []string) (appPath string, appName string, err error) {
 		num := 0
 		for num < 1 || num > len(goPathChunks) {
 			fmt.Printf("Select GOPATH number: ")
-			var num int
 			fmt.Scanln(&num)
+			fmt.Println(num)
 		}
 
 		gopath = goPathChunks[num-1]
 	}
 
-	// Target directory is $GOPATH/src/<app_path>
+	// Target directory is $GOPATH/src/<import_path>
 	appPath = filepath.Join(gopath, "src", appPath)
-	return appPath, appName, nil
+	return appPath, importPath, appName, nil
 }
 
 func getProcessedPaths(path string, pathSeparator string, config newConfig) (cleanPath string, fullPath string) {
