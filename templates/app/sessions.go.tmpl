@@ -12,9 +12,9 @@ func (s State) InitSessions() {
 	}
 
 	if s.Config.SessionsDevStorer {
-		s.Session = sessions.NewCookieOverseer(opts, []byte("GenerateSecretKeyHere"))
+		s.Session = sessions.NewCookieOverseer(opts, []byte("{{randString 32}}"))
 	} else {
-		storer, err := sessions.NewDefaultDiskStorer("GenerateUniqueTmpSubFolderHere")
+		storer, err := sessions.NewDefaultDiskStorer("{{randString 8}}")
 		if err != nil {
 			panic(err)
 		}
