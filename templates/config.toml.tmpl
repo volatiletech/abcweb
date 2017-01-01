@@ -1,9 +1,9 @@
 [dev]
 	bind = ":3999"
 	tls_bind = ":4000"
-	{{if not .NoSSHKeys -}}
-	tls_certificate = "server.pem"
-	tls_key_file = "server.key"
+	{{if not .NoSSLCerts -}}
+	tls_certificate = "private.pem"
+	tls_key_file = "private.key"
 	{{- end}}
 	live_reload = true
 	log_json = false
@@ -17,7 +17,7 @@
 [prod]
 	bind = ":80"
 	tls_bind = ":443"
-	{{if not .NoSSHKeys -}}
-	tls_certificate = "server.pem"
-	tls_key_file = "server.key"
+	{{if not .NoSSLCerts -}}
+	tls_certificate = "private.pem"
+	tls_key_file = "private.key"
 	{{- end}}

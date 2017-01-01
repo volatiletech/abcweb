@@ -16,7 +16,7 @@ type Renderer interface {
 	Text(w io.Writer, status int, v string) error
 	// HTML renders a HTML template. Example:
 	// Assumes you have a template in ./templates called "home.tmpl"
-	// $ mkdir -p templates && echo "<h1>Hello {{.}}.</h1>" > templates/home.tmpl
+	// $ mkdir -p templates && echo "<h1>Hello {{"{"}}{.}{{"}"}}.</h1>" > templates/home.tmpl
 	// HTML(w, http.StatusOK, "home", "World")
 	HTML(w io.Writer, status int, name string, binding interface{}) error
 	// HTMLWithLayout renders a HTML template using a different layout to the

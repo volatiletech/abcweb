@@ -48,3 +48,32 @@ func TestGetAppPath(t *testing.T) {
 		t.Errorf("mismatch, got %s", appName)
 	}
 }
+
+func TestGetProcessedPaths(t *testing.T) {
+	t.Parallel()
+
+	config := newConfig{
+		AppPath: "/test/myapp",
+		AppName: "myapp",
+	}
+
+	inPath := "/lol/" + templatesDirectory + "/file.tmpl"
+	cleanPath, fullPath := getProcessedPaths(inPath, "/", config)
+	if cleanPath != "myapp/file" {
+		t.Error("mismatch:", cleanPath)
+	}
+	if fullPath != "/test/myapp/file" {
+		t.Error("mismatch:", fullPath)
+	}
+
+	config.AppPath = "myapp"
+	config.AppName = "myapp"
+
+	cleanPath, fullPath = getProcessedPaths(inPath, "/", config)
+	if cleanPath != "myapp/file" {
+		t.Error("mismatch:", cleanPath)
+	}
+	if fullPath != "myapp/file" {
+		t.Error("mismatch:", fullPath)
+	}
+}

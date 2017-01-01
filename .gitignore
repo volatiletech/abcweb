@@ -23,9 +23,10 @@ _testmain.go
 *.test
 *.prof
 
-# Ignore self-signed certs
-server.key
-server.pem
+# Ignore generated self-signed certs
+public.key
+private.key
+private.pem
 
 # Ignore binary
 abcweb
