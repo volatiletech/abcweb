@@ -68,11 +68,14 @@ var newCmdConfig newConfig
 
 // newCmd represents the new command
 var newCmd = &cobra.Command{
-	Use:   "new <app_path> [flags]",
+	Use:   "new <import_path> [flags]",
 	Short: "Generate a new ABCWeb application.",
 	Long: `The 'abcweb new' command generates a new ABCWeb application with a 
-default directory structure and configuration at the path you specify.`,
-	Example: "abcweb new ~/go/src/github.com/john/awesomeapp",
+default directory structure and configuration at the Go src path you specify.
+
+The app will generate in $GOPATH/src/<import_path>.
+`,
+	Example: "abcweb new github.com/yourusername/myapp",
 	PreRunE: newCmdPreRun,
 	RunE:    newCmdRun,
 }
@@ -116,6 +119,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 }
 
 func newCmdRun(cmd *cobra.Command, args []string) error {
+	fmt.Println("Generating application in:", newCmdConfig.AppPath)
 	if !newCmdConfig.SSLCertsOnly {
 		// Get base path containing templates folder and source files
 		p, _ := build.Default.Import(basePackage, "", build.FindOnly)
@@ -319,12 +323,44 @@ func getAppPath(args []string) (appPath string, appName string, err error) {
 	}
 
 	appPath = filepath.Clean(args[0])
+
+	// Somewhat validate provided app path, valid paths will have at least 2 components
+	appPathChunks := strings.Split(appPath, os.PathSeparator)
+	if len(appPathChunks) < 2 {
+		return "", "", errors.New("invalid app path provided, see --help for example")
+	}
+
 	_, appName = filepath.Split(appPath)
 
 	if appName == "" || appName == "." || appName == "/" {
 		return appPath, "", errors.New("app path must contain an output folder name")
 	}
 
+	gopath := os.Getenv("GOPATH")
+	if gopath == "" {
+		return "", "", errors.New("cannot get GOPATH from environment variables")
+	}
+
+	// If GOPATH has more than one directory, prompt user to choose which one
+	goPathChunks := strings.Split(appPath, os.PathListSeparator)
+	if len(goPathChunks) > 1 {
+		fmt.Println("Your GOPATH has multiple paths, select your desired GOPATH:")
+		for pos, chunk := range goPathChunks {
+			fmt.Printf("[%d] %s\n", pos+1, chunk)
+		}
+
+		num := 0
+		for num < 1 || num > len(goPathChunks) {
+			fmt.Printf("Select GOPATH number: ")
+			var num int
+			fmt.Scanln(&num)
+		}
+
+		gopath = goPathChunks[num-1]
+	}
+
+	// Target directory is $GOPATH/src/<app_path>
+	appPath = filepath.Join(gopath, "src", appPath)
 	return appPath, appName, nil
 }
 
