@@ -15,7 +15,7 @@ var appHelpers = template.FuncMap{}
 // InitRenderer initializes the renderer using the app configuration.
 // If you need to use multiple renderers, you can add more Renderer
 // variables to your State object and initialize them here.
-func (s State) InitRenderer() {
+func (s *State) InitRenderer() {
 	render := &rendering.Render{
 		Render: render.New(render.Options{
 			Directory:     s.Config.Templates,

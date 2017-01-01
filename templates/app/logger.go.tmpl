@@ -8,7 +8,7 @@ import (
 )
 
 // InitLogger initializes a zap logger
-func (s State) InitLogger() {
+func (s *State) InitLogger() {
 	// JSON logging for production. Should be coupled with a log analyzer
 	// like newrelic, elk, logstash etc.
 	if s.Config.LogJSON {

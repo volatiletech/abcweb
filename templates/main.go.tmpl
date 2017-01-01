@@ -23,31 +23,37 @@ func main() {
 	}
 
 	// Register the command-line configuration flags (app/config.go)
-	state.RegisterFlags()
-
-	// Build app Config using env vars, cfg file and cmd line flags (app/config.go)
-	if err := state.LoadConfig(); err != nil {
-		fmt.Println("failed to load app config", err)
+	if err := state.RegisterFlags(); err != nil {
+		fmt.Println("failed to bind command line args:", err)
 		os.Exit(1)
 	}
 
-	// Initialize the zap logger (app/logger.go)
-	state.InitLogger()
+	// The pre-run function will initialize the app.
+	state.Root.PreRunE = func(cmd *cobra.Command, args []string) error {
+		// Build app Config using env vars, cfg file and cmd line flags (app/config.go)
+		if err := state.LoadConfig(); err != nil {
+			return err
+		}
 
-	// Create a new router
-	state.Router = chi.NewRouter()
+		// Initialize the zap logger (app/logger.go)
+		state.InitLogger()
 
-	// Configure the sessions overseer (app/sessions.go)
-	state.InitSessions()
+		// Create a new router
+		state.Router = chi.NewRouter()
 
-	// Configure the renderer (app/render.go)
-	state.InitRenderer()
+		// Configure the sessions overseer (app/sessions.go)
+		state.InitSessions()
 
-	// Enable middleware for the router (app/middleware.go)
-	state.InitMiddleware()
+		// Configure the renderer (app/render.go)
+		state.InitRenderer()
 
-	// Initialize the routes with the renderer (app/routes.go)
-	state.InitRoutes()
+		// Enable middleware for the router (app/middleware.go)
+		state.InitMiddleware()
+
+		// Initialize the routes with the renderer (app/routes.go)
+		state.InitRoutes()
+		return nil
+	}
 
 	// Execute the root command Run method
 	if err := state.Root.Execute(); err != nil {

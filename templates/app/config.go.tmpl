@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -69,54 +70,60 @@ type Config struct {
 }
 
 // RegisterFlags registers the configuration flag defaults and help strings
-func (s State) RegisterFlags() {
-	s.Root.PersistentFlags().BoolP("livereload", "", false, "Enable or disable LiveReload")
-	s.Root.PersistentFlags().BoolP("logjson", "", true, "Log messages in JSON format")
-	s.Root.PersistentFlags().StringP("loglevel", "", "warn", "Minimum level to log")
-	s.Root.PersistentFlags().StringP("bind", "", ":80", `HTTP bind address, eg: ":80"`)
-	s.Root.PersistentFlags().StringP("tlsbind", "", "", `HTTPS bind address, eg: ":443"`)
-	s.Root.PersistentFlags().StringP("tlscertfile", "", "", "TLS certificate file path")
-	s.Root.PersistentFlags().StringP("tlskeyfile", "", "", "TLS key file path")
-	s.Root.PersistentFlags().DurationP("readtimeout", "", time.Second*30, "Maximum duration before timing out read of the request")
-	s.Root.PersistentFlags().DurationP("writetimeout", "", time.Second*30, "Maximum duration before timing out write of the response")
-	s.Root.PersistentFlags().StringP("templates", "", "./compiled_templates", "Templates folder path")
-	s.Root.PersistentFlags().StringP("assetsin", "", "./assets", "Static assets input folder path")
-	s.Root.PersistentFlags().StringP("assetsout", "", "./public/assets", "Static assets output folder path")
-	s.Root.PersistentFlags().BoolP("assetsnocompile", "", false, "Disable precompilation of assets")
-	s.Root.PersistentFlags().BoolP("assetsnominify", "", false, "Disable minification of assets")
-	s.Root.PersistentFlags().BoolP("assetsnohash", "", false, "Disable fingerprints in compiled asset filenames")
-	s.Root.PersistentFlags().BoolP("assetsnocompress", "", false, "Disable gzip compression of asset files")
-	s.Root.PersistentFlags().BoolP("assetsnocache", "", false, "Disable browsers caching asset files by setting response headers")
+func (s *State) RegisterFlags() error {
+	s.Root.Flags().BoolP("live-reload", "", false, "Enable or disable LiveReload")
+	s.Root.Flags().BoolP("log-json", "", true, "Log messages in JSON format")
+	s.Root.Flags().StringP("log-level", "", "warn", "Minimum level to log")
+	s.Root.Flags().StringP("bind", "", ":80", `HTTP bind address, eg: ":80"`)
+	s.Root.Flags().StringP("tls-bind", "", "", `HTTPS bind address, eg: ":443"`)
+	s.Root.Flags().StringP("tls-cert-file", "", "", "TLS certificate file path")
+	s.Root.Flags().StringP("tls-key-file", "", "", "TLS key file path")
+	s.Root.Flags().DurationP("read-timeout", "", time.Second*30, "Maximum duration before timing out read of the request")
+	s.Root.Flags().DurationP("write-timeout", "", time.Second*30, "Maximum duration before timing out write of the response")
+	s.Root.Flags().StringP("templates", "", "./compiled_templates", "Templates folder path")
+	s.Root.Flags().StringP("assets-in", "", "./assets", "Static assets input folder path")
+	s.Root.Flags().StringP("assets-out", "", "./public/assets", "Static assets output folder path")
+	s.Root.Flags().BoolP("assets-no-compile", "", false, "Disable precompilation of assets")
+	s.Root.Flags().BoolP("assets-no-minify", "", false, "Disable minification of assets")
+	s.Root.Flags().BoolP("assets-no-hash", "", false, "Disable fingerprints in compiled asset filenames")
+	s.Root.Flags().BoolP("assets-no-compress", "", false, "Disable gzip compression of asset files")
+	s.Root.Flags().BoolP("assets-no-cache", "", false, "Disable browsers caching asset files by setting response headers")
 	// This should be used in development mode to avoid having to reload the
 	// server on every template file modification.
-	s.Root.PersistentFlags().BoolP("renderrecompile", "", false, "Enable recompilation of the template on each render")
-	s.Root.PersistentFlags().BoolP("sessionsdevstorer", "", false, "Use the development mode sessions storer")
+	s.Root.Flags().BoolP("render-recompile", "", false, "Enable recompilation of the template on each render")
+	s.Root.Flags().BoolP("sessions-dev-storer", "", false, "Use the development mode sessions storer")
+
+	return viper.BindPFlags(s.Root.Flags())
 }
 
 // LoadConfig loads the configuration object
-func (s State) LoadConfig() error {
+func (s *State) LoadConfig() error {
 	s.Config = &Config{
-		LiveReload:        viper.GetBool("livereload"),
-		LogJSON:           viper.GetBool("logjson"),
-		LogLevel:          viper.GetString("loglevel"),
+		LiveReload:        viper.GetBool("live-reload"),
+		LogJSON:           viper.GetBool("log-json"),
+		LogLevel:          viper.GetString("log-level"),
 		Bind:              viper.GetString("bind"),
-		TLSBind:           viper.GetString("tlsbind"),
-		TLSCertificate:    viper.GetString("tlscertfile"),
-		TLSKeyFile:        viper.GetString("tlskeyfile"),
-		ReadTimeout:       viper.GetDuration("readtimeout"),
-		WriteTimeout:      viper.GetDuration("writetimeout"),
+		TLSBind:           viper.GetString("tls-bind"),
+		TLSCertFile:       viper.GetString("tls-cert-file"),
+		TLSKeyFile:        viper.GetString("tls-key-file"),
+		ReadTimeout:       viper.GetDuration("read-timeout"),
+		WriteTimeout:      viper.GetDuration("write-timeout"),
 		Templates:         viper.GetString("templates"),
-		AssetsIn:          viper.GetString("assetsin"),
-		AssetsOut:         viper.GetString("assetsout"),
-		AssetsNoCompile:   viper.GetBool("assetsnocompile"),
-		AssetsNoMinify:    viper.GetBool("assetsnominify"),
-		AssetsNoHash:      viper.GetBool("assetsnohash"),
-		AssetsNoCompress:  viper.GetBool("assetsnocompress"),
-		AssetsNoCache:     viper.GetBool("assetsnocache"),
-		RenderRecompile:   viper.GetBool("renderrecompile"),
-		SessionsDevStorer: viper.GetBool("sessionsdevstorer"),
+		AssetsIn:          viper.GetString("assets-in"),
+		AssetsOut:         viper.GetString("assets-out"),
+		AssetsNoCompile:   viper.GetBool("assets-no-compile"),
+		AssetsNoMinify:    viper.GetBool("assets-no-minify"),
+		AssetsNoHash:      viper.GetBool("assets-no-hash"),
+		AssetsNoCompress:  viper.GetBool("assets-no-compress"),
+		AssetsNoCache:     viper.GetBool("assets-no-cache"),
+		RenderRecompile:   viper.GetBool("render-recompile"),
+		SessionsDevStorer: viper.GetBool("sessions-dev-storer"),
 	}
 
 	env := os.Getenv("{{.AppName | titleCase }}_ENV")
-	return shift.Load(s.Config, "config.toml", "{{.AppName | titleCase}}", env)
+	if env == "" {
+		fmt.Println(`Warning: No environment chosen using {{.AppName | titleCase}}_ENV, attempting to use default of "prod"`)
+		env = "prod"
+	}
+	return shift.Load(s.Config, "config.toml", env)
 }

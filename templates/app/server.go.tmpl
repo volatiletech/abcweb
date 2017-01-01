@@ -21,7 +21,7 @@ func (s serverErrLogger) Write(b []byte) (int, error) {
 }
 
 // StartServer starts the web server on the specified port
-func (s State) StartServer() error {
+func (s *State) StartServer() error {
 	var err error
 	server := http.Server{
 		ReadTimeout:  s.Config.ReadTimeout,
@@ -47,7 +47,7 @@ func (s State) StartServer() error {
 }
 
 // Redirect listens on the non-https port, and redirects all requests to https
-func (s State) Redirect() {
+func (s *State) Redirect() {
 	var err error
 
 	// Get https port from TLS Bind

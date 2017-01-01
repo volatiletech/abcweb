@@ -3,7 +3,7 @@ package app
 import "{{.ImportPath}}/sessions"
 
 // InitSessions initializes the sessions Overseer
-func (s State) InitSessions() {
+func (s *State) InitSessions() {
 	// Configure cookie options
 	opts := sessions.NewCookieOptions()
 	// If not using HTTPS, disable cookie secure flag

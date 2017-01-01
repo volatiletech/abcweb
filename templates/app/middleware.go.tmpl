@@ -8,7 +8,7 @@ import (
 
 // InitMiddleware initializes the router middleware
 // See https://github.com/pressly/chi#middlewares and abcweb readme for extra middleware
-func (s State) InitMiddleware() {
+func (s *State) InitMiddleware() {
 	m := middleware.Middleware{
 		Log: s.Log,
 	}
