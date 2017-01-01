@@ -2,7 +2,7 @@
 	bind = ":3999"
 	tls_bind = ":4000"
 	{{if not .NoSSLCerts -}}
-	tls_certificate = "private.pem"
+	tls_cert_file = "cert.pem"
 	tls_key_file = "private.key"
 	{{- end}}
 	live_reload = true
@@ -18,6 +18,6 @@
 	bind = ":80"
 	tls_bind = ":443"
 	{{if not .NoSSLCerts -}}
-	tls_certificate = "private.pem"
+	tls_cert_file = "cert.pem"
 	tls_key_file = "private.key"
 	{{- end}}

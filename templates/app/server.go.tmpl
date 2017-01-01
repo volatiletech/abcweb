@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/pkg/errors"
 	"github.com/uber-go/zap"
 )
 
@@ -36,14 +37,18 @@ func (s *State) StartServer() error {
 
 		// Redirect http requests to https
 		go s.Redirect()
-		err = server.ListenAndServeTLS(s.Config.TLSCertFile, s.Config.TLSKeyFile)
+		if err := server.ListenAndServeTLS(s.Config.TLSCertFile, s.Config.TLSKeyFile); err != nil {
+			return errors.Wrap(err, "failed to ListenAndServeTLS")
+		}
 	} else {
 		s.Log.Info("starting http listener", zap.String("bind", s.Config.Bind))
 		server.Addr = s.Config.Bind
-		err = server.ListenAndServe()
+		if err := server.ListenAndServe(); err != nil {
+			return errors.Wrap(err, "failed to ListenAndServe")
+		}
 	}
 
-	return err
+	return errors.Wrap(err, "failed to StartServer")
 }
 
 // Redirect listens on the non-https port, and redirects all requests to https

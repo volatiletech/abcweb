@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
-	"encoding/gob"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"go/build"
@@ -16,6 +13,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/nullbio/abcweb/cert"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -159,66 +157,34 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func generateSSLCerts() error {
-	pemFilePath := filepath.Join(newCmdConfig.AppPath, "private.pem")
+	certFilePath := filepath.Join(newCmdConfig.AppPath, "cert.pem")
+	privateKeyPath := filepath.Join(newCmdConfig.AppPath, "private.key")
+
 	if !newCmdConfig.SSLCertsOnly {
-		_, err := os.Stat(pemFilePath)
+		_, err := os.Stat(certFilePath)
 		if err == nil || (err != nil && !os.IsNotExist(err)) {
 			return nil
 		}
 	}
 
 	fmt.Println("\trun -> SSL Certificate Generator")
-	privateKey, err := rsa.GenerateKey(rand.Reader, 1024)
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return err
 	}
 
-	publicKey := &privateKey.PublicKey
-
-	privateKeyPath := filepath.Join(newCmdConfig.AppPath, "private.key")
-	privateKeyFile, err := os.Create(privateKeyPath)
+	err = cert.WriteCertFile(certFilePath, newCmdConfig.AppName, &privateKey.PublicKey, privateKey)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("\tcreate -> %s\n", filepath.Join(newCmdConfig.AppName, "cert.pem"))
 
-	// Write gob encoded private key to file
-	privateKeyEncoder := gob.NewEncoder(privateKeyFile)
-	if err := privateKeyEncoder.Encode(privateKey); err != nil {
+	if err := cert.WritePrivateKey(privateKeyPath, privateKey); err != nil {
 		return err
 	}
-	privateKeyFile.Close()
 	fmt.Printf("\tcreate -> %s\n", filepath.Join(newCmdConfig.AppName, "private.key"))
 
-	publicKeyPath := filepath.Join(newCmdConfig.AppPath, "public.key")
-	publicKeyFile, err := os.Create(publicKeyPath)
-	if err != nil {
-		return err
-	}
-
-	// Write gob encoded public key to file
-	publicKeyEncoder := gob.NewEncoder(publicKeyFile)
-	if err := publicKeyEncoder.Encode(publicKey); err != nil {
-		return err
-	}
-	publicKeyFile.Close()
-	fmt.Printf("\tcreate -> %s\n", filepath.Join(newCmdConfig.AppName, "public.key"))
-
-	pemFile, err := os.Create(pemFilePath)
-	if err != nil {
-		return err
-	}
-
-	pemKey := &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
-	}
-
-	if err := pem.Encode(pemFile, pemKey); err != nil {
-		return err
-	}
-	fmt.Printf("\tcreate -> %s\n", filepath.Join(newCmdConfig.AppName, "private.pem"))
-
-	return pemFile.Close()
+	return nil
 }
 
 func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error {
