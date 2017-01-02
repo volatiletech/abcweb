@@ -22,7 +22,7 @@ type newConfig struct {
 	AppPath        string
 	ImportPath     string
 	AppName        string
-	SSLCommonName  string
+	TLSCommonName  string
 	ProdStorer     string
 	DevStorer      string
 	DefaultEnv     string
@@ -30,11 +30,11 @@ type newConfig struct {
 	NoBootstrap    bool
 	NoFontAwesome  bool
 	NoLiveReload   bool
-	NoSSLCerts     bool
+	NoTLSCerts     bool
 	NoReadme       bool
 	NoConfig       bool
 	ForceOverwrite bool
-	SSLCertsOnly   bool
+	TLSCertsOnly   bool
 }
 
 const (
@@ -84,17 +84,17 @@ The app will generate in $GOPATH/src/<import_path>.
 func init() {
 	newCmd.Flags().StringP("sessions-prod-storer", "p", "disk", "Session storer to use in production mode")
 	newCmd.Flags().StringP("sessions-dev-storer", "d", "cookie", "Session storer to use in development mode")
-	newCmd.Flags().StringP("ssl-common-name", "", "localhost", "Common Name for generated SSL certificate")
+	newCmd.Flags().StringP("tls-common-name", "", "localhost", "Common Name for generated TLS certificate")
 	newCmd.Flags().StringP("default-env", "", "prod", "Default APP_ENV to use when starting server")
 	newCmd.Flags().BoolP("no-gitignore", "g", false, "Skip .gitignore file")
 	newCmd.Flags().BoolP("no-twitter-bootstrap", "t", false, "Skip Twitter Bootstrap 4 inclusion")
 	newCmd.Flags().BoolP("no-font-awesome", "f", false, "Skip Font Awesome inclusion")
 	newCmd.Flags().BoolP("no-livereload", "l", false, "Don't support LiveReload")
-	newCmd.Flags().BoolP("no-ssl-certs", "s", false, "Skip generation of self-signed SSL cert files")
+	newCmd.Flags().BoolP("no-tls-certs", "s", false, "Skip generation of self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-readme", "r", false, "Skip README.md files")
 	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml file")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
-	newCmd.Flags().BoolP("ssl-certs-only", "", false, "Only generate self-signed SSL cert files")
+	newCmd.Flags().BoolP("tls-certs-only", "", false, "Only generate self-signed TLS cert files")
 
 	RootCmd.AddCommand(newCmd)
 	viper.BindPFlags(newCmd.Flags())
@@ -108,14 +108,14 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		NoBootstrap:    viper.GetBool("no-twitter-bootstrap"),
 		NoFontAwesome:  viper.GetBool("no-font-awesome"),
 		NoLiveReload:   viper.GetBool("no-livereload"),
-		NoSSLCerts:     viper.GetBool("no-ssl-certs"),
-		SSLCertsOnly:   viper.GetBool("ssl-certs-only"),
+		NoTLSCerts:     viper.GetBool("no-tls-certs"),
+		TLSCertsOnly:   viper.GetBool("tls-certs-only"),
 		NoReadme:       viper.GetBool("no-readme"),
 		NoConfig:       viper.GetBool("no-config"),
 		ForceOverwrite: viper.GetBool("force-overwrite"),
 		ProdStorer:     viper.GetString("sessions-prod-storer"),
 		DevStorer:      viper.GetString("sessions-dev-storer"),
-		SSLCommonName:  viper.GetString("ssl-common-name"),
+		TLSCommonName:  viper.GetString("tls-common-name"),
 		DefaultEnv:     viper.GetString("default-env"),
 	}
 
@@ -127,13 +127,13 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 	fmt.Println("Generating in:", newCmdConfig.AppPath)
 
 	// Make the app directory if it doesnt already exist.
-	// Can get dir not exist errors on --ssl-cert-only runs if we don't do this.
+	// Can get dir not exist errors on --tls-cert-only runs if we don't do this.
 	err := os.MkdirAll(newCmdConfig.AppPath, 0755)
 	if err != nil {
 		return err
 	}
 
-	if !newCmdConfig.SSLCertsOnly {
+	if !newCmdConfig.TLSCertsOnly {
 		// Get base path containing templates folder and source files
 		p, _ := build.Default.Import(basePackage, "", build.FindOnly)
 		if p == nil || len(p.Dir) == 0 {
@@ -150,9 +150,9 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Generate SSL certs if requested
-	if !newCmdConfig.NoSSLCerts {
-		err := generateSSLCerts()
+	// Generate TLS certs if requested
+	if !newCmdConfig.NoTLSCerts {
+		err := generateTLSCerts()
 		if err != nil {
 			return err
 		}
@@ -162,25 +162,25 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func generateSSLCerts() error {
+func generateTLSCerts() error {
 	certFilePath := filepath.Join(newCmdConfig.AppPath, "cert.pem")
 	privateKeyPath := filepath.Join(newCmdConfig.AppPath, "private.key")
 
-	if !newCmdConfig.SSLCertsOnly {
+	if !newCmdConfig.TLSCertsOnly {
 		_, err := os.Stat(certFilePath)
 		if err == nil || (err != nil && !os.IsNotExist(err)) {
 			return nil
 		}
 	}
 
-	fmt.Println("\trun -> SSL Certificate Generator")
+	fmt.Println("\trun -> TLS Certificate Generator")
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return err
 	}
 
 	err = cert.WriteCertFile(certFilePath, newCmdConfig.AppName,
-		newCmdConfig.SSLCommonName, &privateKey.PublicKey, privateKey)
+		newCmdConfig.TLSCommonName, &privateKey.PublicKey, privateKey)
 	if err != nil {
 		return err
 	}
