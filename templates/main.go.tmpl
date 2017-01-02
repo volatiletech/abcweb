@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"{{.ImportPath}}/app"
+	"github.com/pkg/errors"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
 	"github.com/uber-go/zap"
@@ -32,7 +33,7 @@ func main() {
 	state.Root.PreRunE = func(cmd *cobra.Command, args []string) error {
 		// Build app Config using env vars, cfg file and cmd line flags (app/config.go)
 		if err := state.LoadConfig(); err != nil {
-			return err
+			return errors.Wrap(err, "failed to load config")
 		}
 
 		// Initialize the zap logger (app/logger.go)

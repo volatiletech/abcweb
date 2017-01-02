@@ -54,7 +54,7 @@ func NewCookieOverseer(opts CookieOptions, secretKey []byte) *CookieOverseer {
 func (c *CookieOverseer) Get(w http.ResponseWriter, r *http.Request) (string, error) {
 	val, err := c.options.getCookieValue(w, r)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "unable to get session value from cookie")
 	}
 
 	return c.decode(val)
@@ -64,7 +64,7 @@ func (c *CookieOverseer) Get(w http.ResponseWriter, r *http.Request) (string, er
 func (c *CookieOverseer) Set(w http.ResponseWriter, r *http.Request, value string) error {
 	ev, err := c.encode(value)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to encode session value into cookie")
 	}
 
 	w.(cookieWriter).SetCookie(c.options.makeCookie(ev))
@@ -113,7 +113,7 @@ func (c *CookieOverseer) ResetExpiry(w http.ResponseWriter, r *http.Request) err
 
 	val, err := c.options.getCookieValue(w, r)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to get session value from cookie")
 	}
 
 	w.(cookieWriter).SetCookie(c.options.makeCookie(val))
@@ -125,7 +125,7 @@ func (c *CookieOverseer) ResetExpiry(w http.ResponseWriter, r *http.Request) err
 func (c *CookieOverseer) encode(plaintext string) (string, error) {
 	nonce := make([]byte, c.gcmBlockMode.NonceSize())
 	if _, err := rand.Read(nonce); err != nil {
-		return "", errors.Wrap(err, "failed to encode session cookie")
+		return "", errors.Wrap(err, "failed to encode session cookie value")
 	}
 
 	// Append ciphertext to the end of nonce so we have the nonce for decrypt
@@ -141,7 +141,7 @@ func (c *CookieOverseer) decode(ciphertext string) (string, error) {
 	}
 
 	if len(ct) <= c.gcmBlockMode.NonceSize() {
-		return "", errors.New("failed to decode in cookie overseer")
+		return "", errors.New("failed to decode session cookie value")
 	}
 
 	// Nonce comes from the first n bytes (n = NonceSize)
@@ -151,7 +151,7 @@ func (c *CookieOverseer) decode(ciphertext string) (string, error) {
 		nil)
 
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "unable to open gcm block mode")
 	}
 
 	return string(plaintext), nil

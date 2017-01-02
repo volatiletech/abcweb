@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // session holds the session value and the flash messages key/value mapping
@@ -104,19 +106,19 @@ func Set(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, 
 
 	val, err := overseer.Get(w, r)
 	if err != nil && !IsNoSessionError(err) {
-		return err
+		return errors.Wrap(err, "unable to get session")
 	}
 
 	if !IsNoSessionError(err) {
 		err = json.Unmarshal([]byte(val), &sess)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "unable to unmarshal session object")
 		}
 
 		if sess.Value != nil {
 			err = json.Unmarshal(*sess.Value, &sessMap)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "unable to unmarshal session map value")
 			}
 		}
 	}
@@ -125,13 +127,13 @@ func Set(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, 
 
 	mv, err := json.Marshal(sessMap)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to marshal session map value")
 	}
 	sess.Value = (*json.RawMessage)(&mv)
 
 	ret, err := json.Marshal(sess)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to marshal session object")
 	}
 
 	return overseer.Set(w, r, string(ret))
@@ -142,19 +144,19 @@ func Set(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, 
 func Get(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) (string, error) {
 	val, err := overseer.Get(w, r)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "unable to get session")
 	}
 
 	var sess session
 	err = json.Unmarshal([]byte(val), &sess)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "unable to unmarshal session object")
 	}
 
 	var sessMap map[string]string
 	err = json.Unmarshal(*sess.Value, &sessMap)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "unable to unmarshal session map value")
 	}
 
 	mapVal, ok := sessMap[key]
@@ -170,32 +172,32 @@ func Get(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) 
 func Del(overseer Overseer, w http.ResponseWriter, r *http.Request, key string) error {
 	val, err := overseer.Get(w, r)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to get session")
 	}
 
 	var sess session
 	err = json.Unmarshal([]byte(val), &sess)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to unmarshal session object")
 	}
 
 	var sessMap map[string]string
 	err = json.Unmarshal(*sess.Value, &sessMap)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to unmarshal session map value")
 	}
 
 	delete(sessMap, key)
 
 	mv, err := json.Marshal(sessMap)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to marshal session map value")
 	}
 	sess.Value = (*json.RawMessage)(&mv)
 
 	ret, err := json.Marshal(sess)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to marshal session object")
 	}
 
 	return overseer.Set(w, r, string(ret))
@@ -208,7 +210,7 @@ func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, value int
 	// If it's a no session error because a session hasn't been created yet
 	// then we can skip this return statement and create a fresh map
 	if err != nil && !IsNoSessionError(err) {
-		return err
+		return errors.Wrap(err, "unable to get session")
 	}
 
 	var sess session
@@ -219,20 +221,20 @@ func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, value int
 		// json unmarshal the outter session struct
 		err = json.Unmarshal([]byte(val), &sess)
 		if err != nil {
-			return err
+		return errors.Wrap(err, "unable to unmarshal session object")
 		}
 
 	}
 
 	mv, err := json.Marshal(value)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to marshal value")
 	}
 	sess.Value = (*json.RawMessage)(&mv)
 
 	ret, err := json.Marshal(sess)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to marshal session object")
 	}
 
 	return overseer.Set(w, r, string(ret))
@@ -243,19 +245,19 @@ func SetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, value int
 func GetObj(overseer Overseer, w http.ResponseWriter, r *http.Request, pointer interface{}) error {
 	val, err := overseer.Get(w, r)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to get session")
 	}
 
 	var sess session
 	// json unmarshal the outter session struct
 	err = json.Unmarshal([]byte(val), &sess)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to unmarshal session object")
 	}
 
 	// json unmarshal the RawMessage value into the users pointer
 	err = json.Unmarshal(*sess.Value, pointer)
-	return err
+	return errors.Wrap(err, "unable to unmarshal session value into pointer")
 }
 
 // AddFlash adds a flash message to the session that will be deleted when it is retrieved with GetFlash
@@ -264,11 +266,11 @@ func AddFlash(overseer Overseer, w http.ResponseWriter, r *http.Request, key str
 
 	val, err := overseer.Get(w, r)
 	if err != nil && !IsNoSessionError(err) {
-		return err
+		return errors.Wrap(err, "unable to get session")
 	} else if !IsNoSessionError(err) {
 		err = json.Unmarshal([]byte(val), &sess)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "unable to unmarshal session object")
 		}
 	}
 
@@ -278,13 +280,13 @@ func AddFlash(overseer Overseer, w http.ResponseWriter, r *http.Request, key str
 
 	mv, err := json.Marshal(value)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to marshal session value")
 	}
 	sess.Flash[key] = (*json.RawMessage)(&mv)
 
 	ret, err := json.Marshal(sess)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to marshal session object")
 	}
 
 	return overseer.Set(w, r, string(ret))
@@ -296,12 +298,12 @@ func GetFlash(overseer Overseer, w http.ResponseWriter, r *http.Request, key str
 
 	val, err := overseer.Get(w, r)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "unable to get session")
 	}
 
 	err = json.Unmarshal([]byte(val), &sess)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "unable to unmarshal session object")
 	}
 
 	fv, ok := sess.Flash[key]
@@ -312,25 +314,25 @@ func GetFlash(overseer Overseer, w http.ResponseWriter, r *http.Request, key str
 	var ret string
 	err = json.Unmarshal(*fv, &ret)
 	if err != nil {
-		return ret, err
+		return ret, errors.Wrap(err, "unable to unmarshal flash value")
 	}
 
 	delete(sess.Flash, key)
 
 	mv, err := json.Marshal(sess)
 	if err != nil {
-		return ret, err
+		return ret, errors.Wrap(err, "unable to marshal session object")
 	}
 
 	err = overseer.Set(w, r, string(mv))
-	return ret, err
+	return ret, errors.Wrap(err, "unable to set flash session object")
 }
 
 // AddFlashObj adds a flash message to the session that will be deleted when it is retrieved with GetFlash
 func AddFlashObj(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, value interface{}) error {
 	mv, err := json.Marshal(value)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to marshal flash value")
 	}
 
 	return AddFlash(overseer, w, r, key, string(mv))
@@ -341,7 +343,7 @@ func AddFlashObj(overseer Overseer, w http.ResponseWriter, r *http.Request, key 
 func GetFlashObj(overseer Overseer, w http.ResponseWriter, r *http.Request, key string, pointer interface{}) error {
 	val, err := GetFlash(overseer, w, r, key)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to get flash object")
 	}
 
 	return json.Unmarshal([]byte(val), pointer)

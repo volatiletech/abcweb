@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/djherbis/times"
+	"github.com/pkg/errors"
 )
 
 // DiskStorer is a session storer implementation for saving sessions
@@ -60,7 +61,7 @@ func NewDiskStorer(folderPath string, maxAge, cleanInterval time.Duration) (*Dis
 	if os.IsNotExist(err) {
 		err := os.Mkdir(folderPath, os.FileMode(int(0755)))
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "unable to make directory: %s", folderPath)
 		}
 	}
 
@@ -71,7 +72,7 @@ func NewDiskStorer(folderPath string, maxAge, cleanInterval time.Duration) (*Dis
 func (d *DiskStorer) All() ([]string, error) {
 	files, err := ioutil.ReadDir(d.folderPath)
 	if err != nil {
-		return []string{}, err
+		return []string{}, errors.Wrapf(err, "unable to read directory: %s", d.folderPath)
 	}
 
 	sessions := make([]string, len(files))
@@ -95,12 +96,12 @@ func (d *DiskStorer) Get(key string) (value string, err error) {
 	if os.IsNotExist(err) {
 		return "", errNoSession{}
 	} else if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "unable to stat session file: %s", filePath)
 	}
 
 	contents, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "unable to read file: %s", filePath)
 	}
 
 	return string(contents), nil
@@ -127,7 +128,7 @@ func (d *DiskStorer) Del(key string) error {
 	if os.IsNotExist(err) {
 		return nil
 	} else if err != nil {
-		return err
+		return errors.Wrapf(err, "unable to stat session file: %s", filePath)
 	}
 
 	return os.Remove(filePath)
