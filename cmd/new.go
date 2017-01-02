@@ -248,7 +248,7 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 			}
 		}
 
-		err = ioutil.WriteFile(fullPath, fileContents.Bytes(), 0644)
+		err = ioutil.WriteFile(fullPath, fileContents.Bytes(), 0664)
 		if err != nil {
 			return err
 		}
