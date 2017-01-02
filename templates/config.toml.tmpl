@@ -1,10 +1,11 @@
 [dev]
-	bind = ":3999"
-	tls_bind = ":4000"
-	{{if not .NoSSLCerts -}}
+	bind = ":4000"
+	# Uncomment the below "tls_bind" line if you wish to use TLS in dev mode.
+	# You may need to add an exception in your browser for your SSL cert.
+	# tls_bind := ":4001"
+	# These keys will only be used if "tls_bind" is set.
 	tls_cert_file = "cert.pem"
 	tls_key_file = "private.key"
-	{{- end}}
 	live_reload = true
 	log_json = false
 	log_level = "info"
@@ -17,7 +18,5 @@
 [prod]
 	bind = ":80"
 	tls_bind = ":443"
-	{{if not .NoSSLCerts -}}
 	tls_cert_file = "cert.pem"
 	tls_key_file = "private.key"
-	{{- end}}
