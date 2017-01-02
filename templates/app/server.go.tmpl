@@ -34,9 +34,11 @@ func (s *State) StartServer() error {
 	if len(s.Config.TLSBind) > 0 {
 		s.Log.Info("starting https listener", zap.String("bind", s.Config.TLSBind))
 		server.Addr = s.Config.TLSBind
-
+		
+		{{if not .NoHTTPRedirect -}}
 		// Redirect http requests to https
 		go s.Redirect()
+		{{end -}}
 		if err := server.ListenAndServeTLS(s.Config.TLSCertFile, s.Config.TLSKeyFile); err != nil {
 			return errors.Wrap(err, "failed to ListenAndServeTLS")
 		}

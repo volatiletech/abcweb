@@ -35,6 +35,7 @@ type newConfig struct {
 	NoConfig       bool
 	ForceOverwrite bool
 	TLSCertsOnly   bool
+	NoHTTPRedirect bool
 }
 
 const (
@@ -95,6 +96,7 @@ func init() {
 	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml file")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("tls-certs-only", "", false, "Only generate self-signed TLS cert files")
+	newCmd.Flags().BoolP("no-http-redirect", "", false, "Disable the http -> https redirect when using TLS")
 
 	RootCmd.AddCommand(newCmd)
 	viper.BindPFlags(newCmd.Flags())
@@ -113,6 +115,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		NoReadme:       viper.GetBool("no-readme"),
 		NoConfig:       viper.GetBool("no-config"),
 		ForceOverwrite: viper.GetBool("force-overwrite"),
+		NoHTTPRedirect: viper.GetBool("no-http-redirect"),
 		ProdStorer:     viper.GetString("sessions-prod-storer"),
 		DevStorer:      viper.GetString("sessions-dev-storer"),
 		TLSCommonName:  viper.GetString("tls-common-name"),
