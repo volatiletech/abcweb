@@ -22,8 +22,10 @@ type newConfig struct {
 	AppPath        string
 	ImportPath     string
 	AppName        string
+	SSLCommonName  string
 	ProdStorer     string
 	DevStorer      string
+	DefaultEnv     string
 	NoGitIgnore    bool
 	NoBootstrap    bool
 	NoFontAwesome  bool
@@ -82,6 +84,8 @@ The app will generate in $GOPATH/src/<import_path>.
 func init() {
 	newCmd.Flags().StringP("sessions-prod-storer", "p", "disk", "Session storer to use in production mode")
 	newCmd.Flags().StringP("sessions-dev-storer", "d", "cookie", "Session storer to use in development mode")
+	newCmd.Flags().StringP("ssl-common-name", "", "localhost", "Common Name for generated SSL certificate")
+	newCmd.Flags().StringP("default-env", "", "prod", "Default APP_ENV to use when starting server")
 	newCmd.Flags().BoolP("no-gitignore", "g", false, "Skip .gitignore file")
 	newCmd.Flags().BoolP("no-twitter-bootstrap", "t", false, "Skip Twitter Bootstrap 4 inclusion")
 	newCmd.Flags().BoolP("no-font-awesome", "f", false, "Skip Font Awesome inclusion")
@@ -111,6 +115,8 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		ForceOverwrite: viper.GetBool("force-overwrite"),
 		ProdStorer:     viper.GetString("sessions-prod-storer"),
 		DevStorer:      viper.GetString("sessions-dev-storer"),
+		SSLCommonName:  viper.GetString("ssl-common-name"),
+		DefaultEnv:     viper.GetString("default-env"),
 	}
 
 	newCmdConfig.AppPath, newCmdConfig.ImportPath, newCmdConfig.AppName, err = getAppPath(args)
@@ -173,7 +179,8 @@ func generateSSLCerts() error {
 		return err
 	}
 
-	err = cert.WriteCertFile(certFilePath, newCmdConfig.AppName, &privateKey.PublicKey, privateKey)
+	err = cert.WriteCertFile(certFilePath, newCmdConfig.AppName,
+		newCmdConfig.SSLCommonName, &privateKey.PublicKey, privateKey)
 	if err != nil {
 		return err
 	}
@@ -276,6 +283,13 @@ func processSkips(basePath string, path string, info os.FileInfo) (skip bool, er
 	// Skip gitignore if requested
 	if newCmdConfig.NoGitIgnore {
 		if info.Name() == ".gitignore" || info.Name() == ".gitignore.tmpl" {
+			return true, nil
+		}
+	}
+
+	// Skip default config.toml if requested
+	if newCmdConfig.NoConfig {
+		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" {
 			return true, nil
 		}
 	}

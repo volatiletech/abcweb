@@ -122,8 +122,8 @@ func (s *State) LoadConfig() error {
 
 	env := os.Getenv("{{.AppName | titleCase }}_ENV")
 	if env == "" {
-		fmt.Println(`Warning: No environment chosen using {{.AppName | titleCase}}_ENV, attempting to use default of "prod"`)
-		env = "prod"
+		fmt.Println(`Warning: No environment chosen using {{.AppName | titleCase}}_ENV, attempting to use default of "{{.DefaultEnv}}"`)
+		env = "{{.DefaultEnv}}"
 	}
 	return shift.Load(s.Config, "config.toml", env)
 }

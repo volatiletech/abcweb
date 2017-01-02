@@ -8,14 +8,13 @@ import (
 	"encoding/pem"
 	"errors"
 	"math/big"
-	"net"
 	"os"
 	"time"
 )
 
 // template is a helper function to create a cert template with a
 // serial number and other required fields
-func template(appName string) (*x509.Certificate, error) {
+func template(appName, commonName string) (*x509.Certificate, error) {
 	// generate a random serial number (a real cert authority would have some logic behind this)
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
@@ -24,24 +23,25 @@ func template(appName string) (*x509.Certificate, error) {
 	}
 
 	tmpl := x509.Certificate{
-		IsCA:                  true,
-		SerialNumber:          serialNumber,
-		Subject:               pkix.Name{Organization: []string{appName}},
+		IsCA:         true,
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization: []string{appName},
+			CommonName:   commonName,
+		},
+
 		SignatureAlgorithm:    x509.SHA256WithRSA,
 		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(time.Hour), // valid for an hour
+		NotAfter:              time.Now().Add(time.Hour * 24 * 365 * 4), // valid for 4 years
 		BasicConstraintsValid: true,
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
-		IPAddresses:           []net.IP{net.ParseIP("127.0.0.1")},
 	}
 
 	return &tmpl, nil
 }
 
 // WriteCertFile writes the cert.pem certificate file
-func WriteCertFile(path string, appName string, pub interface{}, parentPriv interface{}) error {
-	template, err := template(appName)
+func WriteCertFile(path, appName, commonName string, pub interface{}, parentPriv interface{}) error {
+	template, err := template(appName, commonName)
 	if err != nil {
 		return err
 	}
