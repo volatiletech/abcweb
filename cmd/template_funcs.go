@@ -12,7 +12,7 @@ func init() {
 }
 
 var templateFuncs = template.FuncMap{
-	"titleCase":  func(s string) string { return strings.ToUpper(s) },
+	"toUpper":    strings.ToUpper,
 	"randString": randString,
 }
 
