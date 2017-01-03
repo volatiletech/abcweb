@@ -15,3 +15,10 @@ type Root struct {
 	Render  rendering.Renderer
 	Session sessions.Overseer
 }
+
+// Main is the controller struct for the main routes (home, about, etc).
+// You can add variables to this controller struct to limit their exposure
+// to the controller route handlers attached to this controller. 
+type Main struct {
+	Root
+}

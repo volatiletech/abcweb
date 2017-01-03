@@ -16,15 +16,14 @@ var appHelpers = template.FuncMap{}
 // If you need to use multiple renderers, you can add more Renderer
 // variables to your State object and initialize them here.
 func (s *State) InitRenderer() {
-	render := &rendering.Render{
+	s.Render = &rendering.Render{
 		Render: render.New(render.Options{
 			Directory:     s.Config.Templates,
-			Layout:        "layout",
+			Layout:        "layouts/main",
 			Extensions:    []string{".tmpl", ".html"},
 			IsDevelopment: s.Config.RenderRecompile,
 			Funcs:         []template.FuncMap{appHelpers},
+			DisableHTTPErrorRendering: true,
 		}),
 	}
-
-	s.Render = render
 }
