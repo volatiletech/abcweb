@@ -80,7 +80,7 @@ func (s *State) RegisterFlags() error {
 	s.Root.Flags().StringP("tls-key-file", "", "", "TLS key file path")
 	s.Root.Flags().DurationP("read-timeout", "", time.Second*30, "Maximum duration before timing out read of the request")
 	s.Root.Flags().DurationP("write-timeout", "", time.Second*30, "Maximum duration before timing out write of the response")
-	s.Root.Flags().StringP("templates", "", "./compiled_templates", "Templates folder path")
+	s.Root.Flags().StringP("templates", "", "./templates", "Templates folder path")
 	s.Root.Flags().StringP("assets-in", "", "./assets", "Static assets input folder path")
 	s.Root.Flags().StringP("assets-out", "", "./public", "Static assets output folder path")
 	s.Root.Flags().BoolP("assets-no-compile", "", false, "Disable precompilation of assets")
