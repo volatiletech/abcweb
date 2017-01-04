@@ -2,10 +2,41 @@
 <html>
 	<head>
 		<title>{{.AppName}}</title>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<link rel="icon" href="/favicon.ico">
+
+		{{if eq .Bootstrap "regular" -}}
+		<link href="{{"{"}}{ cssPath "bootstrap.css" }{{"}"}}" rel="stylesheet">
+		{{- else if eq .Bootstrap "flex" -}}
+		<link href="{{"{"}}{ cssPath "bootstrap-flex.css" }{{"}"}}" rel="stylesheet">
+		{{- else if eq .Bootstrap "gridonly" -}}
+		<link href="{{"{"}}{ cssPath "bootstrap-grid.css" }{{"}"}}" rel="stylesheet">
+		{{- else if eq .Bootstrap "rebootonly" -}}
+		<link href="{{"{"}}{ cssPath "bootstrap-reboot.css" }{{"}"}}" rel="stylesheet">
+		{{- else if eq .Bootstrap "gridandrebootonly" -}}
+		<link href="{{"{"}}{ cssPath "bootstrap-grid.css" }{{"}"}}" rel="stylesheet">
+		<link href="{{"{"}}{ cssPath "bootstrap-reboot.css" }{{"}"}}" rel="stylesheet">
+		{{- end}}
+		{{if not .NoFontAwesome -}}
+		<link href="{{"{"}}{ cssPath "font-awesome.css" }{{"}"}}" rel="stylesheet">
+		{{- end}}
+		<link href="{{"{"}}{ cssPath "main.css" }{{"}"}}" rel="stylesheet">
 	</head>
 	<body>
 		{{"{"}}{ yield }{{"}"}}
+		{{- if (and (or (eq .Bootstrap "regular") (eq .Bootstrap "flex")) (not .NoBootstrapJS)) -}}
+		<!-- jquery is a twitter bootstrap dependency -->
+		<script src="{{"{"}}{ jsPath "jquery-3.1.1.js" }{{"}"}}"></script>
+		<!-- tether is a twitter bootstrap tooltips dependency -->
+		<script src="{{"{"}}{ jsPath "tether.js" }{{"}"}}"></script>
+		<script src="{{"{"}}{ jsPath "bootstrap.js" }{{"}"}}"></script>
+		{{- end}}
 	</body>
 </html>

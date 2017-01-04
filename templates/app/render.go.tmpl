@@ -10,7 +10,14 @@ import (
 // appHelpers is a map of the template helper functions.
 // Assign the template helper funcs in here, example:
 // "toUpper": strings.ToUpper
-var appHelpers = template.FuncMap{}
+var appHelpers = template.FuncMap{
+	"jsPath": func(s string) string { return "/assets/js/" + s },
+	"cssPath": func(s string) string { return "/assets/css/" + s },
+	"imgPath": func(s string) string { return "/assets/img/" + s },
+	"videoPath": func(s string) string { return "/assets/video/" + s },
+	"audioPath": func(s string) string { return "/assets/audio/" + s },
+	"fontPath": func(s string) string { return "/assets/fonts/" + s },
+}
 
 // InitRenderer initializes the renderer using the app configuration.
 // If you need to use multiple renderers, you can add more Renderer

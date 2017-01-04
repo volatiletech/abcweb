@@ -27,8 +27,9 @@ type newConfig struct {
 	ProdStorer     string
 	DevStorer      string
 	DefaultEnv     string
+	Bootstrap      string
+	NoBootstrapJS  bool
 	NoGitIgnore    bool
-	NoBootstrap    bool
 	NoFontAwesome  bool
 	NoLiveReload   bool
 	NoTLSCerts     bool
@@ -59,12 +60,58 @@ var fontAwesomeFiles = []string{
 	"fontawesome-webfont.woff2",
 }
 
-var bootstrapFiles = []string{
-	"bootstrap.css",
+var bootstrapNone = []string{
 	"bootstrap-flex.css",
 	"bootstrap-grid.css",
 	"bootstrap-reboot.css",
+	"bootstrap.css",
 	"bootstrap.js",
+	"jquery-3.1.1.js",
+	"tether.js",
+}
+
+var bootstrapRegular = []string{
+	"bootstrap-flex.css",
+	"bootstrap-grid.css",
+	"bootstrap-reboot.css",
+}
+
+var bootstrapFlex = []string{
+	"bootstrap-grid.css",
+	"bootstrap-reboot.css",
+	"bootstrap.css",
+}
+
+var bootstrapGridOnly = []string{
+	"bootstrap-flex.css",
+	"bootstrap-reboot.css",
+	"bootstrap.css",
+	"bootstrap.js",
+	"jquery-3.1.1.js",
+	"tether.js",
+}
+
+var bootstrapRebootOnly = []string{
+	"bootstrap-flex.css",
+	"bootstrap-grid.css",
+	"bootstrap.css",
+	"bootstrap.js",
+	"jquery-3.1.1.js",
+	"tether.js",
+}
+
+var bootstrapGridRebootOnly = []string{
+	"bootstrap-flex.css",
+	"bootstrap.css",
+	"bootstrap.js",
+	"jquery-3.1.1.js",
+	"tether.js",
+}
+
+var bootstrapJSFiles = []string{
+	"bootstrap.js",
+	"jquery-3.1.1.js",
+	"tether.js",
 }
 
 var newCmdConfig newConfig
@@ -88,8 +135,9 @@ func init() {
 	newCmd.Flags().StringP("sessions-dev-storer", "d", "cookie", "Session storer to use in development mode")
 	newCmd.Flags().StringP("tls-common-name", "", "localhost", "Common Name for generated TLS certificate")
 	newCmd.Flags().StringP("default-env", "", "prod", "Default APP_ENV to use when starting server")
+	newCmd.Flags().StringP("bootstrap", "b", "flex", "Include Twitter Bootstrap 4 (none|regular|gridonly|rebootonly|gridandrebootonly)")
 	newCmd.Flags().BoolP("no-gitignore", "g", false, "Skip .gitignore file")
-	newCmd.Flags().BoolP("no-twitter-bootstrap", "t", false, "Skip Twitter Bootstrap 4 inclusion")
+	newCmd.Flags().BoolP("no-bootstrap-js", "j", false, "Skip Twitter Bootstrap 4 javascript inclusion")
 	newCmd.Flags().BoolP("no-font-awesome", "f", false, "Skip Font Awesome inclusion")
 	newCmd.Flags().BoolP("no-livereload", "l", false, "Don't support LiveReload")
 	newCmd.Flags().BoolP("no-tls-certs", "s", false, "Skip generation of self-signed TLS cert files")
@@ -108,7 +156,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 
 	newCmdConfig = newConfig{
 		NoGitIgnore:    viper.GetBool("no-gitignore"),
-		NoBootstrap:    viper.GetBool("no-twitter-bootstrap"),
+		NoBootstrapJS:  viper.GetBool("no-bootstrap-js"),
 		NoFontAwesome:  viper.GetBool("no-font-awesome"),
 		NoLiveReload:   viper.GetBool("no-livereload"),
 		NoTLSCerts:     viper.GetBool("no-tls-certs"),
@@ -121,6 +169,20 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		DevStorer:      viper.GetString("sessions-dev-storer"),
 		TLSCommonName:  viper.GetString("tls-common-name"),
 		DefaultEnv:     viper.GetString("default-env"),
+		Bootstrap:      strings.ToLower(viper.GetString("bootstrap")),
+	}
+
+	validBootstrap := []string{"none", "flex", "regular", "gridonly", "rebootonly", "gridandrebootonly"}
+	found := false
+	for _, v := range validBootstrap {
+		if newCmdConfig.Bootstrap == v {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("invalid bootstrap option (%q) supplied, valid options are: none|flex|regular|gridonly|rebootonly|gridandrebootonly", newCmdConfig.Bootstrap)
 	}
 
 	newCmdConfig.AppPath, newCmdConfig.ImportPath, newCmdConfig.AppName, err = getAppPath(args)
@@ -323,9 +385,31 @@ func processSkips(basePath string, path string, info os.FileInfo) (skip bool, er
 		}
 	}
 
-	// Skip Twitter Bootstrap files if requested
-	if newCmdConfig.NoBootstrap {
-		for _, bsFile := range bootstrapFiles {
+	var bsArr []string
+	if newCmdConfig.Bootstrap == "none" {
+		bsArr = bootstrapNone
+	} else if newCmdConfig.Bootstrap == "flex" {
+		bsArr = bootstrapFlex
+	} else if newCmdConfig.Bootstrap == "regular" {
+		bsArr = bootstrapRegular
+	} else if newCmdConfig.Bootstrap == "gridonly" {
+		bsArr = bootstrapGridOnly
+	} else if newCmdConfig.Bootstrap == "rebootonly" {
+		bsArr = bootstrapRebootOnly
+	} else if newCmdConfig.Bootstrap == "gridandrebootonly" {
+		bsArr = bootstrapGridRebootOnly
+	}
+
+	// Skip files contained within bsArr
+	for _, bsFile := range bsArr {
+		if info.Name() == bsFile || info.Name() == bsFile+".tmpl" {
+			return true, nil
+		}
+	}
+
+	// Skip Twitter Bootstrap JS files if requested
+	if newCmdConfig.NoBootstrapJS {
+		for _, bsFile := range bootstrapJSFiles {
 			if info.Name() == bsFile || info.Name() == bsFile+".tmpl" {
 				return true, nil
 			}
