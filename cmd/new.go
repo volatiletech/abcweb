@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"go/build"
+	"go/format"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -247,6 +248,22 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 
 			err = t.Execute(fileContents, newCmdConfig)
 			if err != nil {
+				return err
+			}
+		} else {
+			if _, err := fileContents.Write(rawFileContents); err != nil {
+				return err
+			}
+		}
+
+		// Gofmt go files before save.
+		if strings.HasSuffix(fullPath, ".go") {
+			res, err := format.Source(fileContents.Bytes())
+			if err != nil {
+				return err
+			}
+			fileContents.Reset()
+			if _, err := fileContents.Write(res); err != nil {
 				return err
 			}
 		}
