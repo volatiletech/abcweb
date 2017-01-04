@@ -28,10 +28,10 @@ a client-side rendered web app or a stand-alone web API server.
 ### Packages
 
 * [sqlboiler](https://github.com/vattle/sqlboiler) *-- database ORM generator*
+* [switch](https://github.com/nullbio/switch) *-- TOML configuration parser supporting multiple environments and environment var prefixes*
 * [sql-migrate](https://github.com/rubenv/sql-migrate) *-- database migrations*
 * [lrserver](https://github.com/jaschaephraim/lrserver) *-- LiveReload automatic browser refreshing for front-end development*
 * [godo](https://github.com/go-godo/godo) and/or shell scripts *-- task runner for build tasks like minification*
-* [switch](https://github.com/nullbio/switch) *-- TOML configuration parser supporting multiple environments*
 * [cobra](https://github.com/spf13/cobra) *-- command line arguments*
 * [minify](https://github.com/tdewolff/minify) *-- HTML/CSS/JS minification build task*
 * [zap](https://github.com/uber-go/zap) & [zapcolors](https://github.com/aarondl/zapcolors) *-- colored logging*

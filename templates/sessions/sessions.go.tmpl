@@ -82,12 +82,22 @@ func (errNoMapKey) Error() string {
 // IsNoSessionError checks an error to see if it means that there was no session
 func IsNoSessionError(err error) bool {
 	_, ok := err.(noSessionInterface)
+	if ok {
+		return ok
+	}
+
+	_, ok = errors.Cause(err).(noSessionInterface)
 	return ok
 }
 
 // IsNoMapKeyError checks an error to see if it means that there was no session map key
 func IsNoMapKeyError(err error) bool {
 	_, ok := err.(noMapKeyInterface)
+	if ok {
+		return ok
+	}
+
+	_, ok = errors.Cause(err).(noMapKeyInterface)
 	return ok
 }
 

@@ -1,13 +1,61 @@
 package middleware
 
-import "net/http"
+import (
+	"bytes"
+	"fmt"
+	"net/http"
+	"time"
+
+	chimiddleware "github.com/pressly/chi/middleware"
+	"github.com/uber-go/zap"
+)
+
+// ZapResponseWriter is a wrapper that includes that http status and size for logging
+type ZapResponseWriter struct {
+	http.ResponseWriter
+	Status int
+	Size   int
+}
 
 // Zap middleware handles web request logging using Zap
 func (m Middleware) Zap(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
+		t := time.Now()
+		zw := ZapResponseWriter{ResponseWriter: w}
 
-		next.ServeHTTP(w, r)
+		// Serve the request
+		next.ServeHTTP(zw, r)
+
+		// Write the request log line
+		writeZap(m.Log, r, t, zw.Status, zw.Size)
 	}
 
 	return http.HandlerFunc(fn)
+}
+
+func writeZap(log zap.Logger, r *http.Request, t time.Time, status int, size int) {
+	elapsed := time.Now().Sub(t)
+
+	buf := &bytes.Buffer{}
+	requestID := chimiddleware.GetReqID(r.Context())
+
+	if requestID != "" {
+		fmt.Fprintf(buf, "[%s] ", requestID)
+	}
+
+	fmt.Fprintf(buf, `"%s `, r.Method)
+
+	if r.TLS == nil {
+		if _, err := buf.WriteString(`http`); err != nil {
+			panic(err)
+		}
+	} else {
+		if _, err := buf.WriteString(`https`); err != nil {
+			panic(err)
+		}
+	}
+
+	// Log the error message.
+	fmt.Fprintf(buf, "://%s%s %s\" from %s - %d %d in %s\n", r.Host, r.RequestURI, r.Proto, r.RemoteAddr, status, size, elapsed)
+	log.Info(buf.String())
 }

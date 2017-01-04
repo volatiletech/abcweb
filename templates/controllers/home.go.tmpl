@@ -7,5 +7,6 @@ func (m Main) Home(w http.ResponseWriter, r *http.Request) {
 	err := m.Render.HTML(w, http.StatusOK, "main/home", nil)
 	if err != nil {
 		m.Log.Error(err.Error())
+		m.Render.HTML(w, http.StatusInternalServerError, "errors/500", nil)
 	}
 }

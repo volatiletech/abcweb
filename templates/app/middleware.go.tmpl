@@ -13,11 +13,11 @@ func (s *State) InitMiddleware() {
 		Log: s.Log,
 	}
 
-	// Use zap logger for all routing
-	s.Router.Use(m.Zap)
-
 	// Graceful panic recovery that uses zap to log the stack trace
 	s.Router.Use(m.Recover)
+
+	// Use zap logger for all routing
+	s.Router.Use(m.Zap)
 
 	// Puts a ceiling on the number of concurrent requests.
 	// throttle := chimiddleware.Throttle(100)

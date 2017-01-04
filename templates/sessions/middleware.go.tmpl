@@ -12,8 +12,9 @@ type cookieWriter interface {
 // at the very end of the response workflow (opposed to written on every operation)
 type response struct {
 	http.ResponseWriter
-	wroteHeader bool
-	cookies     map[string]*http.Cookie
+	wroteHeader  bool
+	wroteCookies bool
+	cookies      map[string]*http.Cookie
 }
 
 // newResponse returns a new response object with a pointer to
@@ -35,8 +36,11 @@ func (r *response) Write(buf []byte) (int, error) {
 // headers and calls the underlying ResponseWriter WriteHeader func
 func (r *response) WriteHeader(code int) {
 	// Set all the cookies in the cookie buffer
-	for _, c := range r.cookies {
-		http.SetCookie(r.ResponseWriter, c)
+	if !r.wroteCookies {
+		r.wroteCookies = true
+		for _, c := range r.cookies {
+			http.SetCookie(r.ResponseWriter, c)
+		}
 	}
 
 	r.ResponseWriter.WriteHeader(code)

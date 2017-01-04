@@ -30,6 +30,12 @@ func (s *State) InitRenderer() {
 			Extensions:    []string{".tmpl", ".html"},
 			IsDevelopment: s.Config.RenderRecompile,
 			Funcs:         []template.FuncMap{appHelpers},
+
+			// If you do not wish to handle Render errors yourself you can remove
+			// this line. If this line is removed the Render library will
+			// write the error.String() value to the HTTP response and
+			// set the status code to 500. Note that removing this line can result
+			// in leaking sensitive info through the error message strings.
 			DisableHTTPErrorRendering: true,
 		}),
 	}

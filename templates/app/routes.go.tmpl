@@ -16,8 +16,22 @@ func (s *State) InitRoutes() {
 	}
 
 	// Serve static assets
+	// TODO: This will be replaced with pipedreams handler.
+	// It should go in the NotFound callback.
+	// Keep in mind that these files may need to be protected by auth/sessions
+	// (i.e. only visible if logged in for example), so there needs to be a
+	// mechanism for this.
 	s.Router.FileServer("/", http.Dir(s.Config.AssetsOut))
+
+	// 404 route handler
+	s.Router.NotFound(s.NotFound)
 
 	main := controllers.Main{Root: root}
 	s.Router.Get("/", main.Home)
+}
+
+func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
+	if err := s.Render.HTML(w, http.StatusNotFound, "errors/404", nil); err != nil {
+		panic(err)
+	}
 }
