@@ -8,13 +8,14 @@ import (
 	"encoding/pem"
 	"errors"
 	"math/big"
-	"os"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
-// template is a helper function to create a cert template with a
+// Template is a helper function to create a cert template with a
 // serial number and other required fields
-func template(appName, commonName string) (*x509.Certificate, error) {
+func Template(appName, commonName string) (*x509.Certificate, error) {
 	// generate a random serial number (a real cert authority would have some logic behind this)
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
@@ -40,18 +41,8 @@ func template(appName, commonName string) (*x509.Certificate, error) {
 }
 
 // WriteCertFile writes the cert.pem certificate file
-func WriteCertFile(path, appName, commonName string, pub interface{}, parentPriv interface{}) error {
-	template, err := template(appName, commonName)
-	if err != nil {
-		return err
-	}
-
-	certDER, err := x509.CreateCertificate(rand.Reader, template, template, pub, parentPriv)
-	if err != nil {
-		return err
-	}
-
-	file, err := os.Create(path)
+func WriteCertFile(outFile afero.File, template *x509.Certificate, pub interface{}, priv interface{}) error {
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, pub, priv)
 	if err != nil {
 		return err
 	}
@@ -62,20 +53,15 @@ func WriteCertFile(path, appName, commonName string, pub interface{}, parentPriv
 		Bytes: certDER,
 	}
 
-	return pem.Encode(file, b)
+	return pem.Encode(outFile, b)
 }
 
 // WritePrivateKey writes the private.key private key file
-func WritePrivateKey(path string, key *rsa.PrivateKey) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-
+func WritePrivateKey(outFile afero.File, key *rsa.PrivateKey) error {
 	b := &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	}
 
-	return pem.Encode(file, b)
+	return pem.Encode(outFile, b)
 }

@@ -32,7 +32,7 @@ var skipDirs = []string{
 }
 
 var fontAwesomeFiles = []string{
-	"font-awesome.min.css",
+	"font-awesome.css",
 	"FontAwesome.otf",
 	"fontawesome-webfont.eot",
 	"fontawesome-webfont.svg",
@@ -42,6 +42,7 @@ var fontAwesomeFiles = []string{
 }
 
 var bootstrapNone = []string{
+	"bootstrap-flex.css",
 	"bootstrap-flex.css",
 	"bootstrap-grid.css",
 	"bootstrap-reboot.css",

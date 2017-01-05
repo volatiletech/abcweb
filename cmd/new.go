@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"go/build"
 	"go/format"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/nullbio/abcweb/cert"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -99,7 +99,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Make the app directory if it doesnt already exist.
 	// Can get dir not exist errors on --tls-cert-only runs if we don't do this.
-	err := os.MkdirAll(newCmdConfig.AppPath, 0755)
+	err := fs.MkdirAll(newCmdConfig.AppPath, 0755)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Generate TLS certs if requested
 	if !newCmdConfig.NoTLSCerts {
-		err := generateTLSCerts()
+		err := generateTLSCerts(newCmdConfig)
 		if err != nil {
 			return err
 		}
@@ -133,12 +133,12 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func generateTLSCerts() error {
-	certFilePath := filepath.Join(newCmdConfig.AppPath, "cert.pem")
-	privateKeyPath := filepath.Join(newCmdConfig.AppPath, "private.key")
+func generateTLSCerts(config newConfig) error {
+	certFilePath := filepath.Join(config.AppPath, "cert.pem")
+	privateKeyPath := filepath.Join(config.AppPath, "private.key")
 
-	if !newCmdConfig.TLSCertsOnly {
-		_, err := os.Stat(certFilePath)
+	if !config.TLSCertsOnly {
+		_, err := fs.Stat(certFilePath)
 		if err == nil || (err != nil && !os.IsNotExist(err)) {
 			return nil
 		}
@@ -150,24 +150,38 @@ func generateTLSCerts() error {
 		return err
 	}
 
-	err = cert.WriteCertFile(certFilePath, newCmdConfig.AppName,
-		newCmdConfig.TLSCommonName, &privateKey.PublicKey, privateKey)
+	template, err := cert.Template(config.AppName, config.TLSCommonName)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("\tcreate -> %s\n", filepath.Join(newCmdConfig.AppName, "cert.pem"))
 
-	if err := cert.WritePrivateKey(privateKeyPath, privateKey); err != nil {
+	certFile, err := fs.Create(certFilePath)
+	if err != nil {
 		return err
 	}
-	fmt.Printf("\tcreate -> %s\n", filepath.Join(newCmdConfig.AppName, "private.key"))
+
+	err = cert.WriteCertFile(certFile, template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("\tcreate -> %s\n", filepath.Join(config.AppName, "cert.pem"))
+
+	privateKeyFile, err := fs.Create(privateKeyPath)
+	if err != nil {
+		return err
+	}
+
+	if err := cert.WritePrivateKey(privateKeyFile, privateKey); err != nil {
+		return err
+	}
+	fmt.Printf("\tcreate -> %s\n", filepath.Join(config.AppName, "private.key"))
 
 	return nil
 }
 
 func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error {
 	// Skip files and dirs depending on command line args
-	if skip, err := processSkips(basePath, path, info); skip {
+	if skip, err := processSkips(newCmdConfig, basePath, path, info); skip {
 		return err
 	}
 
@@ -177,7 +191,7 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 	fileContents := &bytes.Buffer{}
 
 	// Check if the output file or folder already exists
-	_, err = os.Stat(fullPath)
+	_, err = fs.Stat(fullPath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
@@ -191,7 +205,7 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 			return nil
 		}
 
-		err = os.MkdirAll(fullPath, 0755)
+		err = fs.MkdirAll(fullPath, 0755)
 		if err != nil {
 			return err
 		}
@@ -201,7 +215,7 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 			return nil
 		}
 
-		rawFileContents, err := ioutil.ReadFile(path)
+		rawFileContents, err := afero.ReadFile(fs, path)
 		if err != nil {
 			return err
 		}
@@ -235,7 +249,7 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 			}
 		}
 
-		err = ioutil.WriteFile(fullPath, fileContents.Bytes(), 0664)
+		err = afero.WriteFile(fs, fullPath, fileContents.Bytes(), 0664)
 		if err != nil {
 			return err
 		}
@@ -245,7 +259,7 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 	return nil
 }
 
-func processSkips(basePath string, path string, info os.FileInfo) (skip bool, err error) {
+func processSkips(config newConfig, basePath string, path string, info os.FileInfo) (skip bool, err error) {
 	// Ignore the root folder
 	if path == basePath && info.IsDir() {
 		return true, nil
@@ -261,28 +275,28 @@ func processSkips(basePath string, path string, info os.FileInfo) (skip bool, er
 	}
 
 	// Skip readme files if requested
-	if newCmdConfig.NoReadme {
+	if config.NoReadme {
 		if info.Name() == "README.md" || info.Name() == "README.md.tmpl" {
 			return true, nil
 		}
 	}
 
 	// Skip gitignore if requested
-	if newCmdConfig.NoGitIgnore {
+	if config.NoGitIgnore {
 		if info.Name() == ".gitignore" || info.Name() == ".gitignore.tmpl" {
 			return true, nil
 		}
 	}
 
 	// Skip default config.toml if requested
-	if newCmdConfig.NoConfig {
+	if config.NoConfig {
 		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" {
 			return true, nil
 		}
 	}
 
 	// Skip FontAwesome files if requested
-	if newCmdConfig.NoFontAwesome {
+	if config.NoFontAwesome {
 		for _, faFile := range fontAwesomeFiles {
 			if info.Name() == faFile || info.Name() == faFile+".tmpl" {
 				return true, nil
@@ -291,17 +305,17 @@ func processSkips(basePath string, path string, info os.FileInfo) (skip bool, er
 	}
 
 	var bsArr []string
-	if newCmdConfig.Bootstrap == "none" {
+	if config.Bootstrap == "none" {
 		bsArr = bootstrapNone
-	} else if newCmdConfig.Bootstrap == "flex" {
+	} else if config.Bootstrap == "flex" {
 		bsArr = bootstrapFlex
-	} else if newCmdConfig.Bootstrap == "regular" {
+	} else if config.Bootstrap == "regular" {
 		bsArr = bootstrapRegular
-	} else if newCmdConfig.Bootstrap == "gridonly" {
+	} else if config.Bootstrap == "gridonly" {
 		bsArr = bootstrapGridOnly
-	} else if newCmdConfig.Bootstrap == "rebootonly" {
+	} else if config.Bootstrap == "rebootonly" {
 		bsArr = bootstrapRebootOnly
-	} else if newCmdConfig.Bootstrap == "gridandrebootonly" {
+	} else if config.Bootstrap == "gridandrebootonly" {
 		bsArr = bootstrapGridRebootOnly
 	}
 
@@ -313,7 +327,7 @@ func processSkips(basePath string, path string, info os.FileInfo) (skip bool, er
 	}
 
 	// Skip Twitter Bootstrap JS files if requested
-	if newCmdConfig.NoBootstrapJS {
+	if config.NoBootstrapJS {
 		for _, bsFile := range bootstrapJSFiles {
 			if info.Name() == bsFile || info.Name() == bsFile+".tmpl" {
 				return true, nil

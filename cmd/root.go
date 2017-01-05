@@ -3,8 +3,12 @@ package cmd
 import (
 	"os"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
+
+// AppFS is a handle to the filesystem in use
+var fs = afero.NewOsFs()
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -19,9 +23,3 @@ func Execute() {
 		os.Exit(-1)
 	}
 }
-
-// func init() {
-// Here you will define your flags and configuration settings.
-// Cobra supports Persistent Flags, which, if defined here,
-// will be global for your application.
-// }
