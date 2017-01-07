@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -226,16 +227,96 @@ func TestProcessSkips(t *testing.T) {
 
 }
 
-func TestNewCmdPreRun(t *testing.T) {
-
-}
-
-func TestNewCmdRun(t *testing.T) {
-
-}
-
 func TestNewCmdWalk(t *testing.T) {
+	config := newConfig{
+		AppPath: "/my/app",
+		AppName: "app",
+		Silent:  true,
+	}
 
+	// test skip
+	err := fs.MkdirAll("/templates/i18n", 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := fs.Stat("/templates/i18n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = newCmdWalk(config, "/templates", "/templates/i18n", info, nil)
+	if err == nil {
+		t.Fatal("expected error but got nil")
+	}
+	if err != filepath.SkipDir {
+		t.Fatalf("expected error type filepath.SkipDir, but got %#v", err)
+	}
+
+	// check go file write
+	err = afero.WriteFile(fs, "/templates/file.go", []byte("hello"), 0664)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err = fs.Stat("/templates/file.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = newCmdWalk(config, "/templates", "/templates/file.go", info, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err = fs.Stat("/my/app/file.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.IsDir() || info.Size() != 5 {
+		t.Fatalf("Expected isdir false and size to be 5, got %t and %d", info.IsDir(), info.Size())
+	}
+
+	// check template file write
+	err = afero.WriteFile(fs, "/templates/template.go.tmpl", []byte(`package    {{.AppName}}`), 0664)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err = fs.Stat("/templates/template.go.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = newCmdWalk(config, "/templates", "/templates/template.go.tmpl", info, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err = fs.Stat("/my/app/template.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.IsDir() || info.Size() != int64(len("package app\n")) {
+		b, err := afero.ReadFile(fs, "/my/app/template.go")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Fatalf("Expected isdir false and size to be %d, got %t and %d, value: %q", len("package app\n"), info.IsDir(), info.Size(), string(b))
+	}
+
+	// check dir write
+	err = fs.MkdirAll("/templates/stuff", 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err = fs.Stat("/templates/stuff")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = newCmdWalk(config, "/templates", "/templates/stuff", info, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err = fs.Stat("/my/app/stuff")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !info.IsDir() {
+		t.Fatalf("Expected isdir true, got %t", info.IsDir())
+	}
 }
 
 func TestGenerateTLSCerts(t *testing.T) {
@@ -246,6 +327,7 @@ func TestGenerateTLSCerts(t *testing.T) {
 		// attempt to create tls certs twice
 		// should fail second time if this is false
 		TLSCertsOnly: false,
+		Silent:       true,
 	}
 
 	err := generateTLSCerts(config)

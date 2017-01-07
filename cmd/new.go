@@ -51,6 +51,7 @@ func init() {
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("tls-certs-only", "", false, "Only generate self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-http-redirect", "", false, "Disable the http -> https redirect when using TLS")
+	newCmd.Flags().BoolP("silent", "", false, "Disable console output")
 
 	RootCmd.AddCommand(newCmd)
 	viper.BindPFlags(newCmd.Flags())
@@ -70,6 +71,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		NoConfig:       viper.GetBool("no-config"),
 		ForceOverwrite: viper.GetBool("force-overwrite"),
 		NoHTTPRedirect: viper.GetBool("no-http-redirect"),
+		Silent:         viper.GetBool("silent"),
 		ProdStorer:     viper.GetString("sessions-prod-storer"),
 		DevStorer:      viper.GetString("sessions-dev-storer"),
 		TLSCommonName:  viper.GetString("tls-common-name"),
@@ -95,7 +97,9 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 }
 
 func newCmdRun(cmd *cobra.Command, args []string) error {
-	fmt.Println("Generating in:", newCmdConfig.AppPath)
+	if !newCmdConfig.Silent {
+		fmt.Println("Generating in:", newCmdConfig.AppPath)
+	}
 
 	// Make the app directory if it doesnt already exist.
 	// Can get dir not exist errors on --tls-cert-only runs if we don't do this.
@@ -114,7 +118,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		// Walk all files in the templates folder
 		basePath := filepath.Join(p.Dir, "templates")
 		err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
-			return newCmdWalk(basePath, path, info, err)
+			return newCmdWalk(newCmdConfig, basePath, path, info, err)
 		})
 		if err != nil {
 			return err
@@ -129,7 +133,9 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Println("\tresult -> Finished")
+	if !newCmdConfig.Silent {
+		fmt.Println("\tresult -> Finished")
+	}
 	return nil
 }
 
@@ -144,7 +150,9 @@ func generateTLSCerts(config newConfig) error {
 		}
 	}
 
-	fmt.Println("\trun -> TLS Certificate Generator")
+	if !config.Silent {
+		fmt.Println("\trun -> TLS Certificate Generator")
+	}
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return err
@@ -164,7 +172,9 @@ func generateTLSCerts(config newConfig) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("\tcreate -> %s\n", filepath.Join(config.AppName, "cert.pem"))
+	if !config.Silent {
+		fmt.Printf("\tcreate -> %s\n", filepath.Join(config.AppName, "cert.pem"))
+	}
 
 	privateKeyFile, err := fs.Create(privateKeyPath)
 	if err != nil {
@@ -174,19 +184,25 @@ func generateTLSCerts(config newConfig) error {
 	if err := cert.WritePrivateKey(privateKeyFile, privateKey); err != nil {
 		return err
 	}
-	fmt.Printf("\tcreate -> %s\n", filepath.Join(config.AppName, "private.key"))
+	if !config.Silent {
+		fmt.Printf("\tcreate -> %s\n", filepath.Join(config.AppName, "private.key"))
+	}
 
 	return nil
 }
 
-func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error {
+func newCmdWalk(config newConfig, basePath string, path string, info os.FileInfo, err error) error {
+	if err != nil {
+		return err
+	}
+
 	// Skip files and dirs depending on command line args
-	if skip, err := processSkips(newCmdConfig, basePath, path, info); skip {
+	if skip, err := processSkips(config, basePath, path, info); skip {
 		return err
 	}
 
 	// Get the path for command line output, and the output target fullPath
-	cleanPath, fullPath := getProcessedPaths(path, string(os.PathSeparator), newCmdConfig)
+	cleanPath, fullPath := getProcessedPaths(path, string(os.PathSeparator), config)
 
 	fileContents := &bytes.Buffer{}
 
@@ -211,7 +227,7 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 		}
 	} else {
 		// Files only get created if they don't already exist, or force overwrite is enabled
-		if !newCmdConfig.ForceOverwrite && outputExists {
+		if !config.ForceOverwrite && outputExists {
 			return nil
 		}
 
@@ -227,7 +243,7 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 				return err
 			}
 
-			err = t.Execute(fileContents, newCmdConfig)
+			err = t.Execute(fileContents, config)
 			if err != nil {
 				return err
 			}
@@ -255,7 +271,9 @@ func newCmdWalk(basePath string, path string, info os.FileInfo, err error) error
 		}
 	}
 
-	fmt.Printf("\tcreate -> %s\n", cleanPath)
+	if !config.Silent {
+		fmt.Printf("\tcreate -> %s\n", cleanPath)
+	}
 	return nil
 }
 

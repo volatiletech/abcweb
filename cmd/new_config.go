@@ -24,6 +24,7 @@ type newConfig struct {
 	ForceOverwrite bool
 	TLSCertsOnly   bool
 	NoHTTPRedirect bool
+	Silent         bool
 }
 
 var skipDirs = []string{
