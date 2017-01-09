@@ -101,6 +101,6 @@ func (z *zapResponseWriter) WriteHeader(code int) {
 
 func (z *zapResponseWriter) Write(b []byte) (int, error) {
 	size, err := z.ResponseWriter.Write(b)
-	z.size += z.size
+	z.size += size
 	return size, err
 }
