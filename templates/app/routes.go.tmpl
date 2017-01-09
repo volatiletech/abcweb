@@ -16,6 +16,9 @@ func (s *State) InitRoutes() {
 		Render:  s.Render,
 		Session: s.Session,
 	}
+	
+	// 404 route handler
+	s.Router.NotFound(s.NotFound)
 
 	// Serve static assets
 	// TODO: This will be replaced with pipedreams handler.
@@ -24,9 +27,6 @@ func (s *State) InitRoutes() {
 	// (i.e. only visible if logged in for example), so there needs to be a
 	// mechanism for this.
 	s.Router.FileServer("/", http.Dir(s.Config.AssetsOut))
-
-	// 404 route handler
-	s.Router.NotFound(s.NotFound)
 
 	main := controllers.Main{Root: root}
 	s.Router.Get("/", main.Home)

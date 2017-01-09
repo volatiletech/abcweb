@@ -26,7 +26,6 @@ func newResponse(w http.ResponseWriter) *response {
 // Write calls the underlying ResponseWriter Write func
 func (r *response) Write(buf []byte) (int, error) {
 	if !r.wroteHeader {
-		r.wroteHeader = true
 		r.WriteHeader(http.StatusOK)
 	}
 	return r.ResponseWriter.Write(buf)
@@ -35,6 +34,8 @@ func (r *response) Write(buf []byte) (int, error) {
 // WriteHeader sets all cookies in the buffer on the underlying ResponseWriter's
 // headers and calls the underlying ResponseWriter WriteHeader func
 func (r *response) WriteHeader(code int) {
+	r.wroteHeader = true
+
 	// Set all the cookies in the cookie buffer
 	if !r.wroteCookies {
 		r.wroteCookies = true
