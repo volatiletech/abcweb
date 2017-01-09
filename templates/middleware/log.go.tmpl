@@ -18,7 +18,7 @@ import (
 type zapResponseWriter struct {
 	http.ResponseWriter
 	status int
-	size   int64
+	size   int
 }
 
 // Zap middleware handles web request logging using Zap
@@ -64,7 +64,7 @@ func Log(r *http.Request) zap.Logger {
 }
 {{- end}}
 
-func writeZap(log zap.Logger, r *http.Request, t time.Time, status int, size int64) {
+func writeZap(log zap.Logger, r *http.Request, t time.Time, status int, size int) {
 	elapsed := time.Now().Sub(t)
 	var protocol string
 	if r.TLS == nil {
@@ -89,7 +89,7 @@ func writeZap(log zap.Logger, r *http.Request, t time.Time, status int, size int
 		zap.String("uri", r.RequestURI),
 		zap.String("remote_addr", r.RemoteAddr),
 		zap.Int("status", status),
-		zap.Int64("size", size),
+		zap.Int("size", size),
 		zap.Duration("elapsed", elapsed),
 	)
 }

@@ -19,8 +19,8 @@ type sessionsResponseWriter struct {
 
 // newResponse returns a new response object with a pointer to
 // the old ResponseWriter object
-func newResponse(w http.ResponseWriter) *response {
-	return &response{ResponseWriter: w}
+func newResponse(w http.ResponseWriter) *sessionsResponseWriter {
+	return &sessionsResponseWriter{ResponseWriter: w}
 }
 
 // Write calls the underlying ResponseWriter Write func
