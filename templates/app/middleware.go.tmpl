@@ -13,6 +13,18 @@ func (s *State) InitMiddleware() {
 		Log: s.Log,
 	}
 
+	// Strip and redirect slashes on routing paths
+	s.Router.Use(chimiddleware.StripSlashes)
+	{{if not .NoRequestID -}}
+	// Injects a request ID into the context of each request
+	s.Router.Use(chimiddleware.RequestID)
+
+	// Creates the derived request ID logger and sets it in the context object.
+	// Use middleware.Log(r) to retrieve it from the context object for usage in
+	// other middleware injected below this one, and in your controllers.
+	s.Router.Use(m.RequestIDLogger)
+	{{- end}}
+
 	// Graceful panic recovery that uses zap to log the stack trace
 	s.Router.Use(m.Recover)
 
@@ -29,13 +41,7 @@ func (s *State) InitMiddleware() {
 	// timeout := chimiddleware.Timeout(time.Second * 30)
 	// s.router.Use(timeout)
 
-	// Strip and redirect slashes on routing paths
-	s.Router.Use(chimiddleware.StripSlashes)
-
 	// More available middleware. Uncomment to enable:
-
-	// Injects a request ID into the context of each request
-	// s.Router.Use(chimiddleware.RequestID)
 
 	// Heartbeat is a monitoring endpoint to check the servers pulse.
 	// route := chimiddleware.Route("/ping")

@@ -19,7 +19,7 @@ a client-side rendered web app or a stand-alone web API server.
 * Command-line argument configuration
 * Minification (HTML5/CSS3/JS/JSON/SVG/XML) 
 * HTTP2 support
-* Flexible routing (supports stdlib context)
+* Flexible routing (supports stdlib context.Context)
 * Flexible rendering (HTML templates, JSON, XML, text & binary data)
 * Colored & leveled logging
 * TLS/SSL support (https://)

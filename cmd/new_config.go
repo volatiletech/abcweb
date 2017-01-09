@@ -21,6 +21,7 @@ type newConfig struct {
 	NoTLSCerts     bool
 	NoReadme       bool
 	NoConfig       bool
+	NoRequestID    bool
 	ForceOverwrite bool
 	TLSCertsOnly   bool
 	NoHTTPRedirect bool

@@ -10,7 +10,9 @@ import (
 func (s *State) InitRoutes() {
 	// The common state for each route handler
 	root := controllers.Root{
+		{{if .NoRequestID -}}
 		Log:     s.Log,
+		{{- end}}
 		Render:  s.Render,
 		Session: s.Session,
 	}

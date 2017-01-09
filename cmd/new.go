@@ -51,6 +51,7 @@ func init() {
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("tls-certs-only", "", false, "Only generate self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-http-redirect", "", false, "Disable the http -> https redirect when using TLS")
+	newCmd.Flags().BoolP("no-request-id", "", false, "Disable the Request ID middleware and Request ID logging")
 	newCmd.Flags().BoolP("silent", "", false, "Disable console output")
 
 	RootCmd.AddCommand(newCmd)
@@ -69,6 +70,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		TLSCertsOnly:   viper.GetBool("tls-certs-only"),
 		NoReadme:       viper.GetBool("no-readme"),
 		NoConfig:       viper.GetBool("no-config"),
+		NoRequestID:    viper.GetBool("no-request-id"),
 		ForceOverwrite: viper.GetBool("force-overwrite"),
 		NoHTTPRedirect: viper.GetBool("no-http-redirect"),
 		Silent:         viper.GetBool("silent"),

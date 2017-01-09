@@ -2,10 +2,25 @@ package middleware
 
 import "github.com/uber-go/zap"
 
+{{if not .NoRequestID -}}
+// CtxRequestIDLogger is the http.Request Context lookup key for the request ID logger
+const CtxRequestIDLogger = "request_id_logger"
+{{- end}}
+
 // Middleware exposes useful variables to every middleware handler.
 // If you wanted to pass additional objects to each middleware handler
 // you can add them here, and then assign them in main.go where the
 // instance of middleware is created.
 type Middleware struct {
+	{{if .NoRequestID -}}
+	// Log is used for logging in your middleware.
+	// Do not remove.
+	{{- else -}}
+	// Log is used for logging in your middleware and to 
+	// create a derived logger that includes the request ID.
+	// Do not remove.
+	{{- end}}
 	Log zap.Logger
+
+	// User's custom vars go underneath this comment.
 }
