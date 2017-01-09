@@ -83,12 +83,13 @@ func writeZap(log zap.Logger, r *http.Request, t time.Time, status int, size int
 
 	// log all the fields
 	log.Info(fmt.Sprintf("%s request", protocol),
+		zap.Int("status", status),
+		zap.String("method", r.Method),
+		zap.String("uri", r.RequestURI),
 		zap.Bool("tls", r.TLS != nil),
 		zap.String("protocol", r.Proto),
 		zap.String("host", r.Host),
-		zap.String("uri", r.RequestURI),
 		zap.String("remote_addr", r.RemoteAddr),
-		zap.Int("status", status),
 		zap.Int("size", size),
 		zap.Duration("elapsed", elapsed),
 	)

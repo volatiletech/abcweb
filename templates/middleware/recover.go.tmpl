@@ -1,11 +1,9 @@
 package middleware
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 
-	chimiddleware "github.com/pressly/chi/middleware"
 	"github.com/uber-go/zap"
 )
 
@@ -14,23 +12,11 @@ func (m Middleware) Recover(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				buf := &bytes.Buffer{}
-				requestID := chimiddleware.GetReqID(r.Context())
-
-				if requestID != "" {
-					fmt.Fprintf(buf, "[%s] ", requestID)
-				}
-
-				fmt.Fprintf(buf, `"%s `, r.Method)
-
+				var protocol string
 				if r.TLS == nil {
-					if _, err := buf.WriteString(`http`); err != nil {
-						panic(err)
-					}
+					protocol = "http"
 				} else {
-					if _, err := buf.WriteString(`https`); err != nil {
-						panic(err)
-					}
+					protocol = "https"
 				}
 				
 				{{if not .NoRequestID -}}
@@ -42,12 +28,27 @@ func (m Middleware) Recover(next http.Handler) http.Handler {
 				}
 				{{- end}}
 
-				// Log the error message.
-				fmt.Fprintf(buf, "://%s%s %s\" from %s", r.Host, r.RequestURI, r.Proto, r.RemoteAddr)
+				// log all the fields
 				{{if .NoRequestID -}}
-				m.Log.Panic(buf.String(), zap.String("error", err.(string)))
+				m.Log.Panic(fmt.Sprintf("%s request error", protocol),
+					zap.String("method", r.Method),
+					zap.String("uri", r.RequestURI),
+					zap.Bool("tls", r.TLS != nil),
+					zap.String("protocol", r.Proto),
+					zap.String("host", r.Host),
+					zap.String("remote_addr", r.RemoteAddr),
+					zap.String("error", err.(string)),
+				)
 				{{- else -}}
-				log.Panic(buf.String(), zap.String("error", err.(string)))
+				log.Panic(fmt.Sprintf("%s request error", protocol),
+					zap.String("method", r.Method),
+					zap.String("uri", r.RequestURI),
+					zap.Bool("tls", r.TLS != nil),
+					zap.String("protocol", r.Proto),
+					zap.String("host", r.Host),
+					zap.String("remote_addr", r.RemoteAddr),
+					zap.String("error", err.(string)),
+				)
 				{{- end}}
 
 				// Return a http 500 with the HTTP body of "Internal Server Error"
