@@ -25,7 +25,8 @@ type State struct {
 	Session sessions.Overseer
 }
 
-// Config for the app
+// Config for the app loaded through environment variables, command line, or
+// the config.toml file.
 type Config struct {
 	// LiveReload enabled or disabled
 	LiveReload bool `toml:"live_reload"`

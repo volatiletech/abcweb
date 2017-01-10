@@ -1,8 +1,11 @@
 package controllers
 
 import (
+	"net/http"
+
 	"{{.ImportPath}}/rendering"
 	"{{.ImportPath}}/sessions"
+	"{{.ImportPath}}/middleware"
 	"github.com/uber-go/zap"
 )
 
@@ -22,3 +25,12 @@ type Root struct {
 type Main struct {
 	Root
 }
+
+{{if not .NoRequestID -}}
+// Log returns the Request ID scoped logger from the request Context
+// and panics if it cannot be found.
+// This is a convenience wrapper -- Log() is nicer than middleware.Log()
+func Log(r *http.Request) zap.Logger {
+	return middleware.Log(r)
+}
+{{- end}}
