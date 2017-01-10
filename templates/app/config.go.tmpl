@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"{{.ImportPath}}/rendering"
+	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
+	{{- end}}
 	"github.com/nullbio/shift"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
@@ -22,7 +24,9 @@ type State struct {
 	Router  *chi.Mux
 	Render  rendering.Renderer
 	Root    *cobra.Command
+	{{if not .NoSessions -}}
 	Session sessions.Overseer
+	{{- end}}
 }
 
 // Config for the app loaded through environment variables, command line, or
@@ -66,8 +70,10 @@ type Config struct {
 	// This should be used in development mode so no server restart is required
 	// on template file changes.
 	RenderRecompile bool `toml:"render_recompile"`
+	{{if not .NoSessions -}}
 	// Use the development mode sessions storer opposed to production mode storer
 	SessionsDevStorer bool `toml:"sessions_dev_storer"`
+	{{- end}}
 }
 
 // RegisterFlags registers the configuration flag defaults and help strings
@@ -92,7 +98,9 @@ func (s *State) RegisterFlags() error {
 	// This should be used in development mode to avoid having to reload the
 	// server on every template file modification.
 	s.Root.Flags().BoolP("render-recompile", "", false, "Enable recompilation of the template on each render")
+	{{if not .NoSessions -}}
 	s.Root.Flags().BoolP("sessions-dev-storer", "", false, "Use the development mode sessions storer")
+	{{- end}}
 
 	return viper.BindPFlags(s.Root.Flags())
 }
@@ -118,7 +126,9 @@ func (s *State) LoadConfig() error {
 		AssetsNoCompress:  viper.GetBool("assets-no-compress"),
 		AssetsNoCache:     viper.GetBool("assets-no-cache"),
 		RenderRecompile:   viper.GetBool("render-recompile"),
+		{{if not .NoSessions -}}
 		SessionsDevStorer: viper.GetBool("sessions-dev-storer"),
+		{{- end}}
 	}
 
 	env := os.Getenv("{{toUpper .AppName}}_ENV")

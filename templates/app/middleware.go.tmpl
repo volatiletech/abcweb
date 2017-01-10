@@ -2,7 +2,9 @@ package app
 
 import (
 	"{{.ImportPath}}/middleware"
+	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
+	{{- end}}
 	chimiddleware "github.com/pressly/chi/middleware"
 )
 
@@ -66,6 +68,7 @@ func (s *State) InitMiddleware() {
 	// default settings by calling cors.New() with your own cors.Options struct.
 	// s.Router.Use(cors.Default().Handler)
 
+	{{if not .NoSessions -}}
 	// Resets the expiry of the active session on each web request
 	s.Router.Use(s.Session.ResetMiddleware)
 
@@ -73,4 +76,5 @@ func (s *State) InitMiddleware() {
 	// session cookies across session API requests.
 	// Note: This is a mandatory middleware when using the sessions library.
 	s.Router.Use(sessions.Middleware)
+	{{- end}}
 }

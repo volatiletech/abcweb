@@ -14,7 +14,9 @@ func (s *State) InitRoutes() {
 		Log:     s.Log,
 		{{- end}}
 		Render:  s.Render,
+		{{if not .NoSessions -}}
 		Session: s.Session,
+		{{- end}}
 	}
 	
 	// 404 route handler

@@ -42,8 +42,10 @@ func main() {
 		// Create a new router
 		state.Router = chi.NewRouter()
 
+		{{if not .NoSessions -}}
 		// Configure the sessions overseer (app/sessions.go)
 		state.InitSessions()
+		{{- end}}
 
 		// Configure the renderer (app/render.go)
 		state.InitRenderer()

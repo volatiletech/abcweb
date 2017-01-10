@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	"{{.ImportPath}}/rendering"
+	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
+	{{- end}}
 	"{{.ImportPath}}/middleware"
 	"github.com/uber-go/zap"
 )
@@ -16,7 +18,9 @@ import (
 type Root struct {
 	Log     zap.Logger
 	Render  rendering.Renderer
+	{{if not .NoSessions -}}
 	Session sessions.Overseer
+	{{- end}}
 }
 
 // Main is the controller struct for the main routes (home, about, etc).

@@ -96,6 +96,7 @@ func TestProcessSkips(t *testing.T) {
 		NoFontAwesome: true,
 		Bootstrap:     "none",
 		NoBootstrapJS: true,
+		NoSessions:    true,
 	}
 
 	// check skip basedir
@@ -138,6 +139,20 @@ func TestProcessSkips(t *testing.T) {
 	skip, _ = processSkips(config, "/templates", "/templates/README.md", info)
 	if skip != true {
 		t.Error("expected to skip skip readme")
+	}
+
+	// check skip app/sessions.go.tmpl
+	f, err = fs.Create("/templates/app/sessions.go.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err = f.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	skip, _ = processSkips(config, "/templates", "/templates/app/sessions.go.tmpl", info)
+	if skip != true {
+		t.Error("expected to skip skip sessions.go.tmpl")
 	}
 
 	// check skip gitignore

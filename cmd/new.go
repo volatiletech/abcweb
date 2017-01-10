@@ -45,9 +45,10 @@ func init() {
 	newCmd.Flags().BoolP("no-bootstrap-js", "j", false, "Skip Twitter Bootstrap 4 javascript inclusion")
 	newCmd.Flags().BoolP("no-font-awesome", "f", false, "Skip Font Awesome inclusion")
 	newCmd.Flags().BoolP("no-livereload", "l", false, "Don't support LiveReload")
-	newCmd.Flags().BoolP("no-tls-certs", "s", false, "Skip generation of self-signed TLS cert files")
+	newCmd.Flags().BoolP("no-tls-certs", "t", false, "Skip generation of self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-readme", "r", false, "Skip README.md files")
 	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml file")
+	newCmd.Flags().BoolP("no-sessions", "s", false, "Skip support for http sessions")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("tls-certs-only", "", false, "Only generate self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-http-redirect", "", false, "Disable the http -> https redirect when using TLS")
@@ -66,6 +67,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		NoBootstrapJS:  viper.GetBool("no-bootstrap-js"),
 		NoFontAwesome:  viper.GetBool("no-font-awesome"),
 		NoLiveReload:   viper.GetBool("no-livereload"),
+		NoSessions:     viper.GetBool("no-sessions"),
 		NoTLSCerts:     viper.GetBool("no-tls-certs"),
 		TLSCertsOnly:   viper.GetBool("tls-certs-only"),
 		NoReadme:       viper.GetBool("no-readme"),
@@ -292,6 +294,11 @@ func processSkips(config newConfig, basePath string, path string, info os.FileIn
 				return true, filepath.SkipDir
 			}
 		}
+	}
+
+	// Skip sessions configuration if requested
+	if config.NoSessions && strings.HasSuffix(path, "/templates/app/sessions.go.tmpl") {
+		return true, nil
 	}
 
 	// Skip readme files if requested
