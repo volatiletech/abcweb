@@ -44,7 +44,7 @@ func (m Middleware) RequestIDLogger(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		requestID := chimiddleware.GetReqID(r.Context())
 		derivedLogger := m.Log.With(zap.String("request_id", requestID))	
-		r = r.WithContext(context.WithValue(r.Context(), CtxRequestIDLogger, derivedLogger))
+		r = r.WithContext(context.WithValue(r.Context(), CtxLogLookup, derivedLogger))
 		next.ServeHTTP(w, r)
 	}
 
@@ -55,7 +55,7 @@ func (m Middleware) RequestIDLogger(next http.Handler) http.Handler {
 // and panics if it cannot be found. This function is only ever used
 // by your controllers if your app uses the RequestID middlewares.
 func Log(r *http.Request) zap.Logger {
-	v := r.Context().Value(CtxRequestIDLogger)
+	v := r.Context().Value(CtxLogLookup)
 	log, ok := v.(zap.Logger)
 	if !ok {
 		panic("cannot get derived request id logger from context object")
@@ -74,7 +74,7 @@ func writeZap(log zap.Logger, r *http.Request, t time.Time, status int, size int
 	}
 
 	{{if not .NoRequestID -}}
-	v := r.Context().Value(CtxRequestIDLogger)
+	v := r.Context().Value(CtxLogLookup)
 	log, ok := v.(zap.Logger)
 	if !ok {
 		panic("cannot get derived request id logger from context object")

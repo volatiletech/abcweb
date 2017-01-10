@@ -3,8 +3,8 @@ package middleware
 import "github.com/uber-go/zap"
 
 {{if not .NoRequestID -}}
-// CtxRequestIDLogger is the http.Request Context lookup key for the request ID logger
-const CtxRequestIDLogger = "request_id_logger"
+// CtxLogLookup is the http.Request Context lookup key for the request ID logger
+const CtxLogLookup = "request_id_logger"
 {{- end}}
 
 // Middleware exposes useful variables to every middleware handler.
