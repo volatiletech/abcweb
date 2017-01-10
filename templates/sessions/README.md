@@ -5,11 +5,15 @@
 * Redis
 * Cookie
 
+---
+
 ### API Operations
 
 Note, you should avoid mixing and matching API calls for key-value versus object.
 Stick to one mode for every app you generate (either simple sessions using key-value
 strings and the regular helpers or a custom sessions struct using the object helpers).
+
+---
 
 #### Key-Value string API
 
@@ -38,6 +42,8 @@ AddFlash adds a flash message key-value pair to your session.
 GetFlash retrieves a flash message key-value pair value stored in your session. 
 Note that flash messages are automatically deleted after being retrieved once.
 
+---
+
 #### Object API
 
 These session API endpoints are ideal for apps that are best served with a sessions
@@ -61,6 +67,8 @@ AddFlashObj adds an object as a flash message to your session.
 
 GetFlashObj retrieves a object as a flash message stored in your session.
 Note that flash messages are automatically deleted after being retrieved once.
+
+---
 
 ### Overseer interface
 
@@ -92,6 +100,8 @@ Regenerate a new session ID for your session.
 
 SessionID returns the session ID for your session.
 
+---
+
 ### Storer interface
 
 In the case of session management, "keys" here are synonymous with session IDs.
@@ -116,6 +126,8 @@ Delete a key-value pair from the store.
 
 Reset the expiry of a key in the store.
 
+---
+
 ### Available Overseers
 
 `NewStorageOverseer(opts CookieOptions, storer Storer) *StorageOverseer`
@@ -125,6 +137,8 @@ StorageOverseer is used for all server-side sessions (disk, memory, redis, etc).
 `NewCookieOverseer(opts CookieOptions, secretKey [32]byte) *CookieOverseer`
 
 CookieOverseer is used for client-side only cookie sessions.
+
+---
 
 ### How does each Storer work?
 
@@ -166,6 +180,8 @@ The cookie storer is intermingled with the CookieOverseer, so to use it you must
 use the CookieOverseer instead of the StorageOverseer. Cookie sessions are stored
 in encrypted form (AES-GCM encrypted and base64 encoded) in the clients browser.
 
+---
+
 ### Sessions Middleware
 
 The sessions.Middleware is a required component when using this sessions package.
@@ -191,6 +207,8 @@ In the majority of cases the middleware is the best user-experience, and we high
 recommend loading this middleware by default. You should load one instance of this
 middleware for each session overseer you are using.
 
+---
+
 ### Error types
 
 If an API operation fails, and you would like to check if it failed due to no session
@@ -202,12 +220,14 @@ against the errors returned:
 IsNoSessionError(err error) bool
 IsNoMapKeyError(err error) bool
 ```
+---
 
 ### Examples
 
 Using object helpers
 
 ```
+// A session struct you've defined. Can contain anything you like.
 type MySession struct {
 	Username string
 	AccessLevel int
@@ -229,6 +249,7 @@ if IsNoSessionError(err) {
 Using object flash helpers
 
 ```
+// A flash struct you've defined. Can contain anything you like.
 type FlashError struct {
 	Error string
 	Code int
