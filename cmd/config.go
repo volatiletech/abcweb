@@ -1,9 +1,41 @@
 package cmd
 
 const (
-	templatesDirectory = "templates"
-	basePackage        = "github.com/nullbio/abcweb"
+	basePackage         = "github.com/nullbio/abcweb"
+	templatesDirectory  = "templates"
+	migrationsDirectory = "./migrations"
 )
+
+type buildConfig struct {
+}
+
+type modelsConfig struct {
+	// "postgres", "mysql", etc
+	DB  string
+	Dir string
+	Env string
+
+	Host    string
+	Port    int
+	DBName  string
+	User    string
+	Pass    string
+	SSLMode string
+}
+
+type migrateConfig struct {
+	// "postgres", "mysql", etc
+	DB  string
+	Dir string
+	Env string
+
+	Host    string
+	Port    int
+	DBName  string
+	User    string
+	Pass    string
+	SSLMode string
+}
 
 type newConfig struct {
 	AppPath        string
