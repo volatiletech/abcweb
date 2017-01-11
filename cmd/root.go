@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // AppFS is a handle to the filesystem in use
@@ -22,4 +23,9 @@ func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		os.Exit(-1)
 	}
+}
+
+func init() {
+	RootCmd.Flags().BoolP("version", "", false, "Print the ABCWeb version")
+	viper.BindPFlags(RootCmd.Flags())
 }
