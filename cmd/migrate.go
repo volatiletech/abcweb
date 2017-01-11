@@ -9,14 +9,10 @@ var migrateCmdConfig migrateConfig
 
 // migrateCmd represents the "migrate" command
 var migrateCmd = &cobra.Command{
-	Use:   "migrate [flags]",
-	Short: "Generate a new ABCWeb application.",
-	Long: `The 'abcweb new' command generates a new ABCWeb application with a 
-default directory structure and configuration at the Go src import path you specify.
-
-The app will generate in $GOPATH/src/<import_path>.
-`,
-	Example: "abcweb new github.com/yourusername/myapp",
+	Use:     "migrate",
+	Short:   "Run migration tasks",
+	Long:    "describe tasks etc...",
+	Example: "example here",
 	PreRunE: migrateCmdPreRun,
 	RunE:    migrateCmdRun,
 }

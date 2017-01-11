@@ -10,14 +10,14 @@ var modelsCmdConfig modelsConfig
 // generateCmd represents the "generate" command
 var generateCmd = &cobra.Command{
 	Use:     "generate",
-	Short:   "stuff here",
+	Short:   "Generate your models and migration files",
 	Long:    "stuff here",
 	Example: "stuff here",
 }
 
 // modelsCmd represents the "generate models" command
 var modelsCmd = &cobra.Command{
-	Use:     "models etc etc etc",
+	Use:     "models",
 	Short:   "stuff here",
 	Long:    "models cmd description",
 	Example: "whatever",

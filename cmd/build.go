@@ -9,14 +9,10 @@ var buildCmdConfig buildConfig
 
 // buildCmd represents the new command
 var buildCmd = &cobra.Command{
-	Use:   "new <import_path> [flags]",
-	Short: "Generate a new ABCWeb application.",
-	Long: `The 'abcweb new' command generates a new ABCWeb application with a 
-default directory structure and configuration at the Go src import path you specify.
-
-The app will generate in $GOPATH/src/<import_path>.
-`,
-	Example: "abcweb new github.com/yourusername/myapp",
+	Use:     "build",
+	Short:   "Builds your ABCWeb app binary and.... does stuff to assets?",
+	Long:    "describe build command here",
+	Example: "build example here",
 	PreRunE: buildCmdPreRun,
 	RunE:    buildCmdRun,
 }

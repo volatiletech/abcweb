@@ -6,11 +6,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// runCmd represents the run command
+// runCmd represents the "run" command
 var runCmd = &cobra.Command{
-	Use:     "run [flags]",
-	Short:   "short desc.",
-	Long:    `The 'abcweb run' command does............`,
+	Use:     "run",
+	Short:   "Runs your ABCWeb app",
+	Long:    "Runs your ABCWeb app, watches files, etc.....",
 	Example: `abcweb run`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO: Work your own magic here
@@ -25,10 +25,10 @@ func init() {
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// runCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// watchCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// watchCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 }
