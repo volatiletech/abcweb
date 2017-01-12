@@ -10,34 +10,36 @@ var modelsCmdConfig modelsConfig
 // generateCmd represents the "generate" command
 var generateCmd = &cobra.Command{
 	Use:     "generate",
-	Short:   "Generate your models and migration files",
-	Long:    "stuff here",
-	Example: "stuff here",
+	Short:   "Generate your database models and migration files",
+	Example: "abcweb generate models\nabcweb generate migration add_users",
 }
 
 // modelsCmd represents the "generate models" command
 var modelsCmd = &cobra.Command{
-	Use:     "models",
-	Short:   "stuff here",
-	Long:    "models cmd description",
-	Example: "whatever",
+	Use:   "models",
+	Short: "Generate your database models",
+	Long: `Generate models will connect to your database and generate 
+your models from your existing database structure. Make sure you run your
+migrations first.`,
+	Example: "abcweb generate models",
 	PreRunE: modelsCmdPreRun,
 	RunE:    modelsCmdRun,
 }
 
 // migrationCmd represents the "generate migration" command
 var migrationCmd = &cobra.Command{
-	Use:     "migration <name> [flags]",
-	Short:   "stuff here",
-	Long:    "Generate a migration file.",
+	Use:   "migration <name> [flags]",
+	Short: "Generate a migration file",
+	Long: `Generate migration will generate a .go or .sql migration file in 
+your migrations directory.`,
 	Example: "abcweb generate migration add_users",
 	RunE:    migrationCmdRun,
 }
 
 func init() {
 	// models flags
-	modelsCmd.Flags().StringP("db", "b", "", `Valid options: (postgres|mysql) (default: config.toml "db" field value)`)
-	modelsCmd.Flags().StringP("env", "e", "dev", `config.toml environment to load (default: will only use "dev" default if cannot find in $PROJECTNAME_ENV)`)
+	modelsCmd.Flags().StringP("env", "e", "dev", `database.toml environment to load, obtained from config.toml default_env or $YOURPROJECTNAME_ENV`)
+	modelsCmd.Flags().StringP("db", "b", "", `Valid options: (postgres|mysql) (default "database.toml db field")`)
 
 	// migration flags
 	migrationCmd.Flags().BoolP("sql", "s", false, "Generate an .sql migration instead of a .go migration")

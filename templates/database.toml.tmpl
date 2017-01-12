@@ -1,0 +1,26 @@
+# Available database.toml configuration flags can be found in the ABCWeb readme.
+# Environment modes here must match your environment modes in config.toml.
+# The environment that is loaded can be set using:
+# default_env in config.toml or {{envAppName .AppName}}_ENV environment variable.
+[dev]
+	# valid values are postgres|mysql
+	# db = "postgres"
+	# pass = "yourpass"
+	dbname = "{{dbAppName .AppName}}_dev"
+	host = "localhost"
+	port = 5432
+	user = "postgres"
+	# tables to ignore when generating models (migration tables, etc)
+	blacklist = ["goose_db_version"]
+[prod]
+	# valid values are postgres|mysql
+	# db = "postgres"
+	# pass = "yourpass"
+	dbname = "{{dbAppName .AppName}}_prod"
+	host = "localhost"
+	port = 5432
+	user = "postgres"
+	# tables to ignore when generating models (migration tables, etc)
+	blacklist = ["goose_db_version"]
+
+
