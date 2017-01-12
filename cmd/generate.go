@@ -19,8 +19,9 @@ var modelsCmd = &cobra.Command{
 	Use:   "models",
 	Short: "Generate your database models",
 	Long: `Generate models will connect to your database and generate 
-your models from your existing database structure. Make sure you run your
-migrations first.`,
+your models from your existing database structure. 
+Make sure you run your migrations first.
+This tool pipes out to SQLBoiler: https://github.com/vattle/sqlboiler`,
 	Example: "abcweb generate models",
 	PreRunE: modelsCmdPreRun,
 	RunE:    modelsCmdRun,
@@ -30,8 +31,8 @@ migrations first.`,
 var migrationCmd = &cobra.Command{
 	Use:   "migration <name> [flags]",
 	Short: "Generate a migration file",
-	Long: `Generate migration will generate a .go or .sql migration file in 
-your migrations directory.`,
+	Long: `Generate migration will generate a .go or .sql migration file in your migrations directory.
+This tool pipes out to Goose: https://github.com/pressly/goose`,
 	Example: "abcweb generate migration add_users",
 	RunE:    migrationCmdRun,
 }

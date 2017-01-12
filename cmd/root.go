@@ -9,7 +9,7 @@ import (
 )
 
 // AppFS is a handle to the filesystem in use
-var fs = afero.NewOsFs()
+var AppFS = afero.NewOsFs()
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{

@@ -107,7 +107,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Make the app directory if it doesnt already exist.
 	// Can get dir not exist errors on --tls-cert-only runs if we don't do this.
-	err := fs.MkdirAll(newCmdConfig.AppPath, 0755)
+	err := AppFS.MkdirAll(newCmdConfig.AppPath, 0755)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func generateTLSCerts(config newConfig) error {
 	privateKeyPath := filepath.Join(config.AppPath, "private.key")
 
 	if !config.TLSCertsOnly {
-		_, err := fs.Stat(certFilePath)
+		_, err := AppFS.Stat(certFilePath)
 		if err == nil || (err != nil && !os.IsNotExist(err)) {
 			return nil
 		}
@@ -167,7 +167,7 @@ func generateTLSCerts(config newConfig) error {
 		return err
 	}
 
-	certFile, err := fs.Create(certFilePath)
+	certFile, err := AppFS.Create(certFilePath)
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func generateTLSCerts(config newConfig) error {
 		fmt.Printf("\tcreate -> %s\n", filepath.Join(config.AppName, "cert.pem"))
 	}
 
-	privateKeyFile, err := fs.Create(privateKeyPath)
+	privateKeyFile, err := AppFS.Create(privateKeyPath)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func newCmdWalk(config newConfig, basePath string, path string, info os.FileInfo
 	fileContents := &bytes.Buffer{}
 
 	// Check if the output file or folder already exists
-	_, err = fs.Stat(fullPath)
+	_, err = AppFS.Stat(fullPath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
@@ -225,7 +225,7 @@ func newCmdWalk(config newConfig, basePath string, path string, info os.FileInfo
 			return nil
 		}
 
-		err = fs.MkdirAll(fullPath, 0755)
+		err = AppFS.MkdirAll(fullPath, 0755)
 		if err != nil {
 			return err
 		}
@@ -235,7 +235,7 @@ func newCmdWalk(config newConfig, basePath string, path string, info os.FileInfo
 			return nil
 		}
 
-		rawFileContents, err := afero.ReadFile(fs, path)
+		rawFileContents, err := afero.ReadFile(AppFS, path)
 		if err != nil {
 			return err
 		}
@@ -269,7 +269,7 @@ func newCmdWalk(config newConfig, basePath string, path string, info os.FileInfo
 			}
 		}
 
-		err = afero.WriteFile(fs, fullPath, fileContents.Bytes(), 0664)
+		err = afero.WriteFile(AppFS, fullPath, fileContents.Bytes(), 0664)
 		if err != nil {
 			return err
 		}
