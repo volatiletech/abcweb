@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nullbio/abcweb/cmd"
 	"github.com/spf13/afero"
 )
 
@@ -55,11 +54,10 @@ const fileOut = `[dev]
 
 func TestLoadDBConfig(t *testing.T) {
 	appPath := GetAppPath()
-	appName := GetAppName(appPath)
 	configPath := filepath.Join(appPath, "database.toml")
 
-	afero.WriteFile(cmd.AppFS, configPath, []byte(fileOut), 0644)
-	config := LoadDBConfig(appPath, appName, "dev")
+	afero.WriteFile(AppFS, configPath, []byte(fileOut), 0644)
+	config := LoadDBConfig(appPath, "dev")
 
 	orig := &DBConfig{
 		DB:               "db1",
@@ -87,7 +85,7 @@ func TestLoadDBConfig(t *testing.T) {
 		t.Errorf("mismatch between structs:\n%#v\n%#v\n", orig, config)
 	}
 
-	config = LoadDBConfig(appPath, appName, "prod")
+	config = LoadDBConfig(appPath, "prod")
 
 	orig = &DBConfig{
 		DB:               "db2",
@@ -118,20 +116,19 @@ func TestLoadDBConfig(t *testing.T) {
 
 func TestGetActiveEnv(t *testing.T) {
 	appPath := GetAppPath()
-	appName := GetAppName(appPath)
 	configPath := filepath.Join(appPath, "config.toml")
 
 	// File has to be present to prevent fatal error
-	afero.WriteFile(cmd.AppFS, configPath, []byte(""), 0644)
+	afero.WriteFile(AppFS, configPath, []byte(""), 0644)
 
-	env := GetActiveEnv(appPath, appName)
+	env := GetActiveEnv(appPath)
 	if env != "" {
 		t.Errorf("Expected %q, got %q", "", env)
 	}
 
-	afero.WriteFile(cmd.AppFS, configPath, []byte("default_env=\"dog\"\n"), 0644)
+	afero.WriteFile(AppFS, configPath, []byte("default_env=\"dog\"\n"), 0644)
 
-	env = GetActiveEnv(appPath, appName)
+	env = GetActiveEnv(appPath)
 	if env != "dog" {
 		t.Errorf("Expected %q, got %q", "dog", env)
 	}
@@ -139,14 +136,14 @@ func TestGetActiveEnv(t *testing.T) {
 	envVal := os.Getenv("ABCWEB_ENV")
 	os.Setenv("ABCWEB_ENV", "cat")
 
-	env = GetActiveEnv(appPath, appName)
+	env = GetActiveEnv(appPath)
 	if env != "cat" {
 		t.Errorf("Expected %q, got %q", "cat", env)
 	}
 
 	// Reset env var for other tests
 	os.Setenv("ABCWEB_ENV", envVal)
-	cmd.AppFS = afero.NewMemMapFs()
+	AppFS = afero.NewMemMapFs()
 }
 
 func TestGetAppPath(t *testing.T) {

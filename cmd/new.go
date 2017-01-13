@@ -14,6 +14,7 @@ import (
 	"text/template"
 
 	"github.com/nullbio/abcweb/cert"
+	"github.com/nullbio/abcweb/config"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -107,7 +108,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Make the app directory if it doesnt already exist.
 	// Can get dir not exist errors on --tls-cert-only runs if we don't do this.
-	err := AppFS.MkdirAll(newCmdConfig.AppPath, 0755)
+	err := config.AppFS.MkdirAll(newCmdConfig.AppPath, 0755)
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 		// Walk all files in the templates folder
 		basePath := filepath.Join(p.Dir, "templates")
-		err := afero.Walk(AppFS, basePath, func(path string, info os.FileInfo, err error) error {
+		err := afero.Walk(config.AppFS, basePath, func(path string, info os.FileInfo, err error) error {
 			return newCmdWalk(newCmdConfig, basePath, path, info, err)
 		})
 		if err != nil {
@@ -143,18 +144,18 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func generateTLSCerts(config newConfig) error {
-	certFilePath := filepath.Join(config.AppPath, "cert.pem")
-	privateKeyPath := filepath.Join(config.AppPath, "private.key")
+func generateTLSCerts(cfg newConfig) error {
+	certFilePath := filepath.Join(cfg.AppPath, "cert.pem")
+	privateKeyPath := filepath.Join(cfg.AppPath, "private.key")
 
-	if !config.TLSCertsOnly {
-		_, err := AppFS.Stat(certFilePath)
+	if !cfg.TLSCertsOnly {
+		_, err := config.AppFS.Stat(certFilePath)
 		if err == nil || (err != nil && !os.IsNotExist(err)) {
 			return nil
 		}
 	}
 
-	if !config.Silent {
+	if !cfg.Silent {
 		fmt.Println("\trun -> TLS Certificate Generator")
 	}
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -162,12 +163,12 @@ func generateTLSCerts(config newConfig) error {
 		return err
 	}
 
-	template, err := cert.Template(config.AppName, config.TLSCommonName)
+	template, err := cert.Template(cfg.AppName, cfg.TLSCommonName)
 	if err != nil {
 		return err
 	}
 
-	certFile, err := AppFS.Create(certFilePath)
+	certFile, err := config.AppFS.Create(certFilePath)
 	if err != nil {
 		return err
 	}
@@ -176,11 +177,11 @@ func generateTLSCerts(config newConfig) error {
 	if err != nil {
 		return err
 	}
-	if !config.Silent {
-		fmt.Printf("\tcreate -> %s\n", filepath.Join(config.AppName, "cert.pem"))
+	if !cfg.Silent {
+		fmt.Printf("\tcreate -> %s\n", filepath.Join(cfg.AppName, "cert.pem"))
 	}
 
-	privateKeyFile, err := AppFS.Create(privateKeyPath)
+	privateKeyFile, err := config.AppFS.Create(privateKeyPath)
 	if err != nil {
 		return err
 	}
@@ -188,30 +189,30 @@ func generateTLSCerts(config newConfig) error {
 	if err := cert.WritePrivateKey(privateKeyFile, privateKey); err != nil {
 		return err
 	}
-	if !config.Silent {
-		fmt.Printf("\tcreate -> %s\n", filepath.Join(config.AppName, "private.key"))
+	if !cfg.Silent {
+		fmt.Printf("\tcreate -> %s\n", filepath.Join(cfg.AppName, "private.key"))
 	}
 
 	return nil
 }
 
-func newCmdWalk(config newConfig, basePath string, path string, info os.FileInfo, err error) error {
+func newCmdWalk(cfg newConfig, basePath string, path string, info os.FileInfo, err error) error {
 	if err != nil {
 		return err
 	}
 
 	// Skip files and dirs depending on command line args
-	if skip, err := processSkips(config, basePath, path, info); skip {
+	if skip, err := processSkips(cfg, basePath, path, info); skip {
 		return err
 	}
 
 	// Get the path for command line output, and the output target fullPath
-	cleanPath, fullPath := getProcessedPaths(path, string(os.PathSeparator), config)
+	cleanPath, fullPath := getProcessedPaths(path, string(os.PathSeparator), cfg)
 
 	fileContents := &bytes.Buffer{}
 
 	// Check if the output file or folder already exists
-	_, err = AppFS.Stat(fullPath)
+	_, err = config.AppFS.Stat(fullPath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
@@ -225,17 +226,17 @@ func newCmdWalk(config newConfig, basePath string, path string, info os.FileInfo
 			return nil
 		}
 
-		err = AppFS.MkdirAll(fullPath, 0755)
+		err = config.AppFS.MkdirAll(fullPath, 0755)
 		if err != nil {
 			return err
 		}
 	} else {
 		// Files only get created if they don't already exist, or force overwrite is enabled
-		if !config.ForceOverwrite && outputExists {
+		if !cfg.ForceOverwrite && outputExists {
 			return nil
 		}
 
-		rawFileContents, err := afero.ReadFile(AppFS, path)
+		rawFileContents, err := afero.ReadFile(config.AppFS, path)
 		if err != nil {
 			return err
 		}
@@ -247,7 +248,7 @@ func newCmdWalk(config newConfig, basePath string, path string, info os.FileInfo
 				return err
 			}
 
-			err = t.Execute(fileContents, config)
+			err = t.Execute(fileContents, cfg)
 			if err != nil {
 				return err
 			}
@@ -269,19 +270,19 @@ func newCmdWalk(config newConfig, basePath string, path string, info os.FileInfo
 			}
 		}
 
-		err = afero.WriteFile(AppFS, fullPath, fileContents.Bytes(), 0664)
+		err = afero.WriteFile(config.AppFS, fullPath, fileContents.Bytes(), 0664)
 		if err != nil {
 			return err
 		}
 	}
 
-	if !config.Silent {
+	if !cfg.Silent {
 		fmt.Printf("\tcreate -> %s\n", cleanPath)
 	}
 	return nil
 }
 
-func processSkips(config newConfig, basePath string, path string, info os.FileInfo) (skip bool, err error) {
+func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo) (skip bool, err error) {
 	// Ignore the root folder
 	if path == basePath && info.IsDir() {
 		return true, nil
@@ -297,33 +298,33 @@ func processSkips(config newConfig, basePath string, path string, info os.FileIn
 	}
 
 	// Skip sessions configuration if requested
-	if config.NoSessions && strings.HasSuffix(path, "/templates/app/sessions.go.tmpl") {
+	if cfg.NoSessions && strings.HasSuffix(path, "/templates/app/sessions.go.tmpl") {
 		return true, nil
 	}
 
 	// Skip readme files if requested
-	if config.NoReadme {
+	if cfg.NoReadme {
 		if info.Name() == "README.md" || info.Name() == "README.md.tmpl" {
 			return true, nil
 		}
 	}
 
 	// Skip gitignore if requested
-	if config.NoGitIgnore {
+	if cfg.NoGitIgnore {
 		if info.Name() == ".gitignore" || info.Name() == ".gitignore.tmpl" {
 			return true, nil
 		}
 	}
 
 	// Skip default config.toml if requested
-	if config.NoConfig {
+	if cfg.NoConfig {
 		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" {
 			return true, nil
 		}
 	}
 
 	// Skip FontAwesome files if requested
-	if config.NoFontAwesome {
+	if cfg.NoFontAwesome {
 		for _, faFile := range fontAwesomeFiles {
 			if info.Name() == faFile || info.Name() == faFile+".tmpl" {
 				return true, nil
@@ -332,17 +333,17 @@ func processSkips(config newConfig, basePath string, path string, info os.FileIn
 	}
 
 	var bsArr []string
-	if config.Bootstrap == "none" {
+	if cfg.Bootstrap == "none" {
 		bsArr = bootstrapNone
-	} else if config.Bootstrap == "flex" {
+	} else if cfg.Bootstrap == "flex" {
 		bsArr = bootstrapFlex
-	} else if config.Bootstrap == "regular" {
+	} else if cfg.Bootstrap == "regular" {
 		bsArr = bootstrapRegular
-	} else if config.Bootstrap == "gridonly" {
+	} else if cfg.Bootstrap == "gridonly" {
 		bsArr = bootstrapGridOnly
-	} else if config.Bootstrap == "rebootonly" {
+	} else if cfg.Bootstrap == "rebootonly" {
 		bsArr = bootstrapRebootOnly
-	} else if config.Bootstrap == "gridandrebootonly" {
+	} else if cfg.Bootstrap == "gridandrebootonly" {
 		bsArr = bootstrapGridRebootOnly
 	}
 
@@ -354,7 +355,7 @@ func processSkips(config newConfig, basePath string, path string, info os.FileIn
 	}
 
 	// Skip Twitter Bootstrap JS files if requested
-	if config.NoBootstrapJS {
+	if cfg.NoBootstrapJS {
 		for _, bsFile := range bootstrapJSFiles {
 			if info.Name() == bsFile || info.Name() == bsFile+".tmpl" {
 				return true, nil
@@ -413,7 +414,7 @@ func getAppPath(args []string) (appPath string, importPath string, appName strin
 	return appPath, importPath, appName, nil
 }
 
-func getProcessedPaths(path string, pathSeparator string, config newConfig) (cleanPath string, fullPath string) {
+func getProcessedPaths(path string, pathSeparator string, cfg newConfig) (cleanPath string, fullPath string) {
 	chunks := strings.Split(path, pathSeparator)
 	var newChunks []string
 
@@ -428,12 +429,12 @@ func getProcessedPaths(path string, pathSeparator string, config newConfig) (cle
 	newChunks = append(newChunks, chunks[found:]...)
 
 	// Make cleanPath for results output
-	newChunks[0] = config.AppName
+	newChunks[0] = cfg.AppName
 	newChunks[len(newChunks)-1] = strings.TrimSuffix(newChunks[len(newChunks)-1], ".tmpl")
 	cleanPath = strings.Join(newChunks, string(os.PathSeparator))
 
 	// Make fullPath for destination save
-	newChunks[0] = config.AppPath
+	newChunks[0] = cfg.AppPath
 	fullPath = strings.Join(newChunks, string(os.PathSeparator))
 
 	return cleanPath, fullPath

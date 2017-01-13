@@ -5,11 +5,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/nullbio/abcweb/config"
 	"github.com/spf13/afero"
 )
 
 func init() {
-	AppFS = afero.NewMemMapFs()
+	config.AppFS = afero.NewMemMapFs()
 }
 
 func TestGetAppPath(t *testing.T) {
@@ -62,13 +63,13 @@ func TestGetAppPath(t *testing.T) {
 func TestGetProcessedPaths(t *testing.T) {
 	t.Parallel()
 
-	config := newConfig{
+	cfg := newConfig{
 		AppPath: "/test/myapp",
 		AppName: "myapp",
 	}
 
 	inPath := "/lol/" + templatesDirectory + "/file.tmpl"
-	cleanPath, fullPath := getProcessedPaths(inPath, "/", config)
+	cleanPath, fullPath := getProcessedPaths(inPath, "/", cfg)
 	if cleanPath != "myapp/file" {
 		t.Error("mismatch:", cleanPath)
 	}
@@ -76,10 +77,10 @@ func TestGetProcessedPaths(t *testing.T) {
 		t.Error("mismatch:", fullPath)
 	}
 
-	config.AppPath = "myapp"
-	config.AppName = "myapp"
+	cfg.AppPath = "myapp"
+	cfg.AppName = "myapp"
 
-	cleanPath, fullPath = getProcessedPaths(inPath, "/", config)
+	cleanPath, fullPath = getProcessedPaths(inPath, "/", cfg)
 	if cleanPath != "myapp/file" {
 		t.Error("mismatch:", cleanPath)
 	}
@@ -89,7 +90,7 @@ func TestGetProcessedPaths(t *testing.T) {
 }
 
 func TestProcessSkips(t *testing.T) {
-	config := newConfig{
+	cfg := newConfig{
 		NoReadme:      true,
 		NoGitIgnore:   true,
 		NoConfig:      true,
@@ -100,35 +101,35 @@ func TestProcessSkips(t *testing.T) {
 	}
 
 	// check skip basedir
-	err := AppFS.MkdirAll("/templates", 0755)
+	err := config.AppFS.MkdirAll("/templates", 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err := AppFS.Stat("/templates")
+	info, err := config.AppFS.Stat("/templates")
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, _ := processSkips(config, "/templates", "/templates", info)
+	skip, _ := processSkips(cfg, "/templates", "/templates", info)
 	if skip == false {
 		t.Error("expected to skip base path")
 	}
 
 	// check skip skipDirs slice
-	err = AppFS.MkdirAll("/templates/i18n", 0755)
+	err = config.AppFS.MkdirAll("/templates/i18n", 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err = AppFS.Stat("/templates/i18n")
+	info, err = config.AppFS.Stat("/templates/i18n")
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, err = processSkips(config, "/templates", "/templates/i18n", info)
+	skip, err = processSkips(cfg, "/templates", "/templates/i18n", info)
 	if skip != true || err == nil {
 		t.Error("expected to skip skipDir and receive skipdir err")
 	}
 
 	// check skip readme
-	f, err := AppFS.Create("/templates/README.md")
+	f, err := config.AppFS.Create("/templates/README.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,13 +137,13 @@ func TestProcessSkips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, _ = processSkips(config, "/templates", "/templates/README.md", info)
+	skip, _ = processSkips(cfg, "/templates", "/templates/README.md", info)
 	if skip != true {
 		t.Error("expected to skip skip readme")
 	}
 
 	// check skip app/sessions.go.tmpl
-	f, err = AppFS.Create("/templates/app/sessions.go.tmpl")
+	f, err = config.AppFS.Create("/templates/app/sessions.go.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,13 +151,13 @@ func TestProcessSkips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, _ = processSkips(config, "/templates", "/templates/app/sessions.go.tmpl", info)
+	skip, _ = processSkips(cfg, "/templates", "/templates/app/sessions.go.tmpl", info)
 	if skip != true {
 		t.Error("expected to skip skip sessions.go.tmpl")
 	}
 
 	// check skip gitignore
-	f, err = AppFS.Create("/templates/.gitignore")
+	f, err = config.AppFS.Create("/templates/.gitignore")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,13 +165,13 @@ func TestProcessSkips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, _ = processSkips(config, "/templates", "/templates/.gitignore", info)
+	skip, _ = processSkips(cfg, "/templates", "/templates/.gitignore", info)
 	if skip != true {
 		t.Error("expected to skip skip readme")
 	}
 
 	// check skip config.toml
-	f, err = AppFS.Create("/templates/config.toml")
+	f, err = config.AppFS.Create("/templates/config.toml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,13 +179,13 @@ func TestProcessSkips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, _ = processSkips(config, "/templates", "/templates/config.toml", info)
+	skip, _ = processSkips(cfg, "/templates", "/templates/config.toml", info)
 	if skip != true {
 		t.Error("expected to skip skip config.toml")
 	}
 
 	// check skip fontawesome files
-	f, err = AppFS.Create("/templates/font-awesome.css")
+	f, err = config.AppFS.Create("/templates/font-awesome.css")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,13 +193,13 @@ func TestProcessSkips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, _ = processSkips(config, "/templates", "/templates/font-awesome.css", info)
+	skip, _ = processSkips(cfg, "/templates", "/templates/font-awesome.css", info)
 	if skip != true {
 		t.Error("expected to skip skip font-awesome.css")
 	}
 
 	// check skip fontawesome files
-	f, err = AppFS.Create("/templates/bootstrap.css")
+	f, err = config.AppFS.Create("/templates/bootstrap.css")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,14 +207,14 @@ func TestProcessSkips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, _ = processSkips(config, "/templates", "/templates/bootstrap.css", info)
+	skip, _ = processSkips(cfg, "/templates", "/templates/bootstrap.css", info)
 	if skip != true {
 		t.Error("expected to skip skip bootstrap.css")
 	}
 
-	config.Bootstrap = "flex"
+	cfg.Bootstrap = "flex"
 	// check skip fontawesome files
-	f, err = AppFS.Create("/templates/bootstrap.js")
+	f, err = config.AppFS.Create("/templates/bootstrap.js")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,13 +222,13 @@ func TestProcessSkips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, _ = processSkips(config, "/templates", "/templates/bootstrap.js", info)
+	skip, _ = processSkips(cfg, "/templates", "/templates/bootstrap.js", info)
 	if skip != true {
 		t.Error("expected to skip skip bootstrap.js")
 	}
 
 	// check no-skip regular go file
-	f, err = AppFS.Create("/templates/file.go")
+	f, err = config.AppFS.Create("/templates/file.go")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,31 +236,31 @@ func TestProcessSkips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, _ = processSkips(config, "/templates", "/templates/file.go", info)
+	skip, _ = processSkips(cfg, "/templates", "/templates/file.go", info)
 	if skip == true {
 		t.Error("did not expect skip")
 	}
 
-	AppFS = afero.NewMemMapFs()
+	config.AppFS = afero.NewMemMapFs()
 }
 
 func TestNewCmdWalk(t *testing.T) {
-	config := newConfig{
+	cfg := newConfig{
 		AppPath: "/my/app",
 		AppName: "app",
 		Silent:  true,
 	}
 
 	// test skip
-	err := AppFS.MkdirAll("/templates/i18n", 0755)
+	err := config.AppFS.MkdirAll("/templates/i18n", 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err := AppFS.Stat("/templates/i18n")
+	info, err := config.AppFS.Stat("/templates/i18n")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = newCmdWalk(config, "/templates", "/templates/i18n", info, nil)
+	err = newCmdWalk(cfg, "/templates", "/templates/i18n", info, nil)
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
@@ -268,19 +269,19 @@ func TestNewCmdWalk(t *testing.T) {
 	}
 
 	// check go file write
-	err = afero.WriteFile(AppFS, "/templates/file.go", []byte("hello"), 0664)
+	err = afero.WriteFile(config.AppFS, "/templates/file.go", []byte("hello"), 0664)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err = AppFS.Stat("/templates/file.go")
+	info, err = config.AppFS.Stat("/templates/file.go")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = newCmdWalk(config, "/templates", "/templates/file.go", info, nil)
+	err = newCmdWalk(cfg, "/templates", "/templates/file.go", info, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err = AppFS.Stat("/my/app/file.go")
+	info, err = config.AppFS.Stat("/my/app/file.go")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,24 +290,24 @@ func TestNewCmdWalk(t *testing.T) {
 	}
 
 	// check template file write
-	err = afero.WriteFile(AppFS, "/templates/template.go.tmpl", []byte(`package    {{.AppName}}`), 0664)
+	err = afero.WriteFile(config.AppFS, "/templates/template.go.tmpl", []byte(`package    {{.AppName}}`), 0664)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err = AppFS.Stat("/templates/template.go.tmpl")
+	info, err = config.AppFS.Stat("/templates/template.go.tmpl")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = newCmdWalk(config, "/templates", "/templates/template.go.tmpl", info, nil)
+	err = newCmdWalk(cfg, "/templates", "/templates/template.go.tmpl", info, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err = AppFS.Stat("/my/app/template.go")
+	info, err = config.AppFS.Stat("/my/app/template.go")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if info.IsDir() || info.Size() != int64(len("package app\n")) {
-		b, err := afero.ReadFile(AppFS, "/my/app/template.go")
+		b, err := afero.ReadFile(config.AppFS, "/my/app/template.go")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -314,19 +315,19 @@ func TestNewCmdWalk(t *testing.T) {
 	}
 
 	// check dir write
-	err = AppFS.MkdirAll("/templates/stuff", 0755)
+	err = config.AppFS.MkdirAll("/templates/stuff", 0755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err = AppFS.Stat("/templates/stuff")
+	info, err = config.AppFS.Stat("/templates/stuff")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = newCmdWalk(config, "/templates", "/templates/stuff", info, nil)
+	err = newCmdWalk(cfg, "/templates", "/templates/stuff", info, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err = AppFS.Stat("/my/app/stuff")
+	info, err = config.AppFS.Stat("/my/app/stuff")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -334,11 +335,11 @@ func TestNewCmdWalk(t *testing.T) {
 		t.Fatalf("Expected isdir true, got %t", info.IsDir())
 	}
 
-	AppFS = afero.NewMemMapFs()
+	config.AppFS = afero.NewMemMapFs()
 }
 
 func TestGenerateTLSCerts(t *testing.T) {
-	config := newConfig{
+	cfg := newConfig{
 		AppPath:       "/out/spiders",
 		AppName:       "spiders",
 		TLSCommonName: "dragons",
@@ -348,12 +349,12 @@ func TestGenerateTLSCerts(t *testing.T) {
 		Silent:       true,
 	}
 
-	err := generateTLSCerts(config)
+	err := generateTLSCerts(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	info, err := AppFS.Stat("/out/spiders/cert.pem")
+	info, err := config.AppFS.Stat("/out/spiders/cert.pem")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,7 +362,7 @@ func TestGenerateTLSCerts(t *testing.T) {
 		t.Error("expected non-0 size for cert file")
 	}
 
-	info, err = AppFS.Stat("/out/spiders/private.key")
+	info, err = config.AppFS.Stat("/out/spiders/private.key")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -369,5 +370,5 @@ func TestGenerateTLSCerts(t *testing.T) {
 		t.Error("expected non-0 size for private key file")
 	}
 
-	AppFS = afero.NewMemMapFs()
+	config.AppFS = afero.NewMemMapFs()
 }

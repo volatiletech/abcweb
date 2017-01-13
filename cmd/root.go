@@ -3,13 +3,9 @@ package cmd
 import (
 	"os"
 
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-// AppFS is a handle to the filesystem in use
-var AppFS = afero.NewOsFs()
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
