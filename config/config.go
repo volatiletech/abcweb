@@ -54,13 +54,15 @@ type AppConfig struct {
 	DefaultEnv string `toml:"default_env"`
 }
 
+var testHarnessShiftLoad = shift.Load
+
 // LoadDBConfig loads the config vars in database.toml into a DBConfig object
 func LoadDBConfig(appPath string, env string) *DBConfig {
 	cfg := &DBConfig{}
 	appName := GetAppName(appPath)
 	configPath := filepath.Join(appPath, "database.toml")
 
-	err := shift.Load(cfg, configPath, strmangle.EnvAppName(appName), env)
+	err := testHarnessShiftLoad(cfg, configPath, strmangle.EnvAppName(appName), env)
 	if err != nil {
 		log.Fatal("unable to load database.toml:", err)
 	}

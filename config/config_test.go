@@ -7,8 +7,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/BurntSushi/toml"
+	"github.com/nullbio/shift"
 	"github.com/spf13/afero"
 )
+
+func init() {
+	AppFS = afero.NewMemMapFs()
+	testHarnessShiftLoad = testShiftLoadOverride
+}
 
 const fileOut = `[dev]
 	db = "db1"
@@ -51,6 +58,21 @@ const fileOut = `[dev]
 	no_hooks=true
 	no_tests=true
 `
+
+func testShiftLoadOverride(c interface{}, file, prefix, env string) error {
+	contents, err := afero.ReadFile(AppFS, file)
+	if err != nil {
+		return err
+	}
+
+	var decoded interface{}
+	_, err = toml.Decode(string(contents), &decoded)
+	if err != nil {
+		return err
+	}
+
+	return shift.LoadWithDecoded(c, decoded, prefix, env)
+}
 
 func TestLoadDBConfig(t *testing.T) {
 	appPath := GetAppPath()
