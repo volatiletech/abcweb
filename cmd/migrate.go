@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/nullbio/abcweb/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -41,19 +44,38 @@ func init() {
 func migrateCmdPreRun(cmd *cobra.Command, args []string) error {
 	var err error
 
-	migrateCmdConfig = migrateConfig{
-		Dir: viper.GetString("dir"),
-		DB:  viper.GetString("db"),
-		Env: viper.GetString("env"),
+	env := config.ActiveEnv
+
+	// Override env string if it exists as a cmd line arg
+	envStr := viper.GetString("env")
+	if len(envStr) > 0 {
+		env = envStr
 	}
 
-	// get other fields here:
-	// migrateCmdConfig.Host =
-	// migrateCmdConfig.Port =
-	// migrateCmdConfig.DBName =
-	// migrateCmdConfig.User =
-	// migrateCmdConfig.Pass =
-	// migrateCmdConfig.SSLMode =
+	// If no env mode is found in config.toml, $APPNAME_ENV OR on command line
+	// then fall back to a default value of "dev"
+	if len(env) == 0 {
+		fmt.Printf(`No environment mode could be found, attempting fallback of "dev"`)
+		env = "dev"
+	}
+
+	dbConfig := config.LoadDBConfig(config.AppPath, env)
+
+	// Override DB field if it exists as a cmd line arg
+	dbStr := viper.GetString("db")
+	if len(dbStr) > 0 {
+		dbConfig.DB = dbStr
+	}
+
+	// Override MigrationsDir field if it exists as a cmd line arg
+	dirStr := viper.GetString("dir")
+	if len(dirStr) > 0 {
+		dbConfig.MigrationsDir = dirStr
+	}
+
+	migrateCmdConfig = migrateConfig{
+		DBConfig: dbConfig,
+	}
 
 	return err
 }

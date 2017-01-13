@@ -1,5 +1,7 @@
 package cmd
 
+import "github.com/nullbio/abcweb/config"
+
 const (
 	basePackage         = "github.com/nullbio/abcweb"
 	templatesDirectory  = "templates"
@@ -10,31 +12,11 @@ type buildConfig struct {
 }
 
 type modelsConfig struct {
-	// "postgres", "mysql", etc
-	DB  string
-	Dir string
-	Env string
-
-	Host    string
-	Port    int
-	DBName  string
-	User    string
-	Pass    string
-	SSLMode string
+	config.DBConfig
 }
 
 type migrateConfig struct {
-	// "postgres", "mysql", etc
-	DB  string
-	Dir string
-	Env string
-
-	Host    string
-	Port    int
-	DBName  string
-	User    string
-	Pass    string
-	SSLMode string
+	config.DBConfig
 }
 
 type newConfig struct {
