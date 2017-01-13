@@ -54,6 +54,8 @@ type AppConfig struct {
 	DefaultEnv string `toml:"default_env"`
 }
 
+// testHarnessShiftLoad is overriden in the tests to prevent shift.Load
+// from writing a file to disk. It does this by utilizing shift.LoadWithDecoded.
 var testHarnessShiftLoad = shift.Load
 
 // LoadDBConfig loads the config vars in database.toml into a DBConfig object
