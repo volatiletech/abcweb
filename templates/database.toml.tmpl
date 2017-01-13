@@ -5,21 +5,25 @@
 [dev]
 	# valid values are postgres|mysql
 	# db = "postgres"
-	# pass = "yourpass"
+	pass = "yourpass"
 	dbname = "{{dbAppName .AppName}}_dev"
 	host = "localhost"
 	port = 5432
 	user = "postgres"
+	#
+	# SQLBoiler (models generator)  additional config
 	# tables to ignore when generating models (migration tables, etc)
 	blacklist = ["goose_db_version"]
 [prod]
 	# valid values are postgres|mysql
 	# db = "postgres"
-	# pass = "yourpass"
+	pass = "yourpass"
 	dbname = "{{dbAppName .AppName}}_prod"
 	host = "localhost"
 	port = 5432
 	user = "postgres"
+	#
+	# SQLBoiler (models generator) additional config
 	# tables to ignore when generating models (migration tables, etc)
 	blacklist = ["goose_db_version"]
 

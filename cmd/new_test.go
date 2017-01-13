@@ -240,6 +240,7 @@ func TestProcessSkips(t *testing.T) {
 		t.Error("did not expect skip")
 	}
 
+	AppFS = afero.NewMemMapFs()
 }
 
 func TestNewCmdWalk(t *testing.T) {
@@ -332,6 +333,8 @@ func TestNewCmdWalk(t *testing.T) {
 	if !info.IsDir() {
 		t.Fatalf("Expected isdir true, got %t", info.IsDir())
 	}
+
+	AppFS = afero.NewMemMapFs()
 }
 
 func TestGenerateTLSCerts(t *testing.T) {
@@ -365,4 +368,6 @@ func TestGenerateTLSCerts(t *testing.T) {
 	if info.Size() == 0 {
 		t.Error("expected non-0 size for private key file")
 	}
+
+	AppFS = afero.NewMemMapFs()
 }

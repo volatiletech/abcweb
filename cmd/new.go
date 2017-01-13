@@ -121,7 +121,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 		// Walk all files in the templates folder
 		basePath := filepath.Join(p.Dir, "templates")
-		err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
+		err := afero.Walk(AppFS, basePath, func(path string, info os.FileInfo, err error) error {
 			return newCmdWalk(newCmdConfig, basePath, path, info, err)
 		})
 		if err != nil {
