@@ -33,13 +33,14 @@ func init() {
 // DBConfig holds the configuration variables contained in the database.toml
 // file for the environment currently loaded (obtained from GetDatabaseEnv())
 type DBConfig struct {
-	DB      string
-	Host    string
-	Port    int
-	DBName  string
-	User    string
-	Pass    string
-	SSLMode string
+	DB            string
+	Host          string
+	Port          int
+	DBName        string
+	User          string
+	Pass          string
+	SSLMode       string
+	MigrationsDir string
 	// Other SQLBoiler flags
 	Blacklist        []string
 	Whitelist        []string
@@ -53,6 +54,7 @@ type DBConfig struct {
 	Debug            bool
 	NoHooks          bool
 	NoTests          bool
+	MigrationsSQL    bool
 }
 
 // AppConfig holds the relevant generated app config.toml file variables
@@ -65,12 +67,12 @@ type AppConfig struct {
 var testHarnessShiftLoad = shift.Load
 
 // LoadDBConfig loads the config vars in database.toml into a DBConfig object
-func LoadDBConfig(appPath string, env string) *DBConfig {
-	cfg := &DBConfig{}
+func LoadDBConfig(appPath string, env string) DBConfig {
+	cfg := DBConfig{}
 	appName := GetAppName(appPath)
 	configPath := filepath.Join(appPath, "database.toml")
 
-	err := testHarnessShiftLoad(cfg, configPath, strmangle.EnvAppName(appName), env)
+	err := testHarnessShiftLoad(&cfg, configPath, strmangle.EnvAppName(appName), env)
 	if err != nil {
 		log.Fatal("unable to load database.toml:", err)
 	}

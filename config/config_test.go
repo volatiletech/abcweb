@@ -24,6 +24,7 @@ const fileOut = `[dev]
 	db_name="dbname1"
 	user="user1"
 	pass="pass1"
+	migrations_dir="dir1"
 	ssl_mode="sslmode1"
 	blacklist=["blacklist1"]
 	whitelist=["whitelist1"]
@@ -37,6 +38,7 @@ const fileOut = `[dev]
 	debug=true
 	no_hooks=true
 	no_tests=true
+	migrations_sql=true
 [prod]
 	db = "db2"
 	host = "host2"
@@ -44,6 +46,7 @@ const fileOut = `[dev]
 	db_name="dbname2"
 	user="user2"
 	pass="pass2"
+	migrations_dir="dir2"
 	ssl_mode="sslmode2"
 	blacklist=["blacklist2"]
 	whitelist=["whitelist2"]
@@ -81,13 +84,14 @@ func TestLoadDBConfig(t *testing.T) {
 	afero.WriteFile(AppFS, configPath, []byte(fileOut), 0644)
 	config := LoadDBConfig(appPath, "dev")
 
-	orig := &DBConfig{
+	orig := DBConfig{
 		DB:               "db1",
 		Host:             "host1",
 		DBName:           "dbname1",
 		Port:             1,
 		User:             "user1",
 		Pass:             "pass1",
+		MigrationsDir:    "dir1",
 		SSLMode:          "sslmode1",
 		Blacklist:        []string{"blacklist1"},
 		Whitelist:        []string{"whitelist1"},
@@ -101,6 +105,7 @@ func TestLoadDBConfig(t *testing.T) {
 		Debug:            true,
 		NoHooks:          true,
 		NoTests:          true,
+		MigrationsSQL:    true,
 	}
 
 	if !reflect.DeepEqual(config, orig) {
@@ -109,13 +114,14 @@ func TestLoadDBConfig(t *testing.T) {
 
 	config = LoadDBConfig(appPath, "prod")
 
-	orig = &DBConfig{
+	orig = DBConfig{
 		DB:               "db2",
 		Host:             "host2",
 		DBName:           "dbname2",
 		Port:             2,
 		User:             "user2",
 		Pass:             "pass2",
+		MigrationsDir:    "dir2",
 		SSLMode:          "sslmode2",
 		Blacklist:        []string{"blacklist2"},
 		Whitelist:        []string{"whitelist2"},
@@ -129,6 +135,7 @@ func TestLoadDBConfig(t *testing.T) {
 		Debug:            true,
 		NoHooks:          true,
 		NoTests:          true,
+		MigrationsSQL:    false,
 	}
 
 	if !reflect.DeepEqual(config, orig) {

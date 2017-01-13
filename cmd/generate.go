@@ -46,6 +46,13 @@ func init() {
 	// models flags
 	modelsCmd.Flags().StringP("env", "e", "", `database.toml environment to load, obtained from config.toml default_env or $YOURPROJECTNAME_ENV`)
 	modelsCmd.Flags().StringP("db", "b", "", `Valid options: (postgres|mysql) (default "database.toml db field")`)
+	modelsCmd.Flags().StringP("schema", "s", "", `The name of your database schema, for databases that support real schemas (default "public"`)
+	modelsCmd.Flags().StringP("basedir", "", "", "The base directory has the templates and templates_test folders")
+	modelsCmd.Flags().BoolP("debug", "d", false, "Debug mode prints stack traces on error")
+	modelsCmd.Flags().BoolP("no-tests", "", false, "Disable generated go test files")
+	modelsCmd.Flags().BoolP("no-hooks", "", false, "Disable hooks feature for your models")
+	modelsCmd.Flags().BoolP("no-auto-timestamps", "", false, "Disable automatic timestamps for created_at/updated_at")
+	modelsCmd.Flags().BoolP("tinyint-not-bool", "", false, "Map MySQL tinyint(1) in Go to int8 instead of bool")
 
 	// migration flags
 	migrationCmd.Flags().BoolP("sql", "s", false, "Generate an .sql migration instead of a .go migration")
@@ -79,10 +86,35 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 
 	dbConfig := config.LoadDBConfig(config.AppPath, env)
 
-	// Override DB field if it exists as a cmd line arg
+	// Override string fields if they exist as cmd line args
 	dbStr := viper.GetString("db")
 	if len(dbStr) > 0 {
 		dbConfig.DB = dbStr
+	}
+	schemaStr := viper.GetString("schema")
+	if len(schemaStr) > 0 {
+		dbConfig.Schema = schemaStr
+	}
+	basedirStr := viper.GetString("basedir")
+	if len(basedirStr) > 0 {
+		dbConfig.BaseDir = basedirStr
+	}
+
+	// If bools aren't default value of "false" then set them as true
+	if viper.GetBool("debug") != false {
+		dbConfig.Debug = true
+	}
+	if viper.GetBool("no-tests") != false {
+		dbConfig.NoTests = true
+	}
+	if viper.GetBool("no-hooks") != false {
+		dbConfig.NoHooks = true
+	}
+	if viper.GetBool("no-auto-timestamps") != false {
+		dbConfig.NoAutoTimestamps = true
+	}
+	if viper.GetBool("tinyint-not-bool") != false {
+		dbConfig.TinyintNotBool = true
 	}
 
 	modelsCmdConfig = modelsConfig{
@@ -93,6 +125,49 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 }
 
 func modelsCmdRun(cmd *cobra.Command, args []string) error {
+	var boilArgs []string
+
+	// First arg to sqlboiler is database
+	boilArgs = append(boilArgs, modelsCmdConfig.DB)
+
+	// Append flags if they're not empty
+	if len(modelsCmdConfig.Schema) > 0 {
+		boilArgs = append(boilArgs, "--schema", modelsCmdConfig.Schema)
+	}
+	if len(modelsCmdConfig.BaseDir) > 0 {
+		boilArgs = append(boilArgs, "--basedir", modelsCmdConfig.BaseDir)
+	}
+	if len(modelsCmdConfig.Output) > 0 {
+		boilArgs = append(boilArgs, "--output", modelsCmdConfig.Output)
+	}
+	if len(modelsCmdConfig.Schema) > 0 {
+		boilArgs = append(boilArgs, "--schema", modelsCmdConfig.Schema)
+	}
+
+	// TODO
+	// strings join array types using comma to pass in blacklist, whitelist etc
+	// will have to make sure sqlboiler can parse this first
+
+	// Append bool flags
+	if modelsCmdConfig.Debug {
+		boilArgs = append(boilArgs, "--debug")
+	}
+	if modelsCmdConfig.NoAutoTimestamps {
+		boilArgs = append(boilArgs, "--no-auto-timestamps")
+	}
+	if modelsCmdConfig.NoHooks {
+		boilArgs = append(boilArgs, "--no-hooks")
+	}
+	if modelsCmdConfig.NoTests {
+		boilArgs = append(boilArgs, "--no-tests")
+	}
+	// sqlboilers field is "as" bool instead of "not" bool, so invert value
+	if !modelsCmdConfig.TinyintNotBool {
+		boilArgs = append(boilArgs, "--tinyint-as-bool")
+	}
+
+	// going to have to set env vars for db connection flags
+
 	return nil
 }
 
