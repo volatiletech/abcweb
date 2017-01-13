@@ -20,8 +20,14 @@ var AppFS = afero.NewOsFs()
 // AppPath is the path to the project, set using the init function
 var AppPath string
 
+// ActiveEnv is the environment mode currently set by "default_env" in config.toml
+// or APPNAME_ENV environment variable. This mode indicates what section of
+// config variables to to load into the config structs.
+var ActiveEnv string
+
 func init() {
-	AppPath = GetAppPath()
+	AppPath = getAppPath()
+	ActiveEnv = getActiveEnv(AppPath)
 }
 
 // DBConfig holds the configuration variables contained in the database.toml
@@ -72,11 +78,11 @@ func LoadDBConfig(appPath string, env string) *DBConfig {
 	return cfg
 }
 
-// GetActiveEnv attempts to get the config.toml and database.toml environment
+// getActiveEnv attempts to get the config.toml and database.toml environment
 // to load by checking the following, in the following order:
 // 1. environment variable $APPNAME_ENV (APPNAME is envAppName variable value)
 // 2. config.toml "default_env"
-func GetActiveEnv(appPath string) string {
+func getActiveEnv(appPath string) string {
 	appName := strmangle.EnvAppName(GetAppName(appPath))
 
 	val := os.Getenv(appName + "_ENV")
@@ -86,26 +92,22 @@ func GetActiveEnv(appPath string) string {
 
 	contents, err := afero.ReadFile(AppFS, filepath.Join(appPath, "config.toml"))
 	if err != nil {
-		log.Fatal("unable to read config.toml file:", err)
+		return ""
 	}
 
 	var config AppConfig
 
 	_, err = toml.Decode(string(contents), &config)
 	if err != nil {
-		log.Fatal("unable to decode config.toml file:", err)
+		return ""
 	}
 
 	return config.DefaultEnv
 }
 
-// GetAppPath executes the git cmd "git rev-parse --show-toplevel" to obtain
+// getAppPath executes the git cmd "git rev-parse --show-toplevel" to obtain
 // the full path of the current app. The last folder in the path is the app name.
-func GetAppPath() string {
-	if len(AppPath) > 0 {
-		return AppPath
-	}
-
+func getAppPath() string {
 	gitCmd := exec.Command("git", "rev-parse", "--show-toplevel")
 
 	b := &bytes.Buffer{}

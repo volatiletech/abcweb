@@ -75,7 +75,7 @@ func testShiftLoadOverride(c interface{}, file, prefix, env string) error {
 }
 
 func TestLoadDBConfig(t *testing.T) {
-	appPath := GetAppPath()
+	appPath := getAppPath()
 	configPath := filepath.Join(appPath, "database.toml")
 
 	afero.WriteFile(AppFS, configPath, []byte(fileOut), 0644)
@@ -137,20 +137,20 @@ func TestLoadDBConfig(t *testing.T) {
 }
 
 func TestGetActiveEnv(t *testing.T) {
-	appPath := GetAppPath()
+	appPath := getAppPath()
 	configPath := filepath.Join(appPath, "config.toml")
 
 	// File has to be present to prevent fatal error
 	afero.WriteFile(AppFS, configPath, []byte(""), 0644)
 
-	env := GetActiveEnv(appPath)
+	env := getActiveEnv(appPath)
 	if env != "" {
 		t.Errorf("Expected %q, got %q", "", env)
 	}
 
 	afero.WriteFile(AppFS, configPath, []byte("default_env=\"dog\"\n"), 0644)
 
-	env = GetActiveEnv(appPath)
+	env = getActiveEnv(appPath)
 	if env != "dog" {
 		t.Errorf("Expected %q, got %q", "dog", env)
 	}
@@ -158,7 +158,7 @@ func TestGetActiveEnv(t *testing.T) {
 	envVal := os.Getenv("ABCWEB_ENV")
 	os.Setenv("ABCWEB_ENV", "cat")
 
-	env = GetActiveEnv(appPath)
+	env = getActiveEnv(appPath)
 	if env != "cat" {
 		t.Errorf("Expected %q, got %q", "cat", env)
 	}
@@ -171,7 +171,7 @@ func TestGetActiveEnv(t *testing.T) {
 func TestGetAppPath(t *testing.T) {
 	t.Parallel()
 
-	path := GetAppPath()
+	path := getAppPath()
 	if !strings.HasSuffix(path, "abcweb") {
 		t.Error("Expected path to end with abcweb, but didnt. Got:", path)
 	}
@@ -180,7 +180,7 @@ func TestGetAppPath(t *testing.T) {
 func TestGetAppName(t *testing.T) {
 	t.Parallel()
 
-	path := GetAppPath()
+	path := getAppPath()
 
 	appName := GetAppName(path)
 	if appName != "abcweb" {
