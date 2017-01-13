@@ -17,6 +17,13 @@ import (
 // AppFS is a handle to the filesystem in use
 var AppFS = afero.NewOsFs()
 
+// AppPath is the path to the project, set using the init function
+var AppPath string
+
+func init() {
+	AppPath = GetAppPath()
+}
+
 // DBConfig holds the configuration variables contained in the database.toml
 // file for the environment currently loaded (obtained from GetDatabaseEnv())
 type DBConfig struct {
@@ -91,6 +98,10 @@ func GetActiveEnv(appPath string) string {
 // GetAppPath executes the git cmd "git rev-parse --show-toplevel" to obtain
 // the full path of the current app. The last folder in the path is the app name.
 func GetAppPath() string {
+	if len(AppPath) > 0 {
+		return AppPath
+	}
+
 	gitCmd := exec.Command("git", "rev-parse", "--show-toplevel")
 
 	b := &bytes.Buffer{}
