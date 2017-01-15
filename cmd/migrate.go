@@ -20,8 +20,7 @@ This tool pipes out to Goose: https://github.com/pressly/goose
 	RunE:    migrateCmdRun,
 }
 
-// MigrateInit initializes the build commands and flags
-func MigrateInit() {
+func init() {
 	// migrate flags
 	migrateCmd.PersistentFlags().StringP("dir", "d", migrationsDirectory, "Directory with migration files")
 	migrateCmd.PersistentFlags().StringP("db", "b", "", `Valid options: (postgres|mysql) (default: config.toml "db" field value)`)

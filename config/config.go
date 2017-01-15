@@ -41,6 +41,7 @@ var ModeViper *viper.Viper
 func init() {
 	AppPath = getAppPath()
 	ActiveEnv = getActiveEnv(AppPath)
+	ModeViper = NewModeViper(AppPath, ActiveEnv)
 }
 
 // DBConfig holds the configuration variables contained in the database.toml

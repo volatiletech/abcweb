@@ -36,8 +36,7 @@ The app will generate in $GOPATH/src/<import_path>.
 	RunE:    newCmdRun,
 }
 
-// NewInit initializes the build commands and flags
-func NewInit() {
+func init() {
 	newCmd.Flags().StringP("sessions-prod-storer", "p", "disk", "Session storer to use in production mode")
 	newCmd.Flags().StringP("sessions-dev-storer", "d", "cookie", "Session storer to use in development mode")
 	newCmd.Flags().StringP("tls-common-name", "", "localhost", "Common Name for generated TLS certificate")

@@ -17,8 +17,7 @@ var buildCmd = &cobra.Command{
 	RunE:    buildCmdRun,
 }
 
-// BuildInit initializes the build commands and flags
-func BuildInit() {
+func init() {
 	buildCmd.Flags().StringP("sessions-prod-storer", "p", "disk", "Session storer to use in production mode")
 	buildCmd.Flags().BoolP("silent", "", false, "Disable console output")
 

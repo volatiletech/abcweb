@@ -26,8 +26,7 @@ func Execute() {
 	}
 }
 
-// RootInit initializes the build commands and flags
-func RootInit() {
+func init() {
 	RootCmd.Flags().BoolP("version", "", false, "Print the ABCWeb version")
 	viper.BindPFlags(RootCmd.Flags())
 }

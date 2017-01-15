@@ -46,8 +46,7 @@ This tool pipes out to Goose: https://github.com/pressly/goose`,
 	RunE:    migrationCmdRun,
 }
 
-// GenerateInit initializes the build commands and flags
-func GenerateInit() {
+func init() {
 	// models flags
 	modelsCmd.Flags().StringP("db", "", "", `Valid options: postgres|mysql (default "database.toml db field")`)
 	modelsCmd.Flags().StringP("output", "o", "models", "The name of the folder to output to")

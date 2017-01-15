@@ -18,8 +18,7 @@ var runCmd = &cobra.Command{
 	},
 }
 
-// RunInit initializes the build commands and flags
-func RunInit() {
+func init() {
 	RootCmd.AddCommand(runCmd)
 
 	// Here you will define your flags and configuration settings.
