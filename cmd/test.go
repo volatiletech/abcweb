@@ -8,7 +8,8 @@ var testCmd = &cobra.Command{
 	RunE:  testCmdRun,
 }
 
-func init() {
+// TestInit initializes the build commands and flags
+func TestInit() {
 	RootCmd.AddCommand(testCmd)
 }
 

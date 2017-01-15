@@ -17,6 +17,8 @@ type modelsConfig struct {
 
 type migrateConfig struct {
 	config.DBConfig
+	SQL bool
+	Dir string
 }
 
 type newConfig struct {

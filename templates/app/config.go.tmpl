@@ -134,10 +134,10 @@ func (s *State) LoadConfig() error {
 	{{envAppNm := envAppName .AppName -}}
 	env := os.Getenv("{{envAppNm}}_ENV")
 	if env == "" {
-		env = viper.GetString("default-env")
+		env = viper.GetString("env")
 	}
 	if env == "" {
-		fmt.Println(`Warning: No environment chosen using {{envAppNm}}_ENV or default_env in config.toml, attempting to use default of "prod"`)
+		fmt.Println(`Warning: No environment chosen using {{envAppNm}}_ENV or env field in config.toml, attempting to use fallback of "prod"`)
 		env = "prod"
 	}
 	return shift.Load(s.Config, "config.toml", "{{envAppNm}}", env)

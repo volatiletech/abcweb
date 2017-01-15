@@ -29,4 +29,11 @@ private.key
 private.pem
 
 # Ignore binary
-abcweb
+/abcweb
+
+# Ignore root models folder if present (for testing)
+/models
+
+# Ignore root config files if present (for testing)
+/database.toml
+/config.toml

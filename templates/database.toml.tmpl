@@ -1,7 +1,7 @@
 # Available database.toml configuration flags can be found in the ABCWeb readme.
 # Environment modes here must match your environment modes in config.toml.
 # The environment that is loaded can be set using:
-# default_env in config.toml or {{envAppName .AppName}}_ENV environment variable.
+# env field in config.toml or {{envAppName .AppName}}_ENV environment variable.
 [dev]
 	# valid values are postgres|mysql
 	# db = "postgres"
@@ -11,9 +11,9 @@
 	port = 5432
 	user = "postgres"
 	# TODO: describe possible values (they differ for mysql vs postgres)
-	ssl_mode = "require"
-	#
-	# SQLBoiler (models generator)  additional config
+	sslmode = "require"
+	
+	# SQLBoiler (models generator) additional config
 	# tables to ignore when generating models (migration tables, etc)
 	blacklist = ["goose_db_version"]
 [prod]
@@ -25,10 +25,9 @@
 	port = 5432
 	user = "postgres"
 	# TODO: describe possible values (they differ for mysql vs postgres)
-	ssl_mode = "require"
+	sslmode = "require"
 	#
 	# SQLBoiler (models generator) additional config
 	# tables to ignore when generating models (migration tables, etc)
 	blacklist = ["goose_db_version"]
-
 

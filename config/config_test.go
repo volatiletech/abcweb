@@ -4,161 +4,93 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/BurntSushi/toml"
-	"github.com/nullbio/shift"
 	"github.com/spf13/afero"
+	"github.com/spf13/viper"
 )
 
 func init() {
 	AppFS = afero.NewMemMapFs()
-	testHarnessShiftLoad = testShiftLoadOverride
+	testHarnessViperReadConfig = func(modeViper *viper.Viper) error {
+		return modeViper.ReadConfig(bytes.NewBuffer([]byte(fileOut)))
+	}
 }
 
 const fileOut = `[dev]
 	db = "db1"
 	host = "host1"
 	port = 1
-	db_name="dbname1"
+	dbname="dbname1"
 	user="user1"
 	pass="pass1"
-	migrations_dir="dir1"
-	ssl_mode="sslmode1"
+	sslmode="sslmode1"
 	blacklist=["blacklist1"]
 	whitelist=["whitelist1"]
 	tag=["tag1"]
-	base_dir="basedir1"
+	basedir="basedir1"
 	output="output1"
-	pkg_name="pkgname1"
+	pkgname="pkgname1"
 	schema="schema1"
-	tinyint_not_bool=true
-	no_auto_timestamps=true
+	tinyint-not-bool=true
+	no-auto-timestamps=true
 	debug=true
-	no_hooks=true
-	no_tests=true
-	migrations_sql=true
+	no-hooks=true
+	no-tests=true
+
+	[dev.migrations]
+		sql=true
 [prod]
 	db = "db2"
 	host = "host2"
 	port = 2
-	db_name="dbname2"
+	dbname="dbname2"
 	user="user2"
 	pass="pass2"
-	migrations_dir="dir2"
-	ssl_mode="sslmode2"
+	sslmode="sslmode2"
 	blacklist=["blacklist2"]
 	whitelist=["whitelist2"]
 	tag=["tag2"]
-	base_dir="basedir2"
+	basedir="basedir2"
 	output="output2"
-	pkg_name="pkgname2"
+	pkgname="pkgname2"
 	schema="schema2"
-	tinyint_not_bool=true
-	no_auto_timestamps=true
+	tinyint-not-bool=true
+	no-auto-timestamps=true
 	debug=true
-	no_hooks=true
-	no_tests=true
+	no-hooks=true
+	no-tests=true
+
+	[prod.migrations]
+		sql=true	
+		dir="dir2"
 `
 
-func testNewModeViper(t *testing.T) {
+func TestNewModeViper(t *testing.T) {
 	t.Parallel()
 
 	appPath := getAppPath()
 
-	envViper := NewModeViper(appPath, "prod")
+	modeViper := NewModeViper(appPath, "prod")
+	modeViper.RegisterAlias("sql", "migrations.sql")
 
-	err := envViper.ReadConfig(bytes.NewBuffer([]byte(fileOut)))
-	if err != nil {
-		t.Error(err)
-	}
-
-	val := envViper.GetString("base-dir")
+	val := modeViper.GetString("basedir")
 	if val != "basedir2" {
 		t.Errorf("expected %q, got %q", "basedir2", val)
 	}
-}
-
-func testShiftLoadOverride(c interface{}, file, prefix, env string) error {
-	contents, err := afero.ReadFile(AppFS, file)
-	if err != nil {
-		return err
+	val = modeViper.GetString("migrations.dir")
+	if val != "dir2" {
+		t.Errorf("expected %q, got %q", "dir2", val)
 	}
 
-	var decoded interface{}
-	_, err = toml.Decode(string(contents), &decoded)
-	if err != nil {
-		return err
+	b := modeViper.GetBool("tinyint-not-bool")
+	if !b {
+		t.Error("expected true, got false")
 	}
-
-	return shift.LoadWithDecoded(c, decoded, prefix, env)
-}
-
-func TestLoadDBConfig(t *testing.T) {
-	appPath := getAppPath()
-	configPath := filepath.Join(appPath, "database.toml")
-
-	afero.WriteFile(AppFS, configPath, []byte(fileOut), 0644)
-	config := LoadDBConfig(appPath, "dev")
-
-	orig := DBConfig{
-		DB:               "db1",
-		Host:             "host1",
-		DBName:           "dbname1",
-		Port:             1,
-		User:             "user1",
-		Pass:             "pass1",
-		MigrationsDir:    "dir1",
-		SSLMode:          "sslmode1",
-		Blacklist:        []string{"blacklist1"},
-		Whitelist:        []string{"whitelist1"},
-		Tag:              []string{"tag1"},
-		BaseDir:          "basedir1",
-		Output:           "output1",
-		PkgName:          "pkgname1",
-		Schema:           "schema1",
-		TinyintNotBool:   true,
-		NoAutoTimestamps: true,
-		Debug:            true,
-		NoHooks:          true,
-		NoTests:          true,
-		MigrationsSQL:    true,
-	}
-
-	if !reflect.DeepEqual(config, orig) {
-		t.Errorf("mismatch between structs:\n%#v\n%#v\n", orig, config)
-	}
-
-	config = LoadDBConfig(appPath, "prod")
-
-	orig = DBConfig{
-		DB:               "db2",
-		Host:             "host2",
-		DBName:           "dbname2",
-		Port:             2,
-		User:             "user2",
-		Pass:             "pass2",
-		MigrationsDir:    "dir2",
-		SSLMode:          "sslmode2",
-		Blacklist:        []string{"blacklist2"},
-		Whitelist:        []string{"whitelist2"},
-		Tag:              []string{"tag2"},
-		BaseDir:          "basedir2",
-		Output:           "output2",
-		PkgName:          "pkgname2",
-		Schema:           "schema2",
-		TinyintNotBool:   true,
-		NoAutoTimestamps: true,
-		Debug:            true,
-		NoHooks:          true,
-		NoTests:          true,
-		MigrationsSQL:    false,
-	}
-
-	if !reflect.DeepEqual(config, orig) {
-		t.Errorf("mismatch between structs:\n%#v\n%#v\n", orig, config)
+	b = modeViper.GetBool("sql")
+	if !b {
+		t.Error("expected true, got false")
 	}
 }
 
@@ -174,7 +106,7 @@ func TestGetActiveEnv(t *testing.T) {
 		t.Errorf("Expected %q, got %q", "", env)
 	}
 
-	afero.WriteFile(AppFS, configPath, []byte("default_env=\"dog\"\n"), 0644)
+	afero.WriteFile(AppFS, configPath, []byte("env=\"dog\"\n"), 0644)
 
 	env = getActiveEnv(appPath)
 	if env != "dog" {

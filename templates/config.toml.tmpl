@@ -1,25 +1,25 @@
 # if an environment is not provided using the "{{envAppName .AppName}}_ENV"
-# environment variable, then your web app will load the environment set here.
-default_env = "{{.DefaultEnv}}"
+# environment variable, then your app will load the default environment set here.
+env = "{{.DefaultEnv}}"
 [dev]
 	bind = ":4000"
-	# Uncomment the below "tls_bind" line if you wish to use TLS in dev mode.
+	# Uncomment the below "tls-bind" line if you wish to use TLS in dev mode.
 	# You may need to add an exception in your browser for your SSL cert.
-	# tls_bind = ":4001"
+	# tls-bind = ":4001"
 	# These keys will only be used if "tls_bind" is set.
-	tls_cert_file = "cert.pem"
-	tls_key_file = "private.key"
-	live_reload = true
-	log_json = false
-	log_level = "info"
-	assets_no_minify = true
-	assets_no_hash = true
-	assets_no_compress = true
-	assets_no_cache = true
-	render_recompile = true
-	sessions_dev_storer = true
+	tls-cert-file = "cert.pem"
+	tls-key-file = "private.key"
+	live-reload = true
+	log-json = false
+	log-level = "info"
+	assets-no-minify = true
+	assets-no-hash = true
+	assets-no-compress = true
+	assets-no-cache = true
+	render-recompile = true
+	sessions-dev-storer = true
 [prod]
 	bind = ":80"
-	tls_bind = ":443"
-	tls_cert_file = "cert.pem"
-	tls_key_file = "private.key"
+	tls-bind = ":443"
+	tls-cert-file = "cert.pem"
+	tls-key-file = "private.key"

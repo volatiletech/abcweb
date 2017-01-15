@@ -17,7 +17,8 @@ var buildCmd = &cobra.Command{
 	RunE:    buildCmdRun,
 }
 
-func init() {
+// BuildInit initializes the build commands and flags
+func BuildInit() {
 	buildCmd.Flags().StringP("sessions-prod-storer", "p", "disk", "Session storer to use in production mode")
 	buildCmd.Flags().BoolP("silent", "", false, "Disable console output")
 
@@ -30,7 +31,7 @@ func buildCmdPreRun(cmd *cobra.Command, args []string) error {
 
 	//	buildCmdConfig = newConfig{
 	//		NoGitIgnore: viper.GetBool("no-gitignore"),
-	//		DefaultEnv:  viper.GetString("default-env"),
+	//		DefaultEnv:  viper.GetString("env"),
 	//		Bootstrap:   strings.ToLower(viper.GetString("bootstrap")),
 	//	}
 

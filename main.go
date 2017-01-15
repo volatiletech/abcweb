@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/nullbio/abcweb/cmd"
+	"github.com/nullbio/abcweb/config"
 )
 
 const abcwebVersion = "1.0.0"
@@ -16,6 +17,18 @@ func main() {
 		fmt.Println("ABCWeb v" + abcwebVersion)
 		return
 	}
+
+	// initialize ModeViper to be used in the initialization funcs below
+	config.ModeViper = config.NewModeViper(config.AppPath, config.ActiveEnv)
+
+	// initialize all the flags and commands
+	cmd.RootInit()
+	cmd.BuildInit()
+	cmd.GenerateInit()
+	cmd.MigrateInit()
+	cmd.NewInit()
+	cmd.RunInit()
+	cmd.TestInit()
 
 	cmd.Execute()
 }

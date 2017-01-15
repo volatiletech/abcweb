@@ -36,11 +36,12 @@ The app will generate in $GOPATH/src/<import_path>.
 	RunE:    newCmdRun,
 }
 
-func init() {
+// NewInit initializes the build commands and flags
+func NewInit() {
 	newCmd.Flags().StringP("sessions-prod-storer", "p", "disk", "Session storer to use in production mode")
 	newCmd.Flags().StringP("sessions-dev-storer", "d", "cookie", "Session storer to use in development mode")
 	newCmd.Flags().StringP("tls-common-name", "", "localhost", "Common Name for generated TLS certificate")
-	newCmd.Flags().StringP("default-env", "", "prod", "Default APP_ENV to use when starting server")
+	newCmd.Flags().StringP("default-env", "", "prod", "Default $APP_ENV to use when starting server")
 	newCmd.Flags().StringP("bootstrap", "b", "flex", "Include Twitter Bootstrap 4 (none|regular|gridonly|rebootonly|gridandrebootonly)")
 	newCmd.Flags().BoolP("no-gitignore", "g", false, "Skip .gitignore file")
 	newCmd.Flags().BoolP("no-bootstrap-js", "j", false, "Skip Twitter Bootstrap 4 javascript inclusion")

@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/nullbio/abcweb/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -23,11 +20,11 @@ This tool pipes out to Goose: https://github.com/pressly/goose
 	RunE:    migrateCmdRun,
 }
 
-func init() {
+// MigrateInit initializes the build commands and flags
+func MigrateInit() {
 	// migrate flags
 	migrateCmd.PersistentFlags().StringP("dir", "d", migrationsDirectory, "Directory with migration files")
 	migrateCmd.PersistentFlags().StringP("db", "b", "", `Valid options: (postgres|mysql) (default: config.toml "db" field value)`)
-	migrateCmd.PersistentFlags().StringP("env", "e", "dev", `config.toml environment to load (default: will only use "dev" default if cannot find in $PROJECTNAME_ENV)`)
 
 	RootCmd.AddCommand(migrateCmd)
 
@@ -43,39 +40,6 @@ func init() {
 
 func migrateCmdPreRun(cmd *cobra.Command, args []string) error {
 	var err error
-
-	env := config.ActiveEnv
-
-	// Override env string if it exists as a cmd line arg
-	envStr := viper.GetString("env")
-	if len(envStr) > 0 {
-		env = envStr
-	}
-
-	// If no env mode is found in config.toml, $APPNAME_ENV OR on command line
-	// then fall back to a default value of "dev"
-	if len(env) == 0 {
-		fmt.Printf(`No environment mode could be found, attempting fallback of "dev"`)
-		env = "dev"
-	}
-
-	dbConfig := config.LoadDBConfig(config.AppPath, env)
-
-	// Override DB field if it exists as a cmd line arg
-	dbStr := viper.GetString("db")
-	if len(dbStr) > 0 {
-		dbConfig.DB = dbStr
-	}
-
-	// Override MigrationsDir field if it exists as a cmd line arg
-	dirStr := viper.GetString("dir")
-	if len(dirStr) > 0 {
-		dbConfig.MigrationsDir = dirStr
-	}
-
-	migrateCmdConfig = migrateConfig{
-		DBConfig: dbConfig,
-	}
 
 	return err
 }
