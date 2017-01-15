@@ -12,6 +12,14 @@ import (
 	"github.com/nullbio/abcweb/strmangle"
 	"github.com/nullbio/shift"
 	"github.com/spf13/afero"
+	"github.com/spf13/viper"
+)
+
+const (
+	// DBConfigFilename is the filename for the database config file
+	DBConfigFilename = "database.toml"
+	// AppConfigFilename is the filename for the app config file
+	AppConfigFilename = "config.toml"
 )
 
 // AppFS is a handle to the filesystem in use
@@ -66,11 +74,22 @@ type AppConfig struct {
 // from writing a file to disk. It does this by utilizing shift.LoadWithDecoded.
 var testHarnessShiftLoad = shift.Load
 
+// NewModeViper creates a viper.Viper with config path and environment prefixes
+// set. It also specifies a Sub of the active environment (the chosen env mode).
+func NewModeViper(appPath string, env string) *viper.Viper {
+	envViper := viper.Sub(ActiveEnv)
+	envViper.SetConfigType("toml")
+	envViper.AddConfigPath(filepath.Join(AppPath, DBConfigFilename))
+	envViper.SetEnvPrefix(strmangle.EnvAppName(GetAppName(AppPath)))
+	envViper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	return envViper
+}
+
 // LoadDBConfig loads the config vars in database.toml into a DBConfig object
 func LoadDBConfig(appPath string, env string) DBConfig {
 	cfg := DBConfig{}
 	appName := GetAppName(appPath)
-	configPath := filepath.Join(appPath, "database.toml")
+	configPath := filepath.Join(appPath, DBConfigFilename)
 
 	err := testHarnessShiftLoad(&cfg, configPath, strmangle.EnvAppName(appName), env)
 	if err != nil {
@@ -92,7 +111,7 @@ func getActiveEnv(appPath string) string {
 		return val
 	}
 
-	contents, err := afero.ReadFile(AppFS, filepath.Join(appPath, "config.toml"))
+	contents, err := afero.ReadFile(AppFS, filepath.Join(appPath, AppConfigFilename))
 	if err != nil {
 		return ""
 	}

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -61,6 +62,24 @@ const fileOut = `[dev]
 	no_hooks=true
 	no_tests=true
 `
+
+func testNewModeViper(t *testing.T) {
+	t.Parallel()
+
+	appPath := getAppPath()
+
+	envViper := NewModeViper(appPath, "prod")
+
+	err := envViper.ReadConfig(bytes.NewBuffer([]byte(fileOut)))
+	if err != nil {
+		t.Error(err)
+	}
+
+	val := envViper.GetString("base-dir")
+	if val != "basedir2" {
+		t.Errorf("expected %q, got %q", "basedir2", val)
+	}
+}
 
 func testShiftLoadOverride(c interface{}, file, prefix, env string) error {
 	contents, err := afero.ReadFile(AppFS, file)

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -17,7 +18,11 @@ var RootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		os.Exit(-1)
+		// Print stacktrace if debug enabled
+		if viper.GetBool("debug") {
+			fmt.Printf("%+v\n", err)
+		}
+		os.Exit(1)
 	}
 }
 
