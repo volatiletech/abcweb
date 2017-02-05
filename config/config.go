@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"go/build"
 	"log"
 	"os"
 	"os/exec"
@@ -58,6 +59,7 @@ type DBConfig struct {
 	Blacklist        []string
 	Whitelist        []string
 	Tag              []string
+	Replacements     []string
 	BaseDir          string
 	Output           string
 	PkgName          string
@@ -67,6 +69,7 @@ type DBConfig struct {
 	Debug            bool
 	NoHooks          bool
 	NoTests          bool
+	Wipe             bool
 
 	MigrationsSQL bool   `toml:"migrations.sql"`
 	MigrationsDir string `toml:"migrations.dir"`
@@ -147,13 +150,13 @@ func getAppPath() string {
 
 	err := gitCmd.Run()
 	if err != nil {
-		log.Fatal("Cannot execute git command:", err)
+		log.Fatal("cannot execute git command rev-parse to obtain app root dir: ", err)
 	}
 
 	output := b.String()
 
 	if len(output) == 0 {
-		log.Fatalln("No output for git command")
+		log.Fatalln("no output for git command")
 	}
 
 	return strings.TrimSpace(output)
@@ -163,4 +166,17 @@ func getAppPath() string {
 func GetAppName(appPath string) string {
 	split := strings.Split(appPath, string(os.PathSeparator))
 	return split[len(split)-1]
+}
+
+var basePackage = "github.com/nullbio/abcweb"
+
+// GetBasePath returns the full path to the custom sqlboiler template files
+// folder used with the sqlboiler --replace flag.
+func GetBasePath() (string, error) {
+	p, _ := build.Default.Import(basePackage, "", build.FindOnly)
+	if p != nil && len(p.Dir) > 0 {
+		return p.Dir, nil
+	}
+
+	return os.Getwd()
 }

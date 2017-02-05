@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/kat-co/vala"
@@ -46,7 +48,26 @@ This tool pipes out to Goose: https://github.com/pressly/goose`,
 	RunE:    migrationCmdRun,
 }
 
+// The custom SQLBoiler template file replacements
+var replaceFiles = [][]string{
+	{"templates_test/main_test/mysql_main.tpl", "sqlboiler/mysql_main.tmpl"},
+	{"templates_test/main_test/postgres_main.tpl", "sqlboiler/postgres_main.tmpl"},
+	{"templates_test/singleton/boil_main_test.tpl", "sqlboiler/boil_main_test.tmpl"},
+}
+
 func init() {
+	basepath, err := config.GetBasePath()
+	if err != nil {
+		panic(fmt.Sprintf("unable to get abcweb base path: %s", err))
+	}
+
+	replaceArgs := make([]string, len(replaceFiles))
+
+	// Prefix the replaceWith file with the basepath
+	for i := 0; i < len(replaceFiles); i++ {
+		replaceArgs[i] = fmt.Sprintf("%s:%s", replaceFiles[i][0], filepath.Join(basepath, replaceFiles[i][1]))
+	}
+
 	// models flags
 	modelsCmd.Flags().StringP("db", "", "", `Valid options: postgres|mysql (default "database.toml db field")`)
 	modelsCmd.Flags().StringP("output", "o", "models", "The name of the folder to output to")
@@ -56,15 +77,20 @@ func init() {
 	modelsCmd.Flags().StringSliceP("blacklist", "b", nil, "Do not include these tables in your generated package")
 	modelsCmd.Flags().StringSliceP("whitelist", "w", nil, "Only include these tables in your generated package")
 	modelsCmd.Flags().StringSliceP("tag", "t", nil, "Struct tags to be included on your models in addition to json, yaml, toml")
+	modelsCmd.Flags().StringSliceP("replace", "", replaceArgs, "Replace templates by directory: relpath/to_file.tpl:relpath/to_replacement.tpl")
 	modelsCmd.Flags().BoolP("debug", "d", false, "Debug mode prints stack traces on error")
 	modelsCmd.Flags().BoolP("no-tests", "", false, "Disable generated go test files")
 	modelsCmd.Flags().BoolP("no-hooks", "", false, "Disable hooks feature for your models")
 	modelsCmd.Flags().BoolP("no-auto-timestamps", "", false, "Disable automatic timestamps for created_at/updated_at")
 	modelsCmd.Flags().BoolP("tinyint-not-bool", "", false, "Map MySQL tinyint(1) in Go to int8 instead of bool")
+	modelsCmd.Flags().BoolP("wipe", "", false, "Delete the output folder (rm -rf) before generation to ensure sanity")
 
 	// migration flags
 	migrationCmd.Flags().BoolP("sql", "s", false, "Generate an .sql migration instead of a .go migration")
 	migrationCmd.Flags().StringP("dir", "d", migrationsDirectory, "Directory with migration files")
+
+	// hide flags not recommended for use
+	modelsCmd.Flags().MarkHidden("replace")
 
 	RootCmd.AddCommand(generateCmd)
 
@@ -91,6 +117,7 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 		NoTests:          config.ModeViper.GetBool("no-tests"),
 		NoHooks:          config.ModeViper.GetBool("no-hooks"),
 		NoAutoTimestamps: config.ModeViper.GetBool("no-auto-timestamps"),
+		Wipe:             config.ModeViper.GetBool("wipe"),
 	}
 
 	// BUG: https://github.com/spf13/viper/pull/296
@@ -115,6 +142,14 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 	modelsCmdConfig.Tags = config.ModeViper.GetStringSlice("tag")
 	if len(modelsCmdConfig.Tags) == 1 && strings.ContainsRune(modelsCmdConfig.Tags[0], ',') {
 		modelsCmdConfig.Tags, err = cmd.Flags().GetStringSlice("tag")
+		if err != nil {
+			return err
+		}
+	}
+
+	modelsCmdConfig.Replacements = config.ModeViper.GetStringSlice("replace")
+	if len(modelsCmdConfig.Replacements) == 1 && strings.ContainsRune(modelsCmdConfig.Replacements[0], ',') {
+		modelsCmdConfig.Replacements, err = cmd.Flags().GetStringSlice("replace")
 		if err != nil {
 			return err
 		}
@@ -194,6 +229,20 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 	}
 
 	modelsCmdState, err = boilingcore.New(modelsCmdConfig)
+	if err != nil {
+		return err
+	}
+
+	// fix imports
+	modelsCmdState.Importer.TestSingleton.Add("boil_main_test", `"github.com/nullbio/abcweb/config"`, true)
+	modelsCmdState.Importer.TestMain.Add("postgres", `"github.com/nullbio/abcweb/config"`, true)
+	modelsCmdState.Importer.TestMain.Add("mysql", `"github.com/nullbio/abcweb/config"`, true)
+	modelsCmdState.Importer.TestSingleton.Remove("boil_main_test", `"path/filepath"`)
+	modelsCmdState.Importer.TestSingleton.Remove("boil_main_test", `"github.com/pkg/errors"`)
+	modelsCmdState.Importer.TestSingleton.Remove("boil_main_test", `"github.com/spf13/viper"`)
+	modelsCmdState.Importer.TestMain.Remove("postgres", `"github.com/spf13/viper"`)
+	modelsCmdState.Importer.TestMain.Remove("mysql", `"github.com/spf13/viper"`)
+
 	return err
 }
 
