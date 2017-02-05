@@ -5,12 +5,13 @@
 [dev]
 	# valid values are postgres|mysql
 	# db = "postgres"
-	pass = "yourpass"
+	pass = "password"
 	dbname = "{{dbAppName .AppName}}_dev"
 	host = "localhost"
-	port = 5432
-	user = "postgres"
-	# TODO: describe possible values (they differ for mysql vs postgres)
+	user = "username"
+	# SSLMode possible values:
+	# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
+	# MySQL: https://github.com/go-sql-driver/mysql#tls
 	sslmode = "require"
 	
 	# SQLBoiler (models generator) additional config
@@ -19,12 +20,13 @@
 [prod]
 	# valid values are postgres|mysql
 	# db = "postgres"
-	pass = "yourpass"
+	pass = "password"
 	dbname = "{{dbAppName .AppName}}_prod"
 	host = "localhost"
-	port = 5432
-	user = "postgres"
-	# TODO: describe possible values (they differ for mysql vs postgres)
+	user = "username"
+	# SSLMode possible values:
+	# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
+	# MySQL: https://github.com/go-sql-driver/mysql#tls
 	sslmode = "require"
 	#
 	# SQLBoiler (models generator) additional config

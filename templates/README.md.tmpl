@@ -3,14 +3,14 @@ https://github.com/nullbio/abcweb -- See here for readme.
 
 ### Example run 
 
-{{envAppNm := envAppName .AppName -}}
-`{{envAppNm}}_ENV` is the environment variable that specifies which
+{{$envAppNm := envAppName .AppName -}}
+`{{$envAppNm}}_ENV` is the environment variable that specifies which
 config.toml configuration mode/section to use.
 
 `./{{.AppName}}` will use the default mode of `{{.DefaultEnv}}`.
 
-`{{envAppNm}}_ENV=dev ./{{.AppName}}`
-`{{envAppNm}}_ENV=prod ./{{.AppName}}`
+`{{$envAppNm}}_ENV=dev ./{{.AppName}}`
+`{{$envAppNm}}_ENV=prod ./{{.AppName}}`
 
 ### Configuration
 
