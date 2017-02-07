@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -22,6 +21,7 @@ your generated app or the abcweb tool by executing "go get" commands`,
 
 func init() {
 	depsCmd.Flags().BoolP("update", "u", false, "Also update already installed dependencies")
+	depsCmd.Flags().BoolP("verbose", "", false, "Very noisy verbose output")
 
 	RootCmd.AddCommand(depsCmd)
 	viper.BindPFlags(depsCmd.Flags())
@@ -51,15 +51,16 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"gulp-cli"},
 	}
 
-	// Prefix Go args with "get" and optionally "-u"
+	prependArgs := []string{"get"}
 	if viper.GetBool("update") {
-		for i := 0; i < len(goGetArgs); i++ {
-			goGetArgs[i] = append([]string{"get", "-u"}, goGetArgs[i]...)
-		}
-	} else {
-		for i := 0; i < len(goGetArgs); i++ {
-			goGetArgs[i] = append([]string{"get"}, goGetArgs[i]...)
-		}
+		prependArgs = append(prependArgs, "-u")
+	}
+	if viper.GetBool("verbose") {
+		prependArgs = append(prependArgs, "-v")
+	}
+
+	for i := 0; i < len(goGetArgs); i++ {
+		goGetArgs[i] = append(prependArgs, goGetArgs[i]...)
 	}
 
 	fmt.Printf("Retrieving all Go dependencies using \"go get\":\n\n")
@@ -68,20 +69,34 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		fmt.Printf("%s ... ", goGetArg[len(goGetArg)-1])
 
 		exc := exec.Command("go", goGetArg...)
-		err := exc.Run()
+		out, err := exc.CombinedOutput()
 
 		if err != nil {
 			fmt.Printf("ERROR\n\n")
-			fmt.Println(err)
-			os.Exit(-1)
+		} else {
+			fmt.Printf("SUCCESS\n")
 		}
 
-		fmt.Printf("SUCCESS\n")
+		if len(out) > 0 {
+			fmt.Println(string(out))
+		}
+
+		if err != nil {
+			fmt.Printf("%s\n\n", err)
+			os.Exit(-1)
+		}
 	}
 
 	// Prefix NPM args with "install --global"
-	for i := 0; i < len(npmInstallArgs); i++ {
-		npmInstallArgs[i] = append([]string{"install", "--global"}, npmInstallArgs[i]...)
+	if viper.GetBool("verbose") {
+		for i := 0; i < len(npmInstallArgs); i++ {
+			npmInstallArgs[i] = append([]string{"install", "--global", "--verbose"}, npmInstallArgs[i]...)
+		}
+	} else {
+		for i := 0; i < len(npmInstallArgs); i++ {
+			npmInstallArgs[i] = append([]string{"install", "--global"}, npmInstallArgs[i]...)
+		}
+
 	}
 
 	fmt.Printf("\nRetrieving all Nodejs dependencies using \"npm install --global\":\n\n")
@@ -101,12 +116,8 @@ https://docs.npmjs.com/getting-started/fixing-npm-permissions
 	for _, npmInstallArg := range npmInstallArgs {
 		fmt.Printf("%s ... ", npmInstallArg[len(npmInstallArg)-1])
 
-		var out bytes.Buffer
 		exc := exec.Command("npm", npmInstallArg...)
-		exc.Stdout = &out
-		exc.Stderr = &out
-
-		err := exc.Run()
+		out, err := exc.CombinedOutput()
 
 		if err != nil {
 			fmt.Printf("ERROR\n\n")
@@ -114,7 +125,9 @@ https://docs.npmjs.com/getting-started/fixing-npm-permissions
 			fmt.Printf("SUCCESS\n\n")
 		}
 
-		fmt.Println(out.String())
+		if len(out) > 0 {
+			fmt.Println(string(out))
+		}
 
 		if err != nil {
 			fmt.Printf("%s\n\n", err)
