@@ -87,16 +87,13 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Prefix NPM args with "install --global"
+	prependArgs = []string{"install", "--global"}
 	if viper.GetBool("verbose") {
-		for i := 0; i < len(npmInstallArgs); i++ {
-			npmInstallArgs[i] = append([]string{"install", "--global", "--verbose"}, npmInstallArgs[i]...)
-		}
-	} else {
-		for i := 0; i < len(npmInstallArgs); i++ {
-			npmInstallArgs[i] = append([]string{"install", "--global"}, npmInstallArgs[i]...)
-		}
+		prependArgs = append(prependArgs, "--verbose")
+	}
 
+	for i := 0; i < len(npmInstallArgs); i++ {
+		npmInstallArgs[i] = append(prependArgs, npmInstallArgs[i]...)
 	}
 
 	fmt.Printf("\nRetrieving all Nodejs dependencies using \"npm install --global\":\n\n")
