@@ -86,12 +86,26 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("\nRetrieving all Nodejs dependencies using \"npm install --global\":\n\n")
 
+	_, err = exec.LookPath("npm")
+	if err != nil {
+		fmt.Printf(`Error: npm could not be found in your $PATH. If you have not already installed nodejs 
+and npm you must do so before proceeding. Please follow the instructions at: 
+https://docs.npmjs.com/getting-started/installing-node
+
+If you receive permission related errors, please apply the following fix: 
+https://docs.npmjs.com/getting-started/fixing-npm-permissions
+`)
+		os.Exit(-1)
+	}
+
 	for _, npmInstallArg := range npmInstallArgs {
 		fmt.Printf("%s ... ", npmInstallArg[len(npmInstallArg)-1])
 
 		var out bytes.Buffer
 		exc := exec.Command("npm", npmInstallArg...)
 		exc.Stdout = &out
+		exc.Stderr = &out
+
 		err := exc.Run()
 
 		if err != nil {
@@ -104,10 +118,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 
 		if err != nil {
 			fmt.Printf("%s\n\n", err)
-			fmt.Printf(`Note: If you have not already installed nodejs and npm you must do so before proceeding.
-Please follow the instructions at: https://docs.npmjs.com/getting-started/installing-node
-
-If you are receiving permission related errors, please apply the following fix: 
+			fmt.Printf(`Note: If you are receiving a permission related exit status or error, please apply the following fix: 
 https://docs.npmjs.com/getting-started/fixing-npm-permissions
 `)
 			os.Exit(-1)
