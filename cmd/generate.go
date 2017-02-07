@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -251,12 +253,41 @@ func modelsCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func migrationCmdPreRun(cmd *cobra.Command, args []string) {
+	checkDep("goose")
+
+	if len(args) == 0 || len(args[0]) == 0 {
+		fmt.Println(`command requires a migration name argument`)
+		os.Exit(-1)
+	}
+
 	migrationCmdConfig = migrateConfig{
-		SQL: config.ModeViper.GetBool("sql"),
-		Dir: config.ModeViper.GetString("dir"),
+		SQL:  config.ModeViper.GetBool("sql"),
+		Dir:  config.ModeViper.GetString("dir"),
+		Name: args[0],
 	}
 }
 
 func migrationCmdRun(cmd *cobra.Command, args []string) error {
+	var runArgs []string
+
+	if len(migrationCmdConfig.Dir) > 0 {
+		runArgs = append(runArgs, "-dir", migrationCmdConfig.Dir)
+	}
+
+	runArgs = append(runArgs, "create", migrationCmdConfig.Name)
+
+	if migrationCmdConfig.SQL {
+		runArgs = append(runArgs, "sql")
+	}
+
+	exc := exec.Command("goose", runArgs...)
+	out, err := exc.CombinedOutput()
+
+	fmt.Printf(string(out))
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

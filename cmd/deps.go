@@ -78,7 +78,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		}
 
 		if len(out) > 0 {
-			fmt.Println(string(out))
+			fmt.Printf(string(out))
 		}
 
 		if err != nil {
@@ -123,7 +123,7 @@ https://docs.npmjs.com/getting-started/fixing-npm-permissions
 		}
 
 		if len(out) > 0 {
-			fmt.Println(string(out))
+			fmt.Printf(string(out))
 		}
 
 		if err != nil {

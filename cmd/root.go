@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,6 +24,14 @@ func Execute() {
 			fmt.Printf("%+v\n", err)
 		}
 		os.Exit(1)
+	}
+}
+
+func checkDep(name string) {
+	_, err := exec.LookPath(name)
+	if err != nil {
+		fmt.Printf("Error: could not find %q dependency in $PATH. Please run \"abcweb deps\" to install all missing dependencies.", name)
+		os.Exit(-1)
 	}
 }
 
