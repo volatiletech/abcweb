@@ -139,7 +139,8 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if !newCmdConfig.Silent {
-		fmt.Println("\tresult -> Finished")
+		fmt.Printf("\tresult -> Finished\n\n")
+		fmt.Println(`Do not forget to run "git init" in your generated app directory.`)
 	}
 	return nil
 }
