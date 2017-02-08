@@ -2,6 +2,8 @@ package config
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"go/build"
 	"log"
 	"os"
@@ -70,9 +72,6 @@ type DBConfig struct {
 	NoHooks          bool
 	NoTests          bool
 	Wipe             bool
-
-	MigrationsSQL bool   `toml:"migrations.sql"`
-	MigrationsDir string `toml:"migrations.dir"`
 }
 
 // AppConfig holds the relevant generated app config.toml file variables
@@ -179,4 +178,11 @@ func GetBasePath() (string, error) {
 	}
 
 	return os.Getwd()
+}
+
+func CheckEnv() error {
+	if ActiveEnv == "" {
+		return errors.New(fmt.Sprintf("No active environment chosen. Please choose an environment using the \"env\" flag in config.toml or the $%s_ENV environment variable", strmangle.EnvAppName(GetAppName(AppPath))))
+	}
+	return nil
 }

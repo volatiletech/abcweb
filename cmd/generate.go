@@ -19,11 +19,13 @@ var modelsCmdState *boilingcore.State
 
 var migrationCmdConfig migrateConfig
 
+const migrationsDir = "./migrations"
+
 // generateCmd represents the "generate" command
 var generateCmd = &cobra.Command{
-	Use:     "generate",
+	Use:     "gen",
 	Short:   "Generate your database models and migration files",
-	Example: "abcweb generate models\nabcweb generate migration add_users",
+	Example: "abcweb gen models\nabcweb gen migration add_users",
 }
 
 // modelsCmd represents the "generate models" command
@@ -34,7 +36,7 @@ var modelsCmd = &cobra.Command{
 Don't forget to run your migrations.
 
 This tool pipes out to SQLBoiler: https://github.com/vattle/sqlboiler -- See README.md at sqlboiler repo for API guidance.`,
-	Example: "abcweb generate models",
+	Example: "abcweb gen models",
 	PreRunE: modelsCmdPreRun,
 	RunE:    modelsCmdRun,
 }
@@ -43,10 +45,9 @@ This tool pipes out to SQLBoiler: https://github.com/vattle/sqlboiler -- See REA
 var migrationCmd = &cobra.Command{
 	Use:   "migration <name> [flags]",
 	Short: "Generate a migration file",
-	Long: `Generate migration will generate a .go or .sql migration file in your migrations directory.
+	Long: `Generate migration will generate a .sql migration file in your migrations directory.
 This tool pipes out to Goose: https://github.com/pressly/goose`,
-	Example: "abcweb generate migration add_users",
-	PreRun:  migrationCmdPreRun,
+	Example: "abcweb gen migration add_users",
 	RunE:    migrationCmdRun,
 }
 
@@ -87,10 +88,6 @@ func init() {
 	modelsCmd.Flags().BoolP("tinyint-not-bool", "", false, "Map MySQL tinyint(1) in Go to int8 instead of bool")
 	modelsCmd.Flags().BoolP("wipe", "", false, "Delete the output folder (rm -rf) before generation to ensure sanity")
 
-	// migration flags
-	migrationCmd.Flags().BoolP("sql", "s", false, "Generate an .sql migration instead of a .go migration")
-	migrationCmd.Flags().StringP("dir", "d", migrationsDirectory, "Directory with migration files")
-
 	// hide flags not recommended for use
 	modelsCmd.Flags().MarkHidden("replace")
 
@@ -101,13 +98,15 @@ func init() {
 	generateCmd.AddCommand(migrationCmd)
 
 	config.ModeViper.BindPFlags(modelsCmd.Flags())
-	config.ModeViper.BindPFlags(migrationCmd.Flags())
 	config.ModeViper.BindPFlags(generateCmd.Flags())
 }
 
 // modelsCmdPreRun sets up the modelsCmdState and modelsCmdConfig objects
 func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
-	var err error
+	err := config.CheckEnv()
+	if err != nil {
+		return err
+	}
 
 	modelsCmdConfig = &boilingcore.Config{
 		DriverName:       config.ModeViper.GetString("db"),
@@ -252,7 +251,7 @@ func modelsCmdRun(cmd *cobra.Command, args []string) error {
 	return modelsCmdState.Run(true)
 }
 
-func migrationCmdPreRun(cmd *cobra.Command, args []string) {
+func migrationCmdRun(cmd *cobra.Command, args []string) error {
 	checkDep("goose")
 
 	if len(args) == 0 || len(args[0]) == 0 {
@@ -260,34 +259,12 @@ func migrationCmdPreRun(cmd *cobra.Command, args []string) {
 		os.Exit(-1)
 	}
 
-	migrationCmdConfig = migrateConfig{
-		SQL:  config.ModeViper.GetBool("sql"),
-		Dir:  config.ModeViper.GetString("dir"),
-		Name: args[0],
-	}
-}
+	exc := exec.Command("goose", "create", args[0], "sql")
+	exc.Dir = filepath.Join(config.AppPath, "migrations")
 
-func migrationCmdRun(cmd *cobra.Command, args []string) error {
-	var runArgs []string
-
-	if len(migrationCmdConfig.Dir) > 0 {
-		runArgs = append(runArgs, "-dir", migrationCmdConfig.Dir)
-	}
-
-	runArgs = append(runArgs, "create", migrationCmdConfig.Name)
-
-	if migrationCmdConfig.SQL {
-		runArgs = append(runArgs, "sql")
-	}
-
-	exc := exec.Command("goose", runArgs...)
 	out, err := exc.CombinedOutput()
 
 	fmt.Printf(string(out))
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
