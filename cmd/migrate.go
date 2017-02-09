@@ -145,13 +145,13 @@ func migrateExec(cmd *cobra.Command, args []string, subCmd string) error {
 
 	out, err := exc.CombinedOutput()
 
-	fmt.Printf(string(out))
+	fmt.Print(string(out))
 	// On error exit here instead of return, because goose erroneously returns
 	// error status codes on expected failures (like "no migration" errors),
 	// which triggers the abcweb --help usage.
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(-1)
+		os.Exit(1)
 	}
 
 	return nil

@@ -100,6 +100,8 @@ func TestGetActiveEnv(t *testing.T) {
 
 	// File has to be present to prevent fatal error
 	afero.WriteFile(AppFS, configPath, []byte(""), 0644)
+	envVal := os.Getenv("ABCWEB_ENV")
+	os.Setenv("ABCWEB_ENV", "")
 
 	env := getActiveEnv(appPath)
 	if env != "" {
@@ -113,7 +115,6 @@ func TestGetActiveEnv(t *testing.T) {
 		t.Errorf("Expected %q, got %q", "dog", env)
 	}
 
-	envVal := os.Getenv("ABCWEB_ENV")
 	os.Setenv("ABCWEB_ENV", "cat")
 
 	env = getActiveEnv(appPath)

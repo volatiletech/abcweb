@@ -31,7 +31,7 @@ func checkDep(name string) {
 	_, err := exec.LookPath(name)
 	if err != nil {
 		fmt.Printf("Error: could not find %q dependency in $PATH. Please run \"abcweb deps\" to install all missing dependencies.", name)
-		os.Exit(-1)
+		os.Exit(1)
 	}
 }
 

@@ -19,7 +19,7 @@ var modelsCmdState *boilingcore.State
 
 var migrationCmdConfig migrateConfig
 
-const migrationsDir = "./migrations"
+const migrationsDir = "migrations"
 
 // generateCmd represents the "generate" command
 var generateCmd = &cobra.Command{
@@ -73,9 +73,9 @@ func init() {
 
 	// models flags
 	modelsCmd.Flags().StringP("db", "", "", `Valid options: postgres|mysql (default "database.toml db field")`)
-	modelsCmd.Flags().StringP("output", "o", "models", "The name of the folder to output to")
 	modelsCmd.Flags().StringP("schema", "s", "public", "The name of your database schema, for databases that support real schemas")
 	modelsCmd.Flags().StringP("pkgname", "p", "models", "The name you wish to assign to your generated package")
+	modelsCmd.Flags().StringP("output", "o", "models", "The name of the folder to output to. Automatically created relative to webapp root dir")
 	modelsCmd.Flags().StringP("basedir", "", "", "The base directory has the templates and templates_test folders")
 	modelsCmd.Flags().StringSliceP("blacklist", "b", nil, "Do not include these tables in your generated package")
 	modelsCmd.Flags().StringSliceP("whitelist", "w", nil, "Only include these tables in your generated package")
@@ -110,7 +110,7 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 
 	modelsCmdConfig = &boilingcore.Config{
 		DriverName:       config.ModeViper.GetString("db"),
-		OutFolder:        config.ModeViper.GetString("output"),
+		OutFolder:        filepath.Join(config.AppPath, config.ModeViper.GetString("output")),
 		Schema:           config.ModeViper.GetString("schema"),
 		PkgName:          config.ModeViper.GetString("pkgname"),
 		BaseDir:          config.ModeViper.GetString("basedir"),
@@ -256,15 +256,15 @@ func migrationCmdRun(cmd *cobra.Command, args []string) error {
 
 	if len(args) == 0 || len(args[0]) == 0 {
 		fmt.Println(`command requires a migration name argument`)
-		os.Exit(-1)
+		os.Exit(1)
 	}
 
 	exc := exec.Command("goose", "create", args[0], "sql")
-	exc.Dir = filepath.Join(config.AppPath, "migrations")
+	exc.Dir = filepath.Join(config.AppPath, migrationsDir)
 
 	out, err := exc.CombinedOutput()
 
-	fmt.Printf(string(out))
+	fmt.Print(string(out))
 
 	return err
 }

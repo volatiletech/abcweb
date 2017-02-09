@@ -78,12 +78,12 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		}
 
 		if len(out) > 0 {
-			fmt.Printf(string(out))
+			fmt.Print(string(out))
 		}
 
 		if err != nil {
 			fmt.Printf("%s\n\n", err)
-			os.Exit(-1)
+			os.Exit(1)
 		}
 	}
 
@@ -107,7 +107,7 @@ https://docs.npmjs.com/getting-started/installing-node
 If you receive permission related errors, please apply the following fix: 
 https://docs.npmjs.com/getting-started/fixing-npm-permissions
 `)
-		os.Exit(-1)
+		os.Exit(1)
 	}
 
 	for _, npmInstallArg := range npmInstallArgs {
@@ -123,7 +123,7 @@ https://docs.npmjs.com/getting-started/fixing-npm-permissions
 		}
 
 		if len(out) > 0 {
-			fmt.Printf(string(out))
+			fmt.Print(string(out))
 		}
 
 		if err != nil {
@@ -131,7 +131,7 @@ https://docs.npmjs.com/getting-started/fixing-npm-permissions
 			fmt.Printf(`Note: If you are receiving a permission related exit status or error, please apply the following fix: 
 https://docs.npmjs.com/getting-started/fixing-npm-permissions
 `)
-			os.Exit(-1)
+			os.Exit(1)
 		}
 	}
 
