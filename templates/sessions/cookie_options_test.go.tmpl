@@ -57,7 +57,7 @@ func TestGetCookieValue(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 	o := NewCookieOptions()
 
 	_, err := o.getCookieValue(w, r)

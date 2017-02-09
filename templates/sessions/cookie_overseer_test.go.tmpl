@@ -41,7 +41,7 @@ func TestCookieOverseerGetFromCookie(t *testing.T) {
 	t.Parallel()
 
 	c := NewCookieOverseer(NewCookieOptions(), testCookieKey)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	ct, err := c.encode("hello world")
@@ -68,7 +68,7 @@ func TestCookieOverseerNoSession(t *testing.T) {
 
 	opts := NewCookieOptions()
 	c := NewCookieOverseer(opts, testCookieKey)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	_, err := c.Get(w, r)
@@ -81,7 +81,7 @@ func TestCookieOverseerSet(t *testing.T) {
 	t.Parallel()
 
 	c := NewCookieOverseer(NewCookieOptions(), testCookieKey)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	var err error
@@ -116,7 +116,7 @@ func TestCookieOverseerDel(t *testing.T) {
 
 	opts := NewCookieOptions()
 	c := NewCookieOverseer(opts, testCookieKey)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	err := c.Del(w, r)
@@ -173,7 +173,7 @@ func TestCookieOverseerResetExpiry(t *testing.T) {
 	opts.MaxAge = time.Hour * 1
 
 	c := NewCookieOverseer(opts, testCookieKey)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	err := c.ResetExpiry(w, r)

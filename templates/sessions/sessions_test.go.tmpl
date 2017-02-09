@@ -10,7 +10,7 @@ func TestSetAndGet(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -60,7 +60,7 @@ func TestDel(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -108,7 +108,7 @@ func TestSetAndGetObj(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -166,7 +166,7 @@ func TestAddFlash(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -192,7 +192,7 @@ func TestGetFlash(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -246,7 +246,7 @@ func TestFlashAddAndGetObj(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -286,7 +286,7 @@ func TestFlashCombined(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -326,7 +326,7 @@ func TestFlashCombinedTwo(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -366,7 +366,7 @@ func TestAddFlashAndSetCombined(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)

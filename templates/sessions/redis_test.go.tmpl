@@ -47,8 +47,8 @@ func TestRedisStorerNewDefault(t *testing.T) {
 		t.Error("Expected client to be created")
 	}
 
-	if storer.maxAge != time.Hour*24*7 {
-		t.Error("expected max age to be a week")
+	if storer.maxAge != time.Hour*24*2 {
+		t.Error("expected max age to be 2 days")
 	}
 }
 

@@ -60,7 +60,7 @@ func TestStorageOverseerGet(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -97,7 +97,7 @@ func TestStorageOverseerSet(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -155,7 +155,7 @@ func TestStorageOverseerDel(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	opts := NewCookieOptions()
 	m, _ := NewDefaultMemoryStorer()
@@ -233,7 +233,7 @@ func TestStorageOverseerRegenerate(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	opts := NewCookieOptions()
 	m, _ := NewDefaultMemoryStorer()
@@ -290,7 +290,7 @@ func TestStorageOverseerSessionID(t *testing.T) {
 	t.Parallel()
 
 	r := httptest.NewRequest("GET", "http://localhost", nil)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 
 	m, _ := NewDefaultMemoryStorer()
 	s := NewStorageOverseer(NewCookieOptions(), m)
@@ -335,7 +335,7 @@ func TestStorageOverseerResetExpiry(t *testing.T) {
 	}
 
 	c := NewStorageOverseer(opts, mem)
-	w := newResponse(httptest.NewRecorder())
+	w := newSessionsResponseWriter(httptest.NewRecorder())
 	r := httptest.NewRequest("GET", "/", nil)
 
 	err = c.ResetExpiry(w, r)
