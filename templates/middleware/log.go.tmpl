@@ -53,7 +53,8 @@ func (m Middleware) RequestIDLogger(next http.Handler) http.Handler {
 
 // Log returns the Request ID scoped logger from the request Context
 // and panics if it cannot be found. This function is only ever used
-// by your controllers if your app uses the RequestID middlewares.
+// by your controllers if your app uses the RequestID middlewares,
+// otherwise you should use the controller's receiver logger directly.
 func Log(r *http.Request) zap.Logger {
 	v := r.Context().Value(CtxLogLookup)
 	log, ok := v.(zap.Logger)

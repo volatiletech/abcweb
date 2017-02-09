@@ -1,9 +1,20 @@
 package middleware
 
-import "testing"
+import (
+	"context"
+	"net/http"
+	"testing"
+
+	"github.com/uber-go/zap"
+)
 
 func TestLog(t *testing.T) {
 	t.Parallel()
 
-	t.Error("not implemented")
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, CtxLogLookup, zap.New(zap.NewTextEncoder()))
+	r := &http.Request{}
+	r = r.WithContext(ctx)
+
+	_ = Log(r)
 }
