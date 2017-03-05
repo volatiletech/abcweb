@@ -5,14 +5,30 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/nullbio/abcweb/config"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+)
+
+var (
+	cnf *config.Configuration
+
+	appFS = afero.NewOsFs()
 )
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:  "abcweb",
 	Long: `ABCWeb is a tool to help you scaffold and develop Go web applications.`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		var err error
+		cnf, err = config.Init()
+		if err != nil {
+			return err
+		}
+		return nil
+	},
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
@@ -22,6 +38,8 @@ func Execute() {
 		// Print stacktrace if debug enabled
 		if viper.GetBool("debug") {
 			fmt.Printf("%+v\n", err)
+		} else {
+			fmt.Println("%v\n", err)
 		}
 		os.Exit(1)
 	}

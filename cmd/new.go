@@ -14,7 +14,6 @@ import (
 	"text/template"
 
 	"github.com/nullbio/abcweb/cert"
-	"github.com/nullbio/abcweb/config"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -48,7 +47,7 @@ func init() {
 	newCmd.Flags().BoolP("no-livereload", "l", false, "Don't support LiveReload")
 	newCmd.Flags().BoolP("no-tls-certs", "t", false, "Skip generation of self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-readme", "r", false, "Skip README.md files")
-	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml file")
+	newCmd.Flags().BoolP("no-config", "c", false, "Skip default cnf.toml file")
 	newCmd.Flags().BoolP("no-sessions", "s", false, "Skip support for http sessions")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("tls-certs-only", "", false, "Only generate self-signed TLS cert files")
@@ -108,7 +107,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Make the app directory if it doesnt already exist.
 	// Can get dir not exist errors on --tls-cert-only runs if we don't do this.
-	err := config.AppFS.MkdirAll(newCmdConfig.AppPath, 0755)
+	err := appFS.MkdirAll(newCmdConfig.AppPath, 0755)
 	if err != nil {
 		return err
 	}
@@ -122,7 +121,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 		// Walk all files in the templates folder
 		basePath := filepath.Join(p.Dir, "templates")
-		err := afero.Walk(config.AppFS, basePath, func(path string, info os.FileInfo, err error) error {
+		err := afero.Walk(appFS, basePath, func(path string, info os.FileInfo, err error) error {
 			return newCmdWalk(newCmdConfig, basePath, path, info, err)
 		})
 		if err != nil {
@@ -150,7 +149,7 @@ func generateTLSCerts(cfg newConfig) error {
 	privateKeyPath := filepath.Join(cfg.AppPath, "private.key")
 
 	if !cfg.TLSCertsOnly {
-		_, err := config.AppFS.Stat(certFilePath)
+		_, err := appFS.Stat(certFilePath)
 		if err == nil || (err != nil && !os.IsNotExist(err)) {
 			return nil
 		}
@@ -169,7 +168,7 @@ func generateTLSCerts(cfg newConfig) error {
 		return err
 	}
 
-	certFile, err := config.AppFS.Create(certFilePath)
+	certFile, err := appFS.Create(certFilePath)
 	if err != nil {
 		return err
 	}
@@ -182,7 +181,7 @@ func generateTLSCerts(cfg newConfig) error {
 		fmt.Printf("\tcreate -> %s\n", filepath.Join(cfg.AppName, "cert.pem"))
 	}
 
-	privateKeyFile, err := config.AppFS.Create(privateKeyPath)
+	privateKeyFile, err := appFS.Create(privateKeyPath)
 	if err != nil {
 		return err
 	}
@@ -213,7 +212,7 @@ func newCmdWalk(cfg newConfig, basePath string, path string, info os.FileInfo, e
 	fileContents := &bytes.Buffer{}
 
 	// Check if the output file or folder already exists
-	_, err = config.AppFS.Stat(fullPath)
+	_, err = appFS.Stat(fullPath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
@@ -227,7 +226,7 @@ func newCmdWalk(cfg newConfig, basePath string, path string, info os.FileInfo, e
 			return nil
 		}
 
-		err = config.AppFS.MkdirAll(fullPath, 0755)
+		err = appFS.MkdirAll(fullPath, 0755)
 		if err != nil {
 			return err
 		}
@@ -237,7 +236,7 @@ func newCmdWalk(cfg newConfig, basePath string, path string, info os.FileInfo, e
 			return nil
 		}
 
-		rawFileContents, err := afero.ReadFile(config.AppFS, path)
+		rawFileContents, err := afero.ReadFile(appFS, path)
 		if err != nil {
 			return err
 		}
@@ -271,7 +270,7 @@ func newCmdWalk(cfg newConfig, basePath string, path string, info os.FileInfo, e
 			}
 		}
 
-		err = afero.WriteFile(config.AppFS, fullPath, fileContents.Bytes(), 0664)
+		err = afero.WriteFile(appFS, fullPath, fileContents.Bytes(), 0664)
 		if err != nil {
 			return err
 		}
@@ -317,9 +316,9 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 		}
 	}
 
-	// Skip default config.toml if requested
+	// Skip default cnf.toml if requested
 	if cfg.NoConfig {
-		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" {
+		if info.Name() == "cnf.toml" || info.Name() == "cnf.toml.tmpl" {
 			return true, nil
 		}
 	}

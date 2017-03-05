@@ -14,18 +14,26 @@ import (
 	"github.com/vattle/sqlboiler/boilingcore"
 )
 
-var modelsCmdConfig *boilingcore.Config
-var modelsCmdState *boilingcore.State
+const (
+	migrationsDir = "migrations"
+)
 
-var migrationCmdConfig migrateConfig
-
-const migrationsDir = "migrations"
+var (
+	modelsCmdConfig    *boilingcore.Config
+	modelsCmdState     *boilingcore.State
+	migrationCmdConfig migrateConfig
+)
 
 // generateCmd represents the "generate" command
 var generateCmd = &cobra.Command{
 	Use:     "gen",
 	Short:   "Generate your database models and migration files",
 	Example: "abcweb gen models\nabcweb gen migration add_users",
+}
+
+func generatePreRun(cmd *cobra.Command, args []string) {
+	cnf.ModeViper.BindPFlags(modelsCmd.Flags())
+	cnf.ModeViper.BindPFlags(generateCmd.Flags())
 }
 
 // modelsCmd represents the "generate models" command
@@ -37,7 +45,6 @@ Don't forget to run your migrations.
 
 This tool pipes out to SQLBoiler: https://github.com/vattle/sqlboiler -- See README.md at sqlboiler repo for API guidance.`,
 	Example: "abcweb gen models",
-	PreRunE: modelsCmdPreRun,
 	RunE:    modelsCmdRun,
 }
 
@@ -93,38 +100,39 @@ func init() {
 
 	RootCmd.AddCommand(generateCmd)
 
+	// hook up pre-run hooks, this avoids initialization loops
+	generateCmd.PersistentPreRun = generatePreRun
+	modelsCmd.PreRunE = modelsCmdPreRun
+
 	// Add generate subcommands
 	generateCmd.AddCommand(modelsCmd)
 	generateCmd.AddCommand(migrationCmd)
-
-	config.ModeViper.BindPFlags(modelsCmd.Flags())
-	config.ModeViper.BindPFlags(generateCmd.Flags())
 }
 
 // modelsCmdPreRun sets up the modelsCmdState and modelsCmdConfig objects
 func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
-	err := config.CheckEnv()
+	err := cnf.CheckEnv()
 	if err != nil {
 		return err
 	}
 
 	modelsCmdConfig = &boilingcore.Config{
-		DriverName:       config.ModeViper.GetString("db"),
-		OutFolder:        filepath.Join(config.AppPath, config.ModeViper.GetString("output")),
-		Schema:           config.ModeViper.GetString("schema"),
-		PkgName:          config.ModeViper.GetString("pkgname"),
-		BaseDir:          config.ModeViper.GetString("basedir"),
-		Debug:            config.ModeViper.GetBool("debug"),
-		NoTests:          config.ModeViper.GetBool("no-tests"),
-		NoHooks:          config.ModeViper.GetBool("no-hooks"),
-		NoAutoTimestamps: config.ModeViper.GetBool("no-auto-timestamps"),
-		Wipe:             config.ModeViper.GetBool("wipe"),
+		DriverName:       cnf.ModeViper.GetString("db"),
+		OutFolder:        filepath.Join(cnf.AppPath, cnf.ModeViper.GetString("output")),
+		Schema:           cnf.ModeViper.GetString("schema"),
+		PkgName:          cnf.ModeViper.GetString("pkgname"),
+		BaseDir:          cnf.ModeViper.GetString("basedir"),
+		Debug:            cnf.ModeViper.GetBool("debug"),
+		NoTests:          cnf.ModeViper.GetBool("no-tests"),
+		NoHooks:          cnf.ModeViper.GetBool("no-hooks"),
+		NoAutoTimestamps: cnf.ModeViper.GetBool("no-auto-timestamps"),
+		Wipe:             cnf.ModeViper.GetBool("wipe"),
 	}
 
 	// BUG: https://github.com/spf13/viper/pull/296
 	// Look up the value of blacklist, whitelist & tags directly from PFlags in Cobra if we
 	// detect a malformed value coming out of viper.
-	modelsCmdConfig.BlacklistTables = config.ModeViper.GetStringSlice("blacklist")
+	modelsCmdConfig.BlacklistTables = cnf.ModeViper.GetStringSlice("blacklist")
 	if len(modelsCmdConfig.BlacklistTables) == 1 && strings.ContainsRune(modelsCmdConfig.BlacklistTables[0], ',') {
 		modelsCmdConfig.BlacklistTables, err = cmd.Flags().GetStringSlice("blacklist")
 		if err != nil {
@@ -132,7 +140,7 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	modelsCmdConfig.WhitelistTables = config.ModeViper.GetStringSlice("whitelist")
+	modelsCmdConfig.WhitelistTables = cnf.ModeViper.GetStringSlice("whitelist")
 	if len(modelsCmdConfig.WhitelistTables) == 1 && strings.ContainsRune(modelsCmdConfig.WhitelistTables[0], ',') {
 		modelsCmdConfig.WhitelistTables, err = cmd.Flags().GetStringSlice("whitelist")
 		if err != nil {
@@ -140,7 +148,7 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	modelsCmdConfig.Tags = config.ModeViper.GetStringSlice("tag")
+	modelsCmdConfig.Tags = cnf.ModeViper.GetStringSlice("tag")
 	if len(modelsCmdConfig.Tags) == 1 && strings.ContainsRune(modelsCmdConfig.Tags[0], ',') {
 		modelsCmdConfig.Tags, err = cmd.Flags().GetStringSlice("tag")
 		if err != nil {
@@ -148,7 +156,7 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	modelsCmdConfig.Replacements = config.ModeViper.GetStringSlice("replace")
+	modelsCmdConfig.Replacements = cnf.ModeViper.GetStringSlice("replace")
 	if len(modelsCmdConfig.Replacements) == 1 && strings.ContainsRune(modelsCmdConfig.Replacements[0], ',') {
 		modelsCmdConfig.Replacements, err = cmd.Flags().GetStringSlice("replace")
 		if err != nil {
@@ -158,22 +166,22 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 
 	if modelsCmdConfig.DriverName == "postgres" {
 		modelsCmdConfig.Postgres = boilingcore.PostgresConfig{
-			User:    config.ModeViper.GetString("user"),
-			Pass:    config.ModeViper.GetString("pass"),
-			Host:    config.ModeViper.GetString("host"),
-			Port:    config.ModeViper.GetInt("port"),
-			DBName:  config.ModeViper.GetString("dbname"),
-			SSLMode: config.ModeViper.GetString("sslmode"),
+			User:    cnf.ModeViper.GetString("user"),
+			Pass:    cnf.ModeViper.GetString("pass"),
+			Host:    cnf.ModeViper.GetString("host"),
+			Port:    cnf.ModeViper.GetInt("port"),
+			DBName:  cnf.ModeViper.GetString("dbname"),
+			SSLMode: cnf.ModeViper.GetString("sslmode"),
 		}
 
 		if modelsCmdConfig.Postgres.SSLMode == "" {
 			modelsCmdConfig.Postgres.SSLMode = "require"
-			config.ModeViper.Set("sslmode", modelsCmdConfig.Postgres.SSLMode)
+			cnf.ModeViper.Set("sslmode", modelsCmdConfig.Postgres.SSLMode)
 		}
 
 		if modelsCmdConfig.Postgres.Port == 0 {
 			modelsCmdConfig.Postgres.Port = 5432
-			config.ModeViper.Set("port", modelsCmdConfig.Postgres.Port)
+			cnf.ModeViper.Set("port", modelsCmdConfig.Postgres.Port)
 		}
 
 		err = vala.BeginValidation().Validate(
@@ -191,29 +199,29 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 
 	if modelsCmdConfig.DriverName == "mysql" {
 		modelsCmdConfig.MySQL = boilingcore.MySQLConfig{
-			User:    config.ModeViper.GetString("user"),
-			Pass:    config.ModeViper.GetString("pass"),
-			Host:    config.ModeViper.GetString("host"),
-			Port:    config.ModeViper.GetInt("port"),
-			DBName:  config.ModeViper.GetString("dbname"),
-			SSLMode: config.ModeViper.GetString("sslmode"),
+			User:    cnf.ModeViper.GetString("user"),
+			Pass:    cnf.ModeViper.GetString("pass"),
+			Host:    cnf.ModeViper.GetString("host"),
+			Port:    cnf.ModeViper.GetInt("port"),
+			DBName:  cnf.ModeViper.GetString("dbname"),
+			SSLMode: cnf.ModeViper.GetString("sslmode"),
 		}
 
 		// Set MySQL TinyintAsBool global var. This flag only applies to MySQL.
 		// Invert the value since ABCWeb takes it as "not" bool instead of "as" bool.
-		drivers.TinyintAsBool = !config.ModeViper.GetBool("tinyint-not-bool")
+		drivers.TinyintAsBool = !cnf.ModeViper.GetBool("tinyint-not-bool")
 
 		// MySQL doesn't have schemas, just databases
 		modelsCmdConfig.Schema = modelsCmdConfig.MySQL.DBName
 
 		if modelsCmdConfig.MySQL.SSLMode == "" {
 			modelsCmdConfig.MySQL.SSLMode = "true"
-			config.ModeViper.Set("sslmode", modelsCmdConfig.MySQL.SSLMode)
+			cnf.ModeViper.Set("sslmode", modelsCmdConfig.MySQL.SSLMode)
 		}
 
 		if modelsCmdConfig.MySQL.Port == 0 {
 			modelsCmdConfig.MySQL.Port = 3306
-			config.ModeViper.Set("port", modelsCmdConfig.MySQL.Port)
+			cnf.ModeViper.Set("port", modelsCmdConfig.MySQL.Port)
 		}
 
 		err = vala.BeginValidation().Validate(
@@ -260,7 +268,7 @@ func migrationCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	exc := exec.Command("goose", "create", args[0], "sql")
-	exc.Dir = filepath.Join(config.AppPath, migrationsDir)
+	exc.Dir = filepath.Join(cnf.AppPath, migrationsDir)
 
 	out, err := exc.CombinedOutput()
 
