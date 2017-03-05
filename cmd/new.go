@@ -372,7 +372,7 @@ func getAppPath(args []string) (appPath string, importPath string, appName strin
 	}
 
 	appPath = filepath.Clean(args[0])
-	importPath = appPath
+	importPath = strings.Replace(appPath, `\`, "/", -1)
 
 	// Somewhat validate provided app path, valid paths will have at least 2 components
 	appPathChunks := strings.Split(appPath, string(os.PathSeparator))
