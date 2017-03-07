@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/kat-co/vala"
-	"github.com/nullbio/abcweb/config"
 	"github.com/spf13/cobra"
 )
 
@@ -77,46 +76,48 @@ func init() {
 	migrateCmd.AddCommand(statusCmd)
 	migrateCmd.AddCommand(dbVersionCmd)
 
-	config.ModeViper.BindPFlags(migrateCmd.PersistentFlags())
+	migrateCmd.PersistentPreRun = func(*cobra.Command, []string) {
+		cnf.ModeViper.BindPFlags(migrateCmd.PersistentFlags())
+	}
 }
 
 func migrateExec(cmd *cobra.Command, args []string, subCmd string) error {
 	checkDep("goose")
 
-	err := config.CheckEnv()
+	err := cnf.CheckEnv()
 	if err != nil {
 		return err
 	}
 
-	migrateCmdConfig.DB = config.ModeViper.GetString("db")
-	migrateCmdConfig.DBName = config.ModeViper.GetString("dbname")
-	migrateCmdConfig.User = config.ModeViper.GetString("user")
-	migrateCmdConfig.Pass = config.ModeViper.GetString("pass")
-	migrateCmdConfig.Host = config.ModeViper.GetString("host")
-	migrateCmdConfig.Port = config.ModeViper.GetInt("port")
-	migrateCmdConfig.SSLMode = config.ModeViper.GetString("sslmode")
+	migrateCmdConfig.DB = cnf.ModeViper.GetString("db")
+	migrateCmdConfig.DBName = cnf.ModeViper.GetString("dbname")
+	migrateCmdConfig.User = cnf.ModeViper.GetString("user")
+	migrateCmdConfig.Pass = cnf.ModeViper.GetString("pass")
+	migrateCmdConfig.Host = cnf.ModeViper.GetString("host")
+	migrateCmdConfig.Port = cnf.ModeViper.GetInt("port")
+	migrateCmdConfig.SSLMode = cnf.ModeViper.GetString("sslmode")
 
 	var connStr string
 	if migrateCmdConfig.DB == "postgres" {
 		if migrateCmdConfig.SSLMode == "" {
 			migrateCmdConfig.SSLMode = "require"
-			config.ModeViper.Set("sslmode", migrateCmdConfig.SSLMode)
+			cnf.ModeViper.Set("sslmode", migrateCmdConfig.SSLMode)
 		}
 
 		if migrateCmdConfig.Port == 0 {
 			migrateCmdConfig.Port = 5432
-			config.ModeViper.Set("port", migrateCmdConfig.Port)
+			cnf.ModeViper.Set("port", migrateCmdConfig.Port)
 		}
 		connStr = postgresConnStr(migrateCmdConfig)
 	} else if migrateCmdConfig.DB == "mysql" {
 		if migrateCmdConfig.SSLMode == "" {
 			migrateCmdConfig.SSLMode = "true"
-			config.ModeViper.Set("sslmode", migrateCmdConfig.SSLMode)
+			cnf.ModeViper.Set("sslmode", migrateCmdConfig.SSLMode)
 		}
 
 		if migrateCmdConfig.Port == 0 {
 			migrateCmdConfig.Port = 3306
-			config.ModeViper.Set("port", migrateCmdConfig.Port)
+			cnf.ModeViper.Set("port", migrateCmdConfig.Port)
 		}
 		connStr = mysqlConnStr(migrateCmdConfig)
 	}
@@ -141,7 +142,7 @@ func migrateExec(cmd *cobra.Command, args []string, subCmd string) error {
 	}
 
 	exc := exec.Command("goose", excArgs...)
-	exc.Dir = filepath.Join(config.AppPath, "migrations")
+	exc.Dir = filepath.Join(cnf.AppPath, "migrations")
 
 	out, err := exc.CombinedOutput()
 

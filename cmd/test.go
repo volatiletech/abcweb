@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/nullbio/abcweb/config"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +21,10 @@ func init() {
 	testCmd.Flags().BoolP("verbose", "v", false, "Enable verbose output")
 
 	RootCmd.AddCommand(testCmd)
-	config.ModeViper.BindPFlags(testCmd.Flags())
+
+	testCmd.PersistentPreRun = func(*cobra.Command, []string) {
+		cnf.ModeViper.BindPFlags(testCmd.Flags())
+	}
 }
 
 func testCmdRun(cmd *cobra.Command, args []string) {
@@ -31,15 +33,15 @@ func testCmdRun(cmd *cobra.Command, args []string) {
 	// Set the APPNAME_ENV flag to the env value in case it was obtained
 	// through the config file instead of through an environment variable.
 	// This is required so that the models tests know what environment to load.
-	// os.Setenv(strmangle.EnvAppName(config.GetAppName(config.AppPath))+"_ENV", config.ActiveEnv)
+	// os.Setenv(strmangle.EnvAppName(cnf.GetAppName(cnf.AppPath))+"_ENV", cnf.ActiveEnv)
 
-	if config.ModeViper.GetBool("verbose") {
+	if cnf.ModeViper.GetBool("verbose") {
 		exc = exec.Command("go", "test", "./...", "-v")
 	} else {
 		exc = exec.Command("go", "test", "./...")
 	}
 
-	exc.Dir = config.AppPath
+	exc.Dir = cnf.AppPath
 	out, err := exc.CombinedOutput()
 	fmt.Print(string(out))
 

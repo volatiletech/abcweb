@@ -2,10 +2,8 @@ package config
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"go/build"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +11,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/nullbio/abcweb/strmangle"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
 )
@@ -22,29 +21,63 @@ const (
 	DBConfigFilename = "database.toml"
 	// AppConfigFilename is the filename for the app config file
 	AppConfigFilename = "config.toml"
+	// basePackage is used to find templates
+	basePackage = "github.com/nullbio/abcweb"
 )
 
-// AppFS is a handle to the filesystem in use
-var AppFS = afero.NewOsFs()
+var (
+	// AppFS is a handle to the filesystem in use
+	appFS = afero.NewOsFs()
+)
 
-// AppPath is the path to the project, set using the init function
-var AppPath string
+type Configuration struct {
+	// AppPath is the path to the project, set using the init function
+	AppPath string
 
-// ActiveEnv is the environment mode currently set by "env" in config.toml
-// or APPNAME_ENV environment variable. This mode indicates what section of
-// config variables to to load into the config structs.
-var ActiveEnv string
+	// AppName is the name of the application, derived from the path
+	AppName string
 
-// ModeViper is a *viper.Viper that has been initialized to:
-// Load the active environment section of the AppPath/database.toml file
-// Load environment variables with a prefix of APPNAME
-// Replace "-" with "_" in environment variable names
-var ModeViper *viper.Viper
+	// AppEnvName is the environment variable containing the app environment
+	AppEnvName string
 
-func init() {
-	AppPath = getAppPath()
-	ActiveEnv = getActiveEnv(AppPath)
-	ModeViper = NewModeViper(AppPath, ActiveEnv)
+	// ActiveEnv is the environment mode currently set by "env" in config.toml
+	// or APPNAME_ENV environment variable. This mode indicates what section of
+	// config variables to to load into the config structs.
+	ActiveEnv string
+
+	// ModeViper is a *viper.Viper that has been initialized to:
+	// Load the active environment section of the AppPath/database.toml file
+	// Load environment variables with a prefix of APPNAME
+	// Replace "-" with "_" in environment variable names
+	ModeViper *viper.Viper
+}
+
+// Init the config
+func Init() (*Configuration, error) {
+	c := &Configuration{}
+
+	path, err := getAppPath()
+	if err != nil {
+		return nil, err
+	}
+	c.AppPath = path
+
+	c.AppName = getAppName(c.AppPath)
+	c.AppEnvName = strmangle.EnvAppName(c.AppName)
+	c.ActiveEnv = getActiveEnv(c.AppPath, c.AppName)
+	c.ModeViper = NewModeViper(c.AppPath, c.AppEnvName, c.ActiveEnv)
+
+	return c, nil
+}
+
+// Init the config but panic if anything goes wrong
+func InitP() *Configuration {
+	c, err := Init()
+	if err != nil {
+		panic(err)
+	}
+
+	return c
 }
 
 // DBConfig holds the configuration variables contained in the database.toml
@@ -86,11 +119,11 @@ var testHarnessViperReadConfig = func(newViper *viper.Viper) error {
 // NewModeViper creates a viper.Viper with config path and environment prefixes
 // set. It also specifies a Sub of the active environment (the chosen env mode)
 // and reads in the config file.
-func NewModeViper(appPath string, env string) *viper.Viper {
+func NewModeViper(appPath string, envAppName, env string) *viper.Viper {
 	newViper := viper.New()
 	newViper.SetConfigType("toml")
 	newViper.SetConfigFile(filepath.Join(appPath, DBConfigFilename))
-	newViper.SetEnvPrefix(strmangle.EnvAppName(GetAppName(appPath)))
+	newViper.SetEnvPrefix(envAppName)
 	newViper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	if env == "" {
@@ -116,15 +149,13 @@ func NewModeViper(appPath string, env string) *viper.Viper {
 // to load by checking the following, in the following order:
 // 1. environment variable $APPNAME_ENV (APPNAME is envAppName variable value)
 // 2. config.toml default environment field "env"
-func getActiveEnv(appPath string) string {
-	appName := strmangle.EnvAppName(GetAppName(appPath))
-
+func getActiveEnv(appPath, appName string) string {
 	val := os.Getenv(appName + "_ENV")
 	if val != "" {
 		return val
 	}
 
-	contents, err := afero.ReadFile(AppFS, filepath.Join(appPath, AppConfigFilename))
+	contents, err := afero.ReadFile(appFS, filepath.Join(appPath, AppConfigFilename))
 	if err != nil {
 		return ""
 	}
@@ -141,7 +172,7 @@ func getActiveEnv(appPath string) string {
 
 // getAppPath executes the git cmd "git rev-parse --show-toplevel" to obtain
 // the full path of the current app. The last folder in the path is the app name.
-func getAppPath() string {
+func getAppPath() (string, error) {
 	gitCmd := exec.Command("git", "rev-parse", "--show-toplevel")
 
 	b := &bytes.Buffer{}
@@ -149,27 +180,25 @@ func getAppPath() string {
 
 	err := gitCmd.Run()
 	if err != nil {
-		log.Fatal("cannot execute git command rev-parse to obtain app root dir: ", err)
+		return "", errors.Wrap(err, "cannot find app root dir git rev-parse failed")
 	}
 
 	output := b.String()
 
 	if len(output) == 0 {
-		log.Fatalln("no output for git command")
+		return "", errors.New("cannot find app root dir git rev-parse had no output")
 	}
 
-	return strings.TrimSpace(output)
+	return strings.TrimSpace(output), nil
 }
 
-// GetAppName gets the appname portion of a project path
-func GetAppName(appPath string) string {
+// getAppName gets the appname portion of a project path
+func getAppName(appPath string) string {
 	split := strings.Split(appPath, string(os.PathSeparator))
 	return split[len(split)-1]
 }
 
-var basePackage = "github.com/nullbio/abcweb"
-
-// GetBasePath returns the full path to the custom sqlboiler template files
+// getBasePath returns the full path to the custom sqlboiler template files
 // folder used with the sqlboiler --replace flag.
 func GetBasePath() (string, error) {
 	p, _ := build.Default.Import(basePackage, "", build.FindOnly)
@@ -180,9 +209,9 @@ func GetBasePath() (string, error) {
 	return os.Getwd()
 }
 
-func CheckEnv() error {
-	if ActiveEnv == "" {
-		return errors.New(fmt.Sprintf("No active environment chosen. Please choose an environment using the \"env\" flag in config.toml or the $%s_ENV environment variable", strmangle.EnvAppName(GetAppName(AppPath))))
+func (c *Configuration) CheckEnv() error {
+	if c.ActiveEnv == "" {
+		return errors.New(fmt.Sprintf("No active environment chosen. Please choose an environment using the \"env\" flag in config.toml or the $%s_ENV environment variable", c.AppEnvName))
 	}
 	return nil
 }
