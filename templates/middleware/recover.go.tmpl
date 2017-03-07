@@ -20,9 +20,9 @@ func (m Middleware) Recover(next http.Handler) http.Handler {
 				}
 				
 				{{if not .NoRequestID -}}
-				var log zap.Logger
+				var log *zap.Logger
 				v := r.Context().Value(CtxLogLookup)
-				log, ok := v.(zap.Logger)
+				log, ok := v.(*zap.Logger)
 				if !ok {
 					panic("cannot get derived request id logger from context object")
 				}
@@ -30,24 +30,24 @@ func (m Middleware) Recover(next http.Handler) http.Handler {
 
 				// log all the fields
 				{{if .NoRequestID -}}
-				m.Log.Panic(fmt.Sprintf("%s request error", protocol),
+				m.Log.Error(fmt.Sprintf("%s request error", protocol),
 					zap.String("method", r.Method),
 					zap.String("uri", r.RequestURI),
 					zap.Bool("tls", r.TLS != nil),
 					zap.String("protocol", r.Proto),
 					zap.String("host", r.Host),
 					zap.String("remote_addr", r.RemoteAddr),
-					zap.String("error", err.(string)),
+					zap.String("error", fmt.Sprintf("%+v", err)),
 				)
 				{{- else -}}
-				log.Panic(fmt.Sprintf("%s request error", protocol),
+				log.Error(fmt.Sprintf("%s request error", protocol),
 					zap.String("method", r.Method),
 					zap.String("uri", r.RequestURI),
 					zap.Bool("tls", r.TLS != nil),
 					zap.String("protocol", r.Proto),
 					zap.String("host", r.Host),
 					zap.String("remote_addr", r.RemoteAddr),
-					zap.String("error", err.(string)),
+					zap.String("error", fmt.Sprintf("%+v", err)),
 				)
 				{{- end}}
 

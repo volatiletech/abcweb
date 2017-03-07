@@ -55,9 +55,9 @@ func (m Middleware) RequestIDLogger(next http.Handler) http.Handler {
 // and panics if it cannot be found. This function is only ever used
 // by your controllers if your app uses the RequestID middlewares,
 // otherwise you should use the controller's receiver logger directly.
-func Log(r *http.Request) zap.Logger {
+func Log(r *http.Request) *zap.Logger {
 	v := r.Context().Value(CtxLogLookup)
-	log, ok := v.(zap.Logger)
+	log, ok := v.(*zap.Logger)
 	if !ok {
 		panic("cannot get derived request id logger from context object")
 	}
@@ -65,7 +65,7 @@ func Log(r *http.Request) zap.Logger {
 }
 {{- end}}
 
-func writeZap(log zap.Logger, r *http.Request, t time.Time, status int, size int) {
+func writeZap(log *zap.Logger, r *http.Request, t time.Time, status int, size int) {
 	elapsed := time.Now().Sub(t)
 	var protocol string
 	if r.TLS == nil {
@@ -76,7 +76,7 @@ func writeZap(log zap.Logger, r *http.Request, t time.Time, status int, size int
 
 	{{if not .NoRequestID -}}
 	v := r.Context().Value(CtxLogLookup)
-	log, ok := v.(zap.Logger)
+	log, ok := v.(*zap.Logger)
 	if !ok {
 		panic("cannot get derived request id logger from context object")
 	}

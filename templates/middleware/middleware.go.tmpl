@@ -20,7 +20,7 @@ type Middleware struct {
 	// create a derived logger that includes the request ID.
 	// Do not remove.
 	{{- end}}
-	Log zap.Logger
+	Log *zap.Logger
 
 	// User's custom vars go underneath this comment.
 }

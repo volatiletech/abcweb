@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 	"time"
+	"strings"
 
 	"{{.ImportPath}}/rendering"
 	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
 	{{- end}}
-	"github.com/nullbio/shift"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -20,7 +20,7 @@ import (
 // The controllers are passed variables from this object when initialized.
 type State struct {
 	Config  *Config
-	Log     zap.Logger
+	Log     *zap.Logger
 	Router  *chi.Mux
 	Render  rendering.Renderer
 	Root    *cobra.Command
@@ -33,54 +33,52 @@ type State struct {
 // the config.toml file.
 type Config struct {
 	// LiveReload enabled or disabled
-	LiveReload bool `toml:"live_reload"`
-	// Log messages in JSON format
-	LogJSON bool `toml:"log_json"`
-	// Minimum level to log
-	LogLevel string `toml:"log_level"`
+	LiveReload bool
+	// Use the production logger (JSON and log level warn), or the
+	// development logger (console and log level info)
+	ProdLogger bool
 	// http bind address. ":<port>" for all interfaces
-	Bind string `toml:"bind"`
+	Bind string
 	// https bind address. ":<port>" for all interfaces
-	TLSBind string `toml:"tls_bind"`
+	TLSBind string
 	// TLS certificate file path
-	TLSCertFile string `toml:"tls_cert_file"`
+	TLSCertFile string
 	// TLS key file path
-	TLSKeyFile string `toml:"tls_key_file"`
+	TLSKeyFile string
 	// Maximum duration before timing out read of the request
-	ReadTimeout time.Duration `toml:"read_timeout"`
+	ReadTimeout time.Duration
 	// Maximum duration before timing out write of the response
-	WriteTimeout time.Duration `toml:"write_timeout"`
+	WriteTimeout time.Duration
 	// Templates folder path
-	Templates string `toml:"templates"`
+	Templates string
 	// Static assets input folder path
-	AssetsIn string `toml:"assets_in"`
+	AssetsIn string
 	// Compiled assets output folder path
-	AssetsOut string `toml:"assets_out"`
+	AssetsOut string 
 	// Disable precompilation of assets
-	AssetsNoCompile bool `toml:"assets_no_compile"`
+	AssetsNoCompile bool
 	// Disable minification of assets
-	AssetsNoMinify bool `toml:"assets_no_minify"`
+	AssetsNoMinify bool 
 	// Disable fingerprints in compiled asset filenames
-	AssetsNoHash bool `toml:"assets_no_hash"`
+	AssetsNoHash bool 
 	// Disable Gzip compression of asset files
-	AssetsNoCompress bool `toml:"assets_no_compress"`
+	AssetsNoCompress bool 
 	// Disable browsers caching asset files by setting response headers
-	AssetsNoCache bool `toml:"assets_no_cache"`
+	AssetsNoCache bool 
 	// RenderRecompile enables recompilation of the template on every render call.
 	// This should be used in development mode so no server restart is required
 	// on template file changes.
-	RenderRecompile bool `toml:"render_recompile"`
+	RenderRecompile bool 
 	{{if not .NoSessions -}}
 	// Use the development mode sessions storer opposed to production mode storer
-	SessionsDevStorer bool `toml:"sessions_dev_storer"`
+	SessionsDevStorer bool 
 	{{- end}}
 }
 
 // RegisterFlags registers the configuration flag defaults and help strings
 func (s *State) RegisterFlags() error {
 	s.Root.Flags().BoolP("live-reload", "", false, "Enable or disable LiveReload")
-	s.Root.Flags().BoolP("log-json", "", true, "Log messages in JSON format")
-	s.Root.Flags().StringP("log-level", "", "warn", "Minimum level to log")
+	s.Root.Flags().BoolP("prod-logger", "", true, "Use the production logger, JSON and log level warn")
 	s.Root.Flags().StringP("bind", "", ":80", `HTTP bind address, eg: ":80"`)
 	s.Root.Flags().StringP("tls-bind", "", "", `HTTPS bind address, eg: ":443"`)
 	s.Root.Flags().StringP("tls-cert-file", "", "", "TLS certificate file path")
@@ -102,43 +100,58 @@ func (s *State) RegisterFlags() error {
 	s.Root.Flags().BoolP("sessions-dev-storer", "", false, "Use the development mode sessions storer")
 	{{- end}}
 
-	return viper.BindPFlags(s.Root.Flags())
+	return nil 
 }
 
 // LoadConfig loads the configuration object
 func (s *State) LoadConfig() error {
+	{{$envAppNm := envAppName .AppName -}}
+	env := os.Getenv("{{$envAppNm}}_ENV")
+
+	v := viper.New()
+	v.SetConfigType("toml")
+	v.SetConfigFile("config.toml")
+	v.SetEnvPrefix("{{$envAppNm}}")
+	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	v.ReadInConfig()
+
+	if env == "" {
+	  env = v.GetString("env")
+	}
+	if env == "" {
+	  fmt.Println(`Warning: No environment chosen using {{$envAppNm}}_ENV or env field in config.toml, attempting to use fallback of "prod"`)
+	  env = "prod"
+	}
+
+	v = v.Sub(env)
+	if v == nil {
+		return fmt.Errorf("unable to load environment %s from config file", env)
+	}
+
+	v.BindPFlags(s.Root.Flags())
+
 	s.Config = &Config{
-		LiveReload:        viper.GetBool("live-reload"),
-		LogJSON:           viper.GetBool("log-json"),
-		LogLevel:          viper.GetString("log-level"),
-		Bind:              viper.GetString("bind"),
-		TLSBind:           viper.GetString("tls-bind"),
-		TLSCertFile:       viper.GetString("tls-cert-file"),
-		TLSKeyFile:        viper.GetString("tls-key-file"),
-		ReadTimeout:       viper.GetDuration("read-timeout"),
-		WriteTimeout:      viper.GetDuration("write-timeout"),
-		Templates:         viper.GetString("templates"),
-		AssetsIn:          viper.GetString("assets-in"),
-		AssetsOut:         viper.GetString("assets-out"),
-		AssetsNoCompile:   viper.GetBool("assets-no-compile"),
-		AssetsNoMinify:    viper.GetBool("assets-no-minify"),
-		AssetsNoHash:      viper.GetBool("assets-no-hash"),
-		AssetsNoCompress:  viper.GetBool("assets-no-compress"),
-		AssetsNoCache:     viper.GetBool("assets-no-cache"),
-		RenderRecompile:   viper.GetBool("render-recompile"),
+		LiveReload:        v.GetBool("live-reload"),
+		ProdLogger:			 v.GetBool("prod-logger"),
+		Bind:              v.GetString("bind"),
+		TLSBind:           v.GetString("tls-bind"),
+		TLSCertFile:       v.GetString("tls-cert-file"),
+		TLSKeyFile:        v.GetString("tls-key-file"),
+		ReadTimeout:       v.GetDuration("read-timeout"),
+		WriteTimeout:      v.GetDuration("write-timeout"),
+		Templates:         v.GetString("templates"),
+		AssetsIn:          v.GetString("assets-in"),
+		AssetsOut:         v.GetString("assets-out"),
+		AssetsNoCompile:   v.GetBool("assets-no-compile"),
+		AssetsNoMinify:    v.GetBool("assets-no-minify"),
+		AssetsNoHash:      v.GetBool("assets-no-hash"),
+		AssetsNoCompress:  v.GetBool("assets-no-compress"),
+		AssetsNoCache:     v.GetBool("assets-no-cache"),
+		RenderRecompile:   v.GetBool("render-recompile"),
 		{{if not .NoSessions -}}
-		SessionsDevStorer: viper.GetBool("sessions-dev-storer"),
+		SessionsDevStorer: v.GetBool("sessions-dev-storer"),
 		{{- end}}
 	}
 
-	{{$envAppNm := envAppName .AppName -}}
-	env := os.Getenv("{{$envAppNm}}_ENV")
-	if env == "" {
-		env = viper.GetString("env")
-	}
-	if env == "" {
-		fmt.Println(`Warning: No environment chosen using {{$envAppNm}}_ENV or env field in config.toml, attempting to use fallback of "prod"`)
-		env = "prod"
-	}
-	return shift.Load(s.Config, "config.toml", "{{$envAppNm}}", env)
+	return nil
 }

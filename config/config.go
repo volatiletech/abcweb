@@ -30,6 +30,7 @@ var (
 	appFS = afero.NewOsFs()
 )
 
+// Configuration holds app state variables
 type Configuration struct {
 	// AppPath is the path to the project, set using the init function
 	AppPath string
@@ -70,7 +71,7 @@ func Init() (*Configuration, error) {
 	return c, nil
 }
 
-// Init the config but panic if anything goes wrong
+// InitP the config but panic if anything goes wrong
 func InitP() *Configuration {
 	c, err := Init()
 	if err != nil {
@@ -130,7 +131,7 @@ func NewModeViper(appPath string, envAppName, env string) *viper.Viper {
 		return newViper
 	}
 
-	// Only give a warning on errors here, so we can fallback to other validation
+	// Do nothing on errors here, so we can fallback to other validation
 	// methods. Users can use env vars or cmd line flags if a config is not found.
 	err := testHarnessViperReadConfig(newViper)
 	if err != nil {
@@ -198,7 +199,7 @@ func getAppName(appPath string) string {
 	return split[len(split)-1]
 }
 
-// getBasePath returns the full path to the custom sqlboiler template files
+// GetBasePath returns the full path to the custom sqlboiler template files
 // folder used with the sqlboiler --replace flag.
 func GetBasePath() (string, error) {
 	p, _ := build.Default.Import(basePackage, "", build.FindOnly)
@@ -209,9 +210,10 @@ func GetBasePath() (string, error) {
 	return os.Getwd()
 }
 
+// CheckEnv outputs an error if no ActiveEnv is found
 func (c *Configuration) CheckEnv() error {
 	if c.ActiveEnv == "" {
-		return errors.New(fmt.Sprintf("No active environment chosen. Please choose an environment using the \"env\" flag in config.toml or the $%s_ENV environment variable", c.AppEnvName))
+		return fmt.Errorf("No active environment chosen. Please choose an environment using the \"env\" flag in config.toml or the $%s_ENV environment variable", c.AppEnvName)
 	}
 	return nil
 }

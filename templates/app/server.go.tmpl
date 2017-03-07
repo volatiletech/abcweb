@@ -12,7 +12,7 @@ import (
 
 // serverErrLogger allows us to use the zap.Logger as our http.Server ErrorLog
 type serverErrLogger struct {
-	log zap.Logger
+	log *zap.Logger
 }
 
 // Implement Write to log server errors using the zap logger

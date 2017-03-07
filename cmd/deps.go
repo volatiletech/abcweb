@@ -31,20 +31,20 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 	var err error
 
 	goGetArgs := [][]string{
-		{"-t", "github.com/vattle/sqlboiler"},
+		{"go.uber.org/zap"},
 		{"github.com/pressly/goose"},
 		{"github.com/satori/go.uuid"},
 		{"github.com/pkg/errors"},
-		{"github.com/lib/pq"},
-		{"github.com/go-sql-driver/mysql"},
 		{"github.com/djherbis/times"},
-		{"github.com/spf13/cobra"},
-		{"github.com/spf13/viper"},
 		{"github.com/pressly/chi"},
 		{"github.com/kat-co/vala"},
 		{"github.com/goware/cors"},
 		{"github.com/unrolled/render"},
-		{"go.uber.org/zap"},
+		{"github.com/go-sql-driver/mysql"},
+		{"github.com/lib/pq"},
+		{"github.com/spf13/cobra"},
+		{"github.com/spf13/viper"},
+		{"-t", "github.com/vattle/sqlboiler"},
 	}
 
 	npmInstallArgs := [][]string{

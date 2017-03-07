@@ -1,44 +1,25 @@
 package app
 
 import (
-	"strings"
-
-	"github.com/aarondl/zapcolors"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // InitLogger initializes a zap logger
 func (s *State) InitLogger() {
-	var level zap.Level
-	// Set the minimum log level, defined in the app configuration
-	switch strings.ToLower(s.Config.LogLevel) {
-	case "debug":
-		level = zap.DebugLevel
-	case "info":
-		level = zap.InfoLevel
-	case "warn":
-		level = zap.WarnLevel
-	case "error":
-		level = zap.ErrorLevel
-	case "panic":
-		level = zap.PanicLevel
-	case "fatal":
-		level = zap.FatalLevel
-	default:
-		level = zap.WarnLevel
-	}
+	var err error
 
 	// JSON logging for production. Should be coupled with a log analyzer
 	// like newrelic, elk, logstash etc.
-	if s.Config.LogJSON {
-		s.Log = zap.New(
-			zap.NewJSONEncoder(),
-			level,
-		)
+	if s.Config.ProdLogger {
+		s.Log, err = zap.NewProduction()
 	} else { // Enable colored logging
-		s.Log = zap.New(
-			zapcolors.NewColorEncoder(zapcolors.TextTimeFormat("2006-01-02 15:04:05 MST")),
-			level,
-		)
+		cfg := zap.NewDevelopmentConfig()
+		cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		s.Log, err = cfg.Build()
+	}
+
+	if err != nil {
+		panic("cannot initialize production logger")
 	}
 }

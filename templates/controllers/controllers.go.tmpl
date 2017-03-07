@@ -16,7 +16,7 @@ import (
 // you can add them here, and then assign them in app/routes.go where the
 // instance of controller is created.
 type Root struct {
-	Log     zap.Logger
+	Log     *zap.Logger
 	Render  rendering.Renderer
 	{{if not .NoSessions -}}
 	Session sessions.Overseer
@@ -34,7 +34,7 @@ type Main struct {
 // Log returns the Request ID scoped logger from the request Context
 // and panics if it cannot be found.
 // This is a convenience wrapper -- Log() is nicer than middleware.Log()
-func Log(r *http.Request) zap.Logger {
+func Log(r *http.Request) *zap.Logger {
 	return middleware.Log(r)
 }
 {{- end}}
