@@ -11,7 +11,7 @@ import (
 	{{if not .NoRequestID -}}
 	chimiddleware "github.com/pressly/chi/middleware"
 	{{- end}}
-	"github.com/uber-go/zap"
+	"go.uber.org/zap"
 )
 
 // zapResponseWriter is a wrapper that includes that http status and size for logging

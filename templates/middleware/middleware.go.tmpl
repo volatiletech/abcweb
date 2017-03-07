@@ -1,6 +1,6 @@
 package middleware
 
-import "github.com/uber-go/zap"
+import "go.uber.org/zap"
 
 {{if not .NoRequestID -}}
 // CtxLogLookup is the http.Request Context lookup key for the request ID logger

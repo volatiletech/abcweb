@@ -38,13 +38,13 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"github.com/lib/pq"},
 		{"github.com/go-sql-driver/mysql"},
 		{"github.com/djherbis/times"},
-		{"github.com/uber-go/zap"},
 		{"github.com/spf13/cobra"},
 		{"github.com/spf13/viper"},
 		{"github.com/pressly/chi"},
 		{"github.com/kat-co/vala"},
 		{"github.com/goware/cors"},
 		{"github.com/unrolled/render"},
+		{"go.uber.org/zap"},
 	}
 
 	npmInstallArgs := [][]string{
