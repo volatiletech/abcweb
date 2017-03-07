@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nullbio/abcweb/config"
 	"github.com/spf13/afero"
 )
 
@@ -170,8 +169,8 @@ func TestProcessSkips(t *testing.T) {
 		t.Error("expected to skip skip readme")
 	}
 
-	// check skip cnf.toml
-	f, err = appFS.Create("/templates/cnf.toml")
+	// check skip config.toml
+	f, err = appFS.Create("/templates/config.toml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,9 +178,9 @@ func TestProcessSkips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	skip, _ = processSkips(cfg, "/templates", "/templates/cnf.toml", info)
+	skip, _ = processSkips(cfg, "/templates", "/templates/config.toml", info)
 	if skip != true {
-		t.Error("expected to skip skip cnf.toml")
+		t.Error("expected to skip skip config.toml")
 	}
 
 	// check skip fontawesome files

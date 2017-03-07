@@ -47,7 +47,7 @@ func init() {
 	newCmd.Flags().BoolP("no-livereload", "l", false, "Don't support LiveReload")
 	newCmd.Flags().BoolP("no-tls-certs", "t", false, "Skip generation of self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-readme", "r", false, "Skip README.md files")
-	newCmd.Flags().BoolP("no-config", "c", false, "Skip default cnf.toml file")
+	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml file")
 	newCmd.Flags().BoolP("no-sessions", "s", false, "Skip support for http sessions")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("tls-certs-only", "", false, "Only generate self-signed TLS cert files")
@@ -316,9 +316,9 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 		}
 	}
 
-	// Skip default cnf.toml if requested
+	// Skip default config.toml if requested
 	if cfg.NoConfig {
-		if info.Name() == "cnf.toml" || info.Name() == "cnf.toml.tmpl" {
+		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" {
 			return true, nil
 		}
 	}
