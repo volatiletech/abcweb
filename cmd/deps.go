@@ -40,6 +40,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"github.com/kat-co/vala"},
 		{"github.com/goware/cors"},
 		{"github.com/unrolled/render"},
+		{"github.com/kardianos/govendor"},
 		{"github.com/go-sql-driver/mysql"},
 		{"github.com/lib/pq"},
 		{"github.com/spf13/cobra"},

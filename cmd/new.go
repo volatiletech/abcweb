@@ -9,6 +9,7 @@ import (
 	"go/build"
 	"go/format"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -137,11 +138,33 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	err = vendorSync(newCmdConfig)
+	if err != nil {
+		return err
+	}
+
 	if !newCmdConfig.Silent {
 		fmt.Printf("\tresult -> Finished\n\n")
 		fmt.Println(`Do not forget to run "git init" in your generated app directory.`)
 	}
 	return nil
+}
+
+func vendorSync(cfg newConfig) error {
+	if !cfg.Silent {
+		fmt.Println("\trun -> govendor sync")
+	}
+
+	checkDep("govendor")
+
+	exc := exec.Command("govendor", "sync")
+	exc.Dir = cfg.AppPath
+
+	out, err := exc.CombinedOutput()
+
+	fmt.Print(string(out))
+
+	return err
 }
 
 func generateTLSCerts(cfg newConfig) error {
