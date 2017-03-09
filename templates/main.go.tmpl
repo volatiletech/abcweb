@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"{{.ImportPath}}/app"
+	"{{.ImportPath}}/db"
 	"github.com/pkg/errors"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
@@ -31,9 +32,26 @@ func main() {
 
 	// The pre-run function will initialize the app.
 	state.Root.PreRunE = func(cmd *cobra.Command, args []string) error {
-		// Build app Config using env vars, cfg file and cmd line flags (app/config.go)
-		if err := state.LoadConfig(); err != nil {
-			return errors.Wrap(err, "failed to load config")
+		// Build app Config using env vars, config.toml file and cmd line flags (app/config.go)
+		appCfgViper, err := app.NewAppViper(state.Root.Flags())
+		if err != nil {
+			return errors.Wrap(err, "failed to load app config")
+		}
+		state.Config = app.LoadConfig(appCfgViper)
+
+		// Build db Config using env vars and database.toml cfg file (app/config.go)
+		dbCfgViper, err := app.NewDBViper(state.Config.ActiveEnv)
+		if err != nil {
+			return errors.Wrap(err, "failed to load db config")
+		}
+		// if dbCfgViper is nil then don't load the DBConfig struct 
+		// and presume we want to run the app without a database.
+		if dbCfgViper != nil {
+			state.DBConfig = app.LoadDBConfig(dbCfgViper)
+			// Initialize the global database handle
+			if err := db.InitDB(state.DBConfig); err != nil {
+				return errors.Wrap(err, "failed to connect with global db handle")
+			}
 		}
 
 		// Initialize the zap logger (app/logger.go)

@@ -1,2 +1,37 @@
 package controllers
 
+import (
+	"os"
+	"fmt"
+	"testing"
+)
+
+func TestMain(m *testing.M) {
+	// Load the database config
+	v, err := NewDBViper("test") 
+	if err != nil {
+		fmt.Printf("failed to load database config for TestMain: %s\n", err)
+		os.Exit(1)
+	}
+	dbCfg := app.LoadDBConfig(v)
+	connStr := db.GetConnStr(dbCfg)
+
+	// Execute database migrations
+	err := db.Setup(dbCfg.DB, connStr)
+	if err != nil {
+		fmt.Printf("failed to execute database migrations for TestMain: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Run the package tests
+	r := m.Run()
+
+	// Teardown the database migrations
+	err := db.Teardown(dbCfg.DB, connStr)
+	if err != nil {
+		fmt.Printf("failed to teardown database migrations for TestMain: %s\n", err)
+		os.Exit(1)
+	}
+
+	os.Exit(r)
+}

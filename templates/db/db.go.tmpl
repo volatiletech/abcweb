@@ -1,0 +1,51 @@
+package db
+
+import (
+	"fmt"
+	"database/sql"
+
+	"github.com/vattle/sqlboiler/bdb/drivers"
+	"{{.ImportPath}}/app"
+)
+
+// DB is the global database handle to your config defined db
+var DB *sql.DB
+
+// InitDB initializes the DB global database handle
+func InitDB(cfg *app.DBConfig) error {
+	// No username provided is a signal to skip database usage
+	if len(cfg.User) == 0 {
+		return nil
+	}
+
+	var err error
+	DB, err = sql.Open(cfg.DB, GetConnStr(cfg))
+	if err != nil {
+		return err
+	}
+
+	p := DB.Ping()
+	if p != nil {
+		return p
+	}
+
+	return nil
+}
+
+func GetConnStr(cfg *app.DBConfig) string {
+	if cfg.DB == "postgres" {
+		return drivers.PostgresBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode)
+	} else if cfg.DB == "mysql" {
+		return drivers.MySQLBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode)
+	}
+
+	panic(fmt.Sprintf("cannot get connection string for unknown database %s", cfg.DB))
+}
+
+func Setup(db string, conn string) error {
+	return nil
+}
+
+func Teardown(db string, conn string) error {
+	return nil
+}

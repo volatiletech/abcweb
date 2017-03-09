@@ -5,10 +5,11 @@
 [dev]
 	# valid values are postgres|mysql
 	# db = "postgres"
+	# If the user line is commented the database will not be connected to.
+	# user = "username"
 	pass = "password"
 	dbname = "{{dbAppName .AppName}}_dev"
 	host = "localhost"
-	user = "username"
 	# SSLMode possible values:
 	# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
 	# MySQL: https://github.com/go-sql-driver/mysql#tls
@@ -20,10 +21,11 @@
 [prod]
 	# valid values are postgres|mysql
 	# db = "postgres"
+	# If the user line is commented the database will not be connected to.
+	# user = "username"
 	pass = "password"
 	dbname = "{{dbAppName .AppName}}_prod"
 	host = "localhost"
-	user = "username"
 	# SSLMode possible values:
 	# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
 	# MySQL: https://github.com/go-sql-driver/mysql#tls
@@ -32,4 +34,22 @@
 	# SQLBoiler (models generator) additional config
 	# tables to ignore when generating models (migration tables, etc)
 	blacklist = ["goose_db_version"]
-
+[test]
+	# The test segment defines the database to connect to when running unit
+	# tests and when executing unit test migrations.
+	# valid values are postgres|mysql
+	# db = "postgres"
+	# If the user line is commented the database will not be connected to
+	# and the unit tests will not run migrations.
+	# user = "username"
+	pass = "password"
+	dbname = "{{dbAppName .AppName}}_test"
+	host = "localhost"
+	# SSLMode possible values:
+	# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
+	# MySQL: https://github.com/go-sql-driver/mysql#tls
+	sslmode = "require"
+	#
+	# SQLBoiler (models generator) additional config
+	# tables to ignore when generating models (migration tables, etc)
+	blacklist = ["goose_db_version"]
