@@ -76,7 +76,7 @@ func init() {
 	migrateCmd.AddCommand(statusCmd)
 	migrateCmd.AddCommand(dbVersionCmd)
 
-	migrateCmd.PersistentPreRun = func(*cobra.Command, []string) {
+	migrateCmd.PreRun = func(*cobra.Command, []string) {
 		cnf.ModeViper.BindPFlags(migrateCmd.PersistentFlags())
 	}
 }
@@ -142,7 +142,7 @@ func migrateExec(cmd *cobra.Command, args []string, subCmd string) error {
 	}
 
 	exc := exec.Command("goose", excArgs...)
-	exc.Dir = filepath.Join(cnf.AppPath, "migrations")
+	exc.Dir = filepath.Join(cnf.AppPath, migrationsDirectory)
 
 	out, err := exc.CombinedOutput()
 

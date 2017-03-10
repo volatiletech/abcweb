@@ -14,10 +14,6 @@ import (
 	"github.com/vattle/sqlboiler/boilingcore"
 )
 
-const (
-	migrationsDir = "db/migrations"
-)
-
 var (
 	modelsCmdConfig    *boilingcore.Config
 	modelsCmdState     *boilingcore.State
@@ -29,11 +25,6 @@ var generateCmd = &cobra.Command{
 	Use:     "gen",
 	Short:   "Generate your database models and migration files",
 	Example: "abcweb gen models\nabcweb gen migration add_users",
-}
-
-func generatePreRun(cmd *cobra.Command, args []string) {
-	cnf.ModeViper.BindPFlags(modelsCmd.Flags())
-	cnf.ModeViper.BindPFlags(generateCmd.Flags())
 }
 
 // modelsCmd represents the "generate models" command
@@ -101,16 +92,23 @@ func init() {
 	RootCmd.AddCommand(generateCmd)
 
 	// hook up pre-run hooks, this avoids initialization loops
-	generateCmd.PersistentPreRun = generatePreRun
 	modelsCmd.PreRunE = modelsCmdPreRun
+	migrationCmd.PreRun = migrationCmdPreRun
 
 	// Add generate subcommands
 	generateCmd.AddCommand(modelsCmd)
 	generateCmd.AddCommand(migrationCmd)
 }
 
+// migrationCmdPreRun sets up the flag bindings
+func migrationCmdPreRun(*cobra.Command, []string) {
+	cnf.ModeViper.BindPFlags(migrationCmd.Flags())
+}
+
 // modelsCmdPreRun sets up the modelsCmdState and modelsCmdConfig objects
 func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
+	cnf.ModeViper.BindPFlags(modelsCmd.Flags())
+
 	err := cnf.CheckEnv()
 	if err != nil {
 		return err
@@ -268,7 +266,7 @@ func migrationCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	exc := exec.Command("goose", "create", args[0], "sql")
-	exc.Dir = filepath.Join(cnf.AppPath, migrationsDir)
+	exc.Dir = filepath.Join(cnf.AppPath, migrationsDirectory)
 
 	out, err := exc.CombinedOutput()
 

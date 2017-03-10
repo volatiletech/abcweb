@@ -22,7 +22,7 @@ func init() {
 
 	RootCmd.AddCommand(testCmd)
 
-	testCmd.PersistentPreRun = func(*cobra.Command, []string) {
+	testCmd.PreRun = func(*cobra.Command, []string) {
 		cnf.ModeViper.BindPFlags(testCmd.Flags())
 	}
 }

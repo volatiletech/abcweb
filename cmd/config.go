@@ -5,7 +5,7 @@ import "github.com/nullbio/abcweb/config"
 const (
 	basePackage         = "github.com/nullbio/abcweb"
 	templatesDirectory  = "templates"
-	migrationsDirectory = "./migrations"
+	migrationsDirectory = "db/migrations"
 )
 
 type buildConfig struct {

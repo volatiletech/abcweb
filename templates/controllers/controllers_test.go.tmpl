@@ -23,49 +23,43 @@ func TestMain(m *testing.M) {
 // defined in database.toml, runs the unit tests, and then downs the migrations.
 // It returns a status code to be used with os.Exit(). Codes > 0 indicate error.
 func testMainMigrations(m *testing.M) int {
-	var skip bool
-
 	// Load the database config
 	v, err := config.NewDBViper("test") 
 	if err != nil {
-		fmt.Printf("failed to load database config for TestMain: %s\n", err)
+		fmt.Printf("TestMain cannot load database.toml: %s\n", err)
 		return 1	
 	}
 	dbCfg := config.LoadDBConfig(v)
-
+	
+	var errStatus int
+	
 	if len(dbCfg.User) == 0 {
 		fmt.Println("No user defined in database.toml, skipping migrations.")
 	} else {
 		// Execute database migrations
 		err = db.Setup(dbCfg)
 		if err != nil {
-			fmt.Printf("failed to execute database migrations for TestMain: %s\n", err)
-			skip = true
+			fmt.Printf("TestMain Setup error: %s\n", err)
+			errStatus = 2
 		}
 	}
 
 	// Run the package tests
-	var r int
-	if !skip {
-		r = m.Run()
-	} else {
-		fmt.Println("skipping unit tests due to migration error")
-	}
+	r := m.Run()
 
 	if len(dbCfg.User) != 0 {
 		// Teardown the database migrations
 		err = db.Teardown(dbCfg)
 		if err != nil {
-			fmt.Printf("failed to teardown database migrations for TestMain: %s\n", err)
-			return 3	
+			fmt.Printf("TestMain Teardown error: %s\n", err)
+			errStatus = 3	
 		}
 	}
 
-	// If migrations failed, exit with error code
-	if skip {
-		return 2	
+	// Exit with return code of unit test run
+	if errStatus == 0 {
+		return r
 	}
 
-	// Exit with return code of unit test run
-	return r
+	return errStatus
 }
