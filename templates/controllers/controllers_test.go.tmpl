@@ -4,9 +4,13 @@ import (
 	"os"
 	"fmt"
 	"testing"
+
+	"{{.ImportPath}}/app"
 )
 
 func TestMain(m *testing.M) {
+	var skip bool
+
 	// Load the database config
 	v, err := NewDBViper("test") 
 	if err != nil {
@@ -14,24 +18,34 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	dbCfg := app.LoadDBConfig(v)
-	connStr := db.GetConnStr(dbCfg)
 
 	// Execute database migrations
-	err := db.Setup(dbCfg.DB, connStr)
+	err := db.Setup(dbCfg)
 	if err != nil {
 		fmt.Printf("failed to execute database migrations for TestMain: %s\n", err)
-		os.Exit(1)
+		skip = true
 	}
 
 	// Run the package tests
-	r := m.Run()
-
-	// Teardown the database migrations
-	err := db.Teardown(dbCfg.DB, connStr)
-	if err != nil {
-		fmt.Printf("failed to teardown database migrations for TestMain: %s\n", err)
-		os.Exit(1)
+	var r int
+	if !skip {
+		r = m.Run()
+	} else {
+		fmt.Printf("skipping unit tests due to migration error")
 	}
 
+	// Teardown the database migrations
+	err := db.Teardown(dbCfg)
+	if err != nil {
+		fmt.Printf("failed to teardown database migrations for TestMain: %s\n", err)
+		os.Exit(3)
+	}
+
+	// If migrations failed, exit with error code
+	if skip {
+		os.Exit(2)
+	}
+
+	// Exit with return code of unit test run
 	os.Exit(r)
 }

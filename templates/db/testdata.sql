@@ -1,0 +1,5 @@
+/*
+   If you would like to insert test data into your test database
+   after your migrations have executed when running unit tests
+   you may put the SQL statements here to do so.
+*/

@@ -35,6 +35,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"github.com/pressly/goose"},
 		{"github.com/satori/go.uuid"},
 		{"github.com/pkg/errors"},
+		{"github.com/nullbio/helpers/git"},
 		{"github.com/djherbis/times"},
 		{"github.com/pressly/chi"},
 		{"github.com/kat-co/vala"},

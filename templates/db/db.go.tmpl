@@ -3,16 +3,33 @@ package db
 import (
 	"fmt"
 	"database/sql"
+	"path/filepath"
+	"io/ioutil"
 
 	"github.com/vattle/sqlboiler/bdb/drivers"
-	"{{.ImportPath}}/app"
+	"github.com/nullbio/helpers/git"
+	"github.com/pressly/goose"
+	"github.com/pkg/errors"
 )
 
 // DB is the global database handle to your config defined db
 var DB *sql.DB
 
+// Config holds the database config for the app loaded through
+// environment variables, or the database.toml file.
+type Config struct {
+	// DB is the database software; "postgres", "mysql", etc.
+	DB      string
+	Host    string
+	Port    int
+	DBName  string
+	User    string
+	Pass    string
+	SSLMode string
+}
+
 // InitDB initializes the DB global database handle
-func InitDB(cfg *app.DBConfig) error {
+func InitDB(cfg *Config) error {
 	// No username provided is a signal to skip database usage
 	if len(cfg.User) == 0 {
 		return nil
@@ -32,7 +49,8 @@ func InitDB(cfg *app.DBConfig) error {
 	return nil
 }
 
-func GetConnStr(cfg *app.DBConfig) string {
+// GetConnStr returns a connection string for the database software used
+func GetConnStr(cfg *Config) string {
 	if cfg.DB == "postgres" {
 		return drivers.PostgresBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode)
 	} else if cfg.DB == "mysql" {
@@ -42,10 +60,100 @@ func GetConnStr(cfg *app.DBConfig) string {
 	panic(fmt.Sprintf("cannot get connection string for unknown database %s", cfg.DB))
 }
 
-func Setup(db string, conn string) error {
+// Setup executes the migrations "up" against the passed in database and also
+// inserts the test data defined in testdata.sql
+func Setup(cfg *Config) error {
+	appPath, err := git.GetAppPath()
+	if err != nil {
+		return err
+	}
+
+	connStr := GetConnStr(cfg)
+	db, err := sql.Open(cfg.DB, connStr)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	
+	err = goose.Up(db, filepath.Join(appPath, "db", "migrations"))	
+	if err != nil {
+		return err
+	}
+
+	if err := sqlTestdata(cfg); err != nil {
+		return err
+	}
+
+	err = goTestdata(cfg.DB, connStr)
+
+	return err
+}
+
+// Teardown executes the migrations "down" against the passed in database
+func Teardown(cfg *Config) error {
+	appPath, err := git.GetAppPath()
+	if err != nil {
+		return err
+	}
+
+	db, err := sql.Open(cfg.DB, GetConnStr(cfg))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	
+	err = goose.Down(db, filepath.Join(appPath, "db", "migrations"))	
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func Teardown(db string, conn string) error {
-	return nil
+// pgPassFile creates a file in the temp directory containing the connection
+// details and password for the database to be passed into the mysql cmdline cmd
+func pgPassFile(cfg *Config) (string, error) {
+	tmp, err := ioutil.TempFile("", "pgpass")
+	if err != nil {
+		return "", errors.New("failed to create postgres pass file")
+	}
+	defer tmp.Close()
+
+	fmt.Fprintf(tmp, "%s:%d:%s:%s", cfg.Host, cfg.Port, cfg.DBName, cfg.User)
+	if len(cfg.Pass) != 0 {
+		fmt.Fprintf(tmp, ":%s", cfg.Pass)
+	}
+	fmt.Fprintln(tmp)
+
+	return tmp.Name(), nil
+}
+
+// mysqlPassFile creates a file in the temp directory containing the connection
+// details and password for the database to be passed into the mysql cmdline cmd
+func mysqlPassFile(cfg *Config) (string, error) {
+	tmp, err := ioutil.TempFile("", "mysqlpass")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create mysql pass file")
+	}
+	defer tmp.Close()
+
+	fmt.Fprintln(tmp, "[client]")
+	fmt.Fprintf(tmp, "host=%s\n", cfg.Host)
+	fmt.Fprintf(tmp, "port=%d\n", cfg.Port)
+	fmt.Fprintf(tmp, "user=%s\n", cfg.User)
+	fmt.Fprintf(tmp, "password=%s\n", cfg.Pass)
+	
+	var sslMode string
+	switch cfg.SSLMode {
+	case "true":
+		sslMode = "REQUIRED"
+	case "false":
+		sslMode = "DISABLED"
+	default:
+		sslMode = "PREFERRED"
+	}
+
+	fmt.Fprintf(tmp, "ssl-mode=%s\n", sslMode)
+	
+	return tmp.Name(), nil
 }

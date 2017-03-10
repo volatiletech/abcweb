@@ -3,21 +3,20 @@ package app
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"bytes"
 	"time"
 	"strings"
 	"path/filepath"
 
 	"{{.ImportPath}}/rendering"
+	"{{.ImportPath}}/db"
 	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
 	{{- end}}
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+	"github.com/nullbio/helpers/git"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +24,7 @@ import (
 // The controllers are passed variables from this object when initialized.
 type State struct {
 	Config	 *Config
-	DBConfig	 *DBConfig
+	DBConfig	 *db.Config
 	Log		 *zap.Logger
 	Router	 *chi.Mux
 	Render	 rendering.Renderer
@@ -83,19 +82,6 @@ type Config struct {
 	{{- end}}
 }
 
-// DBConfig holds the database config for the app loaded through
-// environment variables, or the database.toml file.
-type DBConfig struct {
-	// DB is the database software; "postgres", "mysql", etc.
-	DB      string
-	Host    string
-	Port    int
-	DBName  string
-	User    string
-	Pass    string
-	SSLMode string
-}
-
 // RegisterFlags registers the configuration flag defaults and help strings
 func (s *State) RegisterFlags() error {
 	s.Root.Flags().BoolP("live-reload", "", false, "Enable or disable LiveReload")
@@ -124,28 +110,6 @@ func (s *State) RegisterFlags() error {
 	return nil 
 }
 
-// getAppPath executes the git cmd "git rev-parse --show-toplevel" to obtain
-// the full path of the current app. The last folder in the path is the app name.
-func getAppPath() (string, error) {
-	gitCmd := exec.Command("git", "rev-parse", "--show-toplevel")
-
-	b := &bytes.Buffer{}
-	gitCmd.Stdout = b
-
-	err := gitCmd.Run()
-	if err != nil {
-		return "", errors.Wrap(err, "cannot find app root dir git rev-parse failed")
-	}
-
-	output := b.String()
-
-	if len(output) == 0 {
-		return "", errors.New("cannot find app root dir git rev-parse had no output")
-	}
-
-	return strings.TrimSpace(output), nil
-}
-
 // NewAppViper returns a viper instance activated against the active environment
 // configuration subsection and initialized with the database.toml
 // configuration file and the environment variable prefix.
@@ -153,7 +117,7 @@ func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
 	{{$envAppNm := envAppName .AppName -}}
 	env := os.Getenv("{{$envAppNm}}_ENV")
 
-	appPath, err := getAppPath()
+	appPath, err := git.GetAppPath()
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +156,7 @@ func NewDBViper(env string) (*viper.Viper, error) {
 		return nil, fmt.Errorf("empty environment parameter received")
 	}
 
-	appPath, err := getAppPath()
+	appPath, err := git.GetAppPath()
 	if err != nil {
 		return nil, err
 	}
@@ -247,8 +211,8 @@ func LoadConfig(v *viper.Viper) *Config {
 }
 
 // LoadDBConfig loads the database.toml database configuration object
-func LoadDBConfig(v *viper.Viper) *DBConfig {
-	return &DBConfig{
+func LoadDBConfig(v *viper.Viper) *db.Config {
+	return &db.Config{
 		DB:		v.GetString("db"),
 		Host:		v.GetString("host"),
 		Port:		v.GetInt("port"),
