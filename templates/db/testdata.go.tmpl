@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"{{.ImportPath}}/config"
 	"github.com/nullbio/helpers/git"
 )
 
@@ -31,7 +32,7 @@ func goTestdata(driver string, conn string) error {
 
 // sqlTestdata executes the testdata.sql file SQL against the passed in test db.
 // This is not a function to be edited.
-func sqlTestdata(cfg *Config) error {
+func sqlTestdata(cfg *config.DBConfig) error {
 	appPath, err := git.GetAppPath()
 	if err != nil {
 		return err
@@ -39,14 +40,14 @@ func sqlTestdata(cfg *Config) error {
 
 	sqlFilePath := filepath.Join(appPath, "db", "testdata.sql")
 	if cfg.DB == "postgres" {
-		passFile, err := pgPassFile(cfg)
+		passFilePath, err := pgPassFile(cfg)
 		if err != nil {
 			return err
 		}
-		defer os.Remove(passFile)
+		defer os.Remove(passFilePath)
 
-		cmd := exec.Command("psql", cfg.DBName, sqlFilePath)
-		cmd.Env = append(os.Environ(), fmt.Sprintf("PGPASSFILE=%s", passFile))
+		cmd := exec.Command("psql", cfg.DBName, "--file", sqlFilePath)
+		cmd.Env = append(os.Environ(), pgEnv(cfg, passFilePath)...)
 		return cmd.Run()
 	} else if cfg.DB == "mysql" {
 		passFile, err := mysqlPassFile(cfg)
@@ -59,5 +60,5 @@ func sqlTestdata(cfg *Config) error {
 		return cmd.Run()
 	}
 
-	return fmt.Errorf("cannot import sql testdata, incompatible database software %s", cfg.DB)
+	return fmt.Errorf("cannot import sql testdata, incompatible database %q", cfg.DB)
 }

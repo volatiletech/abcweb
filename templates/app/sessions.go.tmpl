@@ -7,11 +7,11 @@ func (s *State) InitSessions() {
 	// Configure cookie options
 	opts := sessions.NewCookieOptions()
 	// If not using HTTPS, disable cookie secure flag
-	if len(s.Config.TLSBind) == 0 {
+	if len(s.AppConfig.TLSBind) == 0 {
 		opts.Secure = false
 	}
 
-	if s.Config.SessionsDevStorer {
+	if s.AppConfig.SessionsDevStorer {
 		s.Session = sessions.NewCookieOverseer(opts, []byte("{{randString 32}}"))
 	} else {
 		storer, err := sessions.NewDefaultDiskStorer("{{randString 8}}")

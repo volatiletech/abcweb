@@ -10,26 +10,14 @@ import (
 	"github.com/nullbio/helpers/git"
 	"github.com/pressly/goose"
 	"github.com/pkg/errors"
+	"{{.ImportPath}}/config"
 )
 
 // DB is the global database handle to your config defined db
 var DB *sql.DB
 
-// Config holds the database config for the app loaded through
-// environment variables, or the database.toml file.
-type Config struct {
-	// DB is the database software; "postgres", "mysql", etc.
-	DB      string
-	Host    string
-	Port    int
-	DBName  string
-	User    string
-	Pass    string
-	SSLMode string
-}
-
 // InitDB initializes the DB global database handle
-func InitDB(cfg *Config) error {
+func InitDB(cfg *config.DBConfig) error {
 	// No username provided is a signal to skip database usage
 	if len(cfg.User) == 0 {
 		return nil
@@ -50,19 +38,23 @@ func InitDB(cfg *Config) error {
 }
 
 // GetConnStr returns a connection string for the database software used
-func GetConnStr(cfg *Config) string {
+func GetConnStr(cfg *config.DBConfig) string {
+	if len(cfg.DB) == 0 {
+		panic("db field in database.toml must be provided")
+	}
+
 	if cfg.DB == "postgres" {
 		return drivers.PostgresBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode)
 	} else if cfg.DB == "mysql" {
 		return drivers.MySQLBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode)
 	}
 
-	panic(fmt.Sprintf("cannot get connection string for unknown database %s", cfg.DB))
+	panic(fmt.Sprintf("cannot get connection string for unknown database %q", cfg.DB))
 }
 
 // Setup executes the migrations "up" against the passed in database and also
 // inserts the test data defined in testdata.sql
-func Setup(cfg *Config) error {
+func Setup(cfg *config.DBConfig) error {
 	appPath, err := git.GetAppPath()
 	if err != nil {
 		return err
@@ -90,7 +82,7 @@ func Setup(cfg *Config) error {
 }
 
 // Teardown executes the migrations "down" against the passed in database
-func Teardown(cfg *Config) error {
+func Teardown(cfg *config.DBConfig) error {
 	appPath, err := git.GetAppPath()
 	if err != nil {
 		return err
@@ -110,9 +102,19 @@ func Teardown(cfg *Config) error {
 	return nil
 }
 
+// pgEnv returns a slice of the connection related environment variables
+func pgEnv(cfg *config.DBConfig, passFilePath string) []string {
+  return []string{
+    fmt.Sprintf("PGHOST=%s", cfg.Host),
+    fmt.Sprintf("PGPORT=%d", cfg.Port),
+    fmt.Sprintf("PGUSER=%s", cfg.User),
+    fmt.Sprintf("PGPASSFILE=%s", passFilePath),
+  }
+}
+
 // pgPassFile creates a file in the temp directory containing the connection
 // details and password for the database to be passed into the mysql cmdline cmd
-func pgPassFile(cfg *Config) (string, error) {
+func pgPassFile(cfg *config.DBConfig) (string, error) {
 	tmp, err := ioutil.TempFile("", "pgpass")
 	if err != nil {
 		return "", errors.New("failed to create postgres pass file")
@@ -130,7 +132,7 @@ func pgPassFile(cfg *Config) (string, error) {
 
 // mysqlPassFile creates a file in the temp directory containing the connection
 // details and password for the database to be passed into the mysql cmdline cmd
-func mysqlPassFile(cfg *Config) (string, error) {
+func mysqlPassFile(cfg *config.DBConfig) (string, error) {
 	tmp, err := ioutil.TempFile("", "mysqlpass")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create mysql pass file")

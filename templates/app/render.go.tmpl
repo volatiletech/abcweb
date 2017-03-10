@@ -25,10 +25,10 @@ var appHelpers = template.FuncMap{
 func (s *State) InitRenderer() {
 	s.Render = &rendering.Render{
 		Render: render.New(render.Options{
-			Directory:     s.Config.Templates,
+			Directory:     s.AppConfig.Templates,
 			Layout:        "layouts/main",
 			Extensions:    []string{".tmpl", ".html"},
-			IsDevelopment: s.Config.RenderRecompile,
+			IsDevelopment: s.AppConfig.RenderRecompile,
 			Funcs:         []template.FuncMap{appHelpers},
 
 			// If you do not wish to handle Render errors yourself you can remove

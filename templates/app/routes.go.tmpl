@@ -28,7 +28,7 @@ func (s *State) InitRoutes() {
 	// Keep in mind that these files may need to be protected by auth/sessions
 	// (i.e. only visible if logged in for example), so there needs to be a
 	// mechanism for this.
-	s.Router.FileServer("/", http.Dir(s.Config.AssetsOut))
+	s.Router.FileServer("/", http.Dir(s.AppConfig.AssetsOut))
 
 	main := controllers.Main{Root: root}
 	s.Router.Get("/", main.Home)

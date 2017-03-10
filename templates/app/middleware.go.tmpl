@@ -57,7 +57,7 @@ func (s *State) InitMiddleware() {
 	// s.Router.Use(chimiddleware.CloseNotify)
 
 	// Sets response headers to prevent clients from caching
-	if s.Config.AssetsNoCache {
+	if s.AppConfig.AssetsNoCache {
 		s.Router.Use(chimiddleware.NoCache)
 	}
 

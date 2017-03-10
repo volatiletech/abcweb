@@ -1,30 +1,23 @@
 package app
 
 import (
-	"fmt"
-	"os"
 	"time"
-	"strings"
-	"path/filepath"
 
 	"{{.ImportPath}}/rendering"
-	"{{.ImportPath}}/db"
+	"{{.ImportPath}}/config"
 	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
 	{{- end}}
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/spf13/pflag"
-	"github.com/nullbio/helpers/git"
 	"go.uber.org/zap"
 )
 
 // State is the configuration state for the entire app.
 // The controllers are passed variables from this object when initialized.
 type State struct {
-	Config	 *Config
-	DBConfig	 *db.Config
+	AppConfig *config.AppConfig
+	DBConfig	 *config.DBConfig
 	Log		 *zap.Logger
 	Router	 *chi.Mux
 	Render	 rendering.Renderer
@@ -34,191 +27,29 @@ type State struct {
 	{{- end}}
 }
 
-// Config is config for the app loaded through environment variables, 
-// command line, or the config.toml file.
-type Config struct {
-	// The active config file environment mode
-	ActiveEnv string
-	// LiveReload enabled or disabled
-	LiveReload bool
-	// Use the production logger (JSON and log level warn), or the
-	// development logger (console and log level info)
-	ProdLogger bool
-	// http bind address. ":<port>" for all interfaces
-	Bind string
-	// https bind address. ":<port>" for all interfaces
-	TLSBind string
-	// TLS certificate file path
-	TLSCertFile string
-	// TLS key file path
-	TLSKeyFile string
-	// Maximum duration before timing out read of the request
-	ReadTimeout time.Duration
-	// Maximum duration before timing out write of the response
-	WriteTimeout time.Duration
-	// Templates folder path
-	Templates string
-	// Static assets input folder path
-	AssetsIn string
-	// Compiled assets output folder path
-	AssetsOut string 
-	// Disable precompilation of assets
-	AssetsNoCompile bool
-	// Disable minification of assets
-	AssetsNoMinify bool 
-	// Disable fingerprints in compiled asset filenames
-	AssetsNoHash bool 
-	// Disable Gzip compression of asset files
-	AssetsNoCompress bool 
-	// Disable browsers caching asset files by setting response headers
-	AssetsNoCache bool 
-	// RenderRecompile enables recompilation of the template on every render call.
-	// This should be used in development mode so no server restart is required
-	// on template file changes.
-	RenderRecompile bool 
-	{{if not .NoSessions -}}
-	// Use the development mode sessions storer opposed to production mode storer
-	SessionsDevStorer bool 
-	{{- end}}
-}
-
 // RegisterFlags registers the configuration flag defaults and help strings
-func (s *State) RegisterFlags() error {
-	s.Root.Flags().BoolP("live-reload", "", false, "Enable or disable LiveReload")
-	s.Root.Flags().BoolP("prod-logger", "", true, "Use the production logger, JSON and log level warn")
-	s.Root.Flags().StringP("bind", "", ":80", `HTTP bind address, eg: ":80"`)
-	s.Root.Flags().StringP("tls-bind", "", "", `HTTPS bind address, eg: ":443"`)
-	s.Root.Flags().StringP("tls-cert-file", "", "", "TLS certificate file path")
-	s.Root.Flags().StringP("tls-key-file", "", "", "TLS key file path")
-	s.Root.Flags().DurationP("read-timeout", "", time.Second*30, "Maximum duration before timing out read of the request")
-	s.Root.Flags().DurationP("write-timeout", "", time.Second*30, "Maximum duration before timing out write of the response")
-	s.Root.Flags().StringP("templates", "", "./templates", "Templates folder path")
-	s.Root.Flags().StringP("assets-in", "", "./assets", "Static assets input folder path")
-	s.Root.Flags().StringP("assets-out", "", "./public", "Static assets output folder path")
-	s.Root.Flags().BoolP("assets-no-compile", "", false, "Disable precompilation of assets")
-	s.Root.Flags().BoolP("assets-no-minify", "", false, "Disable minification of assets")
-	s.Root.Flags().BoolP("assets-no-hash", "", false, "Disable fingerprints in compiled asset filenames")
-	s.Root.Flags().BoolP("assets-no-compress", "", false, "Disable gzip compression of asset files")
-	s.Root.Flags().BoolP("assets-no-cache", "", false, "Disable browsers caching asset files by setting response headers")
+func RegisterFlags(root *cobra.Command) {
+	root.Flags().BoolP("live-reload", "", false, "Enable or disable LiveReload")
+	root.Flags().BoolP("prod-logger", "", true, "Use the production logger, JSON and log level warn")
+	root.Flags().StringP("bind", "", ":80", `HTTP bind address, eg: ":80"`)
+	root.Flags().StringP("tls-bind", "", "", `HTTPS bind address, eg: ":443"`)
+	root.Flags().StringP("tls-cert-file", "", "", "TLS certificate file path")
+	root.Flags().StringP("tls-key-file", "", "", "TLS key file path")
+	root.Flags().DurationP("read-timeout", "", time.Second*30, "Maximum duration before timing out read of the request")
+	root.Flags().DurationP("write-timeout", "", time.Second*30, "Maximum duration before timing out write of the response")
+	root.Flags().StringP("templates", "", "./templates", "Templates folder path")
+	root.Flags().StringP("assets-in", "", "./assets", "Static assets input folder path")
+	root.Flags().StringP("assets-out", "", "./public", "Static assets output folder path")
+	root.Flags().BoolP("assets-no-compile", "", false, "Disable precompilation of assets")
+	root.Flags().BoolP("assets-no-minify", "", false, "Disable minification of assets")
+	root.Flags().BoolP("assets-no-hash", "", false, "Disable fingerprints in compiled asset filenames")
+	root.Flags().BoolP("assets-no-compress", "", false, "Disable gzip compression of asset files")
+	root.Flags().BoolP("assets-no-cache", "", false, "Disable browsers caching asset files by setting response headers")
 	// This should be used in development mode to avoid having to reload the
 	// server on every template file modification.
-	s.Root.Flags().BoolP("render-recompile", "", false, "Enable recompilation of the template on each render")
+	root.Flags().BoolP("render-recompile", "", false, "Enable recompilation of the template on each render")
 	{{if not .NoSessions -}}
-	s.Root.Flags().BoolP("sessions-dev-storer", "", false, "Use the development mode sessions storer")
+	root.Flags().BoolP("sessions-dev-storer", "", false, "Use the development mode sessions storer")
 	{{- end}}
-
-	return nil 
 }
 
-// NewAppViper returns a viper instance activated against the active environment
-// configuration subsection and initialized with the database.toml
-// configuration file and the environment variable prefix.
-func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
-	{{$envAppNm := envAppName .AppName -}}
-	env := os.Getenv("{{$envAppNm}}_ENV")
-
-	appPath, err := git.GetAppPath()
-	if err != nil {
-		return nil, err
-	}
-
-	v := viper.New()
-	v.SetConfigType("toml")
-	v.SetConfigFile(filepath.Join(appPath, "config.toml"))
-	v.SetEnvPrefix("{{$envAppNm}}")
-	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	v.ReadInConfig()
-
-	if env == "" {
-	  env = v.GetString("env")
-	}
-	if env == "" {
-	  fmt.Println(`Warning: No environment chosen using {{$envAppNm}}_ENV or env field in config.toml, attempting to use fallback of "prod"`)
-	  env = "prod"
-	}
-
-	v = v.Sub(env)
-	if v == nil {
-		return nil, fmt.Errorf("unable to load environment %s from app config file", env)
-	}
-
-	v.BindPFlags(flags)
-
-	v.Set("env", env)
-	return v, nil
-}
-
-// NewDBViper returns a viper instance activated against the active environment
-// configuration subsection and initialized with the database.toml
-// configuration file and the environment variable prefix.
-func NewDBViper(env string) (*viper.Viper, error) {
-	if env == "" {
-		return nil, fmt.Errorf("empty environment parameter received")
-	}
-
-	appPath, err := git.GetAppPath()
-	if err != nil {
-		return nil, err
-	}
-
-	cfgPath := filepath.Join(appPath, "database.toml")
-	
-	if _, err := os.Stat(cfgPath); os.IsNotExist(err) {
-		return nil, nil
-	}
-
-	v := viper.New()
-	v.SetConfigType("toml")
-	v.SetConfigFile(cfgPath)
-	v.SetEnvPrefix("{{$envAppNm}}")
-	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	v.ReadInConfig()
-
-	v = v.Sub(env)
-	if v == nil {
-		return nil, fmt.Errorf("unable to load environment %s from database config file", env)
-	}
-
-	v.Set("env", env)
-	return v, nil
-}
-
-// LoadConfig loads the config.toml app configuration object
-func LoadConfig(v *viper.Viper) *Config {
-	return &Config{
-		ActiveEnv:			v.GetString("env"),
-		LiveReload:			v.GetBool("live-reload"),
-		ProdLogger:			v.GetBool("prod-logger"),
-		Bind:					v.GetString("bind"),
-		TLSBind:				v.GetString("tls-bind"),
-		TLSCertFile:		v.GetString("tls-cert-file"),
-		TLSKeyFile:			v.GetString("tls-key-file"),
-		ReadTimeout:		v.GetDuration("read-timeout"),
-		WriteTimeout:		v.GetDuration("write-timeout"),
-		Templates:			v.GetString("templates"),
-		AssetsIn:			v.GetString("assets-in"),
-		AssetsOut:			v.GetString("assets-out"),
-		AssetsNoCompile:	v.GetBool("assets-no-compile"),
-		AssetsNoMinify:	v.GetBool("assets-no-minify"),
-		AssetsNoHash:		v.GetBool("assets-no-hash"),
-		AssetsNoCompress:	v.GetBool("assets-no-compress"),
-		AssetsNoCache:		v.GetBool("assets-no-cache"),
-		RenderRecompile:	v.GetBool("render-recompile"),
-		{{if not .NoSessions -}}
-		SessionsDevStorer: v.GetBool("sessions-dev-storer"),
-		{{- end}}
-	}
-}
-
-// LoadDBConfig loads the database.toml database configuration object
-func LoadDBConfig(v *viper.Viper) *db.Config {
-	return &db.Config{
-		DB:		v.GetString("db"),
-		Host:		v.GetString("host"),
-		Port:		v.GetInt("port"),
-		DBName:	v.GetString("dbname"),
-		User:		v.GetString("user"),
-		Pass:		v.GetString("pass"),
-		SSLMode: v.GetString("sslmode"),
-	}
-}

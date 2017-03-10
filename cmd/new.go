@@ -48,7 +48,7 @@ func init() {
 	newCmd.Flags().BoolP("no-livereload", "l", false, "Don't support LiveReload")
 	newCmd.Flags().BoolP("no-tls-certs", "t", false, "Skip generation of self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-readme", "r", false, "Skip README.md files")
-	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml file")
+	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml and database.toml file")
 	newCmd.Flags().BoolP("no-sessions", "s", false, "Skip support for http sessions")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("tls-certs-only", "", false, "Only generate self-signed TLS cert files")
@@ -143,9 +143,13 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	err = gitInit(newCmdConfig)
+	if err != nil {
+		return err
+	}
+
 	if !newCmdConfig.Silent {
-		fmt.Printf("\tresult -> Finished\n\n")
-		fmt.Println(`Do not forget to run "git init" in your generated app directory.`)
+		fmt.Printf("\tresult -> Finished\n")
 	}
 	return nil
 }
@@ -163,6 +167,21 @@ func vendorSync(cfg newConfig) error {
 	out, err := exc.CombinedOutput()
 
 	fmt.Print(string(out))
+
+	return err
+}
+
+func gitInit(cfg newConfig) error {
+	if !cfg.Silent {
+		fmt.Println("\trun -> git init")
+	}
+
+	checkDep("git")
+
+	exc := exec.Command("git", "init")
+	exc.Dir = cfg.AppPath
+
+	err := exc.Run()
 
 	return err
 }
@@ -339,9 +358,10 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 		}
 	}
 
-	// Skip default config.toml if requested
+	// Skip default config.toml and database.toml if requested
 	if cfg.NoConfig {
-		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" {
+		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" ||
+			info.Name() == "database.toml" || info.Name() == "database.toml.tmpl" {
 			return true, nil
 		}
 	}
