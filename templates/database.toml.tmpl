@@ -41,6 +41,8 @@
 	# db = "postgres"
 	# If the user line is commented the database will not be connected to
 	# and the unit tests will not run migrations.
+	# The test database user needs to be a superuser so that it can create
+	# and drop the test database.
 	# user = "username"
 	pass = "password"
 	dbname = "{{dbAppName .AppName}}_test"
