@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 }
 
 // testMainMigrations executes the database migrations for the test database
-// defined in database.toml, runs the unit tests, and then downs the migrations.
+// defined in database.toml and executes testdata.sql, then runs the unit tests.
 // It returns a status code to be used with os.Exit(). Codes > 0 indicate error.
 func testMainMigrations(m *testing.M) int {
 	// Load the database config
@@ -47,14 +47,6 @@ func testMainMigrations(m *testing.M) int {
 	// Run the package tests
 	r := m.Run()
 
-	if len(dbCfg.User) != 0 {
-		// Teardown the database migrations
-		err = db.Teardown(dbCfg)
-		if err != nil {
-			fmt.Printf("TestMain Teardown error: %s\n", err)
-			errStatus = 3	
-		}
-	}
 
 	// Exit with return code of unit test run
 	if errStatus == 0 {

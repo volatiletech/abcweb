@@ -5,7 +5,11 @@ import (
 	"database/sql"
 	"path/filepath"
 	"io/ioutil"
-
+	
+	// mysql driver
+	_ "github.com/go-sql-driver/mysql"
+	// postgres driver
+	_ "github.com/lib/pq"
 	"github.com/vattle/sqlboiler/bdb/drivers"
 	"github.com/nullbio/helpers/git"
 	"github.com/pressly/goose"
@@ -60,6 +64,38 @@ func Setup(cfg *config.DBConfig) error {
 		return err
 	}
 
+	// copy cfg into cfgNew
+	cfgNew := *cfg
+	
+	// Drop and create the database if it exists so each test run starts 
+	// on a clean slate
+	if cfgNew.DB == "postgres" {
+		// Set the db to the default postgres db so we have something to connect to
+		// to create a new database or drop old databases
+		cfgNew.DBName = "postgres"
+
+		connStr := GetConnStr(&cfgNew)
+		db, err := sql.Open(cfgNew.DB, connStr)
+		if err != nil {
+			return err
+		}
+
+		_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", cfg.DBName))
+		if err != nil {
+			return errors.Wrap(err, "drop if exists failed")
+		}
+
+		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", cfg.DBName))
+		if err != nil {
+			return errors.Wrap(err, "create database failed")
+		}
+
+		db.Close()
+	} else if cfgNew.DB == "mysql" {
+		// do the same for mysql
+		
+	}
+
 	connStr := GetConnStr(cfg)
 	db, err := sql.Open(cfg.DB, connStr)
 	if err != nil {
@@ -79,27 +115,6 @@ func Setup(cfg *config.DBConfig) error {
 	err = goTestdata(cfg.DB, connStr)
 
 	return err
-}
-
-// Teardown executes the migrations "down" against the passed in database
-func Teardown(cfg *config.DBConfig) error {
-	appPath, err := git.GetAppPath()
-	if err != nil {
-		return err
-	}
-
-	db, err := sql.Open(cfg.DB, GetConnStr(cfg))
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-	
-	err = goose.Down(db, filepath.Join(appPath, "db", "migrations"))	
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // pgEnv returns a slice of the connection related environment variables
