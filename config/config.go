@@ -151,7 +151,7 @@ func NewModeViper(appPath string, envAppName, env string) *viper.Viper {
 // 1. environment variable $APPNAME_ENV (APPNAME is envAppName variable value)
 // 2. config.toml default environment field "env"
 func getActiveEnv(appPath, appName string) string {
-	val := os.Getenv(appName + "_ENV")
+	val := os.Getenv(strmangle.EnvAppName(appName) + "_ENV")
 	if val != "" {
 		return val
 	}

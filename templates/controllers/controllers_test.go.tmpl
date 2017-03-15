@@ -31,27 +31,19 @@ func testMainMigrations(m *testing.M) int {
 	}
 	dbCfg := config.LoadDBConfig(v)
 	
-	var errStatus int
-	
 	if len(dbCfg.User) == 0 {
 		fmt.Println("No user defined in database.toml, skipping migrations.")
 	} else {
 		// Execute database migrations
-		err = db.Setup(dbCfg)
+		count, err := db.Setup(dbCfg)
 		if err != nil {
 			fmt.Printf("TestMain Setup error: %s\n", err)
-			errStatus = 2
+			return 2	
+		} else {
+			fmt.Printf("TestMain Setup ran %d migrations.\n", count)
 		}
 	}
 
 	// Run the package tests
-	r := m.Run()
-
-
-	// Exit with return code of unit test run
-	if errStatus == 0 {
-		return r
-	}
-
-	return errStatus
+	return m.Run()
 }

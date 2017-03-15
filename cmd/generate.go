@@ -44,7 +44,7 @@ var migrationCmd = &cobra.Command{
 	Use:   "migration <name> [flags]",
 	Short: "Generate a migration file",
 	Long: `Generate migration will generate a .sql migration file in your migrations directory.
-This tool pipes out to Goose: https://github.com/pressly/goose`,
+This tool pipes out to mig: https://github.com/nullbio/mig`,
 	Example: "abcweb gen migration add_users",
 	RunE:    migrationCmdRun,
 }
@@ -258,14 +258,14 @@ func modelsCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func migrationCmdRun(cmd *cobra.Command, args []string) error {
-	checkDep("goose")
+	checkDep("mig")
 
 	if len(args) == 0 || len(args[0]) == 0 {
 		fmt.Println(`command requires a migration name argument`)
 		os.Exit(1)
 	}
 
-	exc := exec.Command("goose", "create", args[0], "sql")
+	exc := exec.Command("mig", "create", args[0])
 	exc.Dir = filepath.Join(cnf.AppPath, migrationsDirectory)
 
 	out, err := exc.CombinedOutput()

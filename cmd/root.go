@@ -35,12 +35,6 @@ var RootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		// Print stacktrace if debug enabled
-		if viper.GetBool("debug") {
-			fmt.Printf("%+v\n", err)
-		} else {
-			fmt.Println("%v\n", err)
-		}
 		os.Exit(1)
 	}
 }

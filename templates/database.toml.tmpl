@@ -17,7 +17,7 @@
 	
 	# SQLBoiler (models generator) additional config
 	# tables to ignore when generating models (migration tables, etc)
-	blacklist = ["goose_db_version"]
+	blacklist = ["mig_migrations"]
 [prod]
 	# valid values are postgres|mysql
 	# db = "postgres"
@@ -33,7 +33,7 @@
 	#
 	# SQLBoiler (models generator) additional config
 	# tables to ignore when generating models (migration tables, etc)
-	blacklist = ["goose_db_version"]
+	blacklist = ["mig_migrations"]
 [test]
 	# The test segment defines the database to connect to when running unit
 	# tests and when executing unit test migrations.
@@ -54,4 +54,4 @@
 	#
 	# SQLBoiler (models generator) additional config
 	# tables to ignore when generating models (migration tables, etc)
-	blacklist = ["goose_db_version"]
+	blacklist = ["mig_migrations"]
