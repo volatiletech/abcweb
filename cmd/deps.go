@@ -32,7 +32,6 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 
 	goGetArgs := [][]string{
 		{"go.uber.org/zap"},
-		{"github.com/nullbio/mig/..."},
 		{"github.com/satori/go.uuid"},
 		{"github.com/pkg/errors"},
 		{"github.com/nullbio/helpers/git"},
@@ -44,6 +43,9 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"github.com/kardianos/govendor"},
 		{"github.com/go-sql-driver/mysql"},
 		{"github.com/lib/pq"},
+		{"github.com/mattn/go-sqlite3"},
+		{"github.com/nullbio/mig"},
+		{"github.com/nullbio/mig/cmd/mig"},
 		{"github.com/spf13/cobra"},
 		{"github.com/spf13/viper"},
 		{"-t", "github.com/vattle/sqlboiler"},

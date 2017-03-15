@@ -156,7 +156,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 func vendorSync(cfg newConfig) error {
 	if !cfg.Silent {
-		fmt.Println("\trun -> govendor sync")
+		fmt.Println("\trunning -> govendor sync")
 	}
 
 	checkDep("govendor")
@@ -173,7 +173,7 @@ func vendorSync(cfg newConfig) error {
 
 func gitInit(cfg newConfig) error {
 	if !cfg.Silent {
-		fmt.Println("\trun -> git init")
+		fmt.Println("\trunning -> git init")
 	}
 
 	checkDep("git")
@@ -198,7 +198,7 @@ func generateTLSCerts(cfg newConfig) error {
 	}
 
 	if !cfg.Silent {
-		fmt.Println("\trun -> TLS Certificate Generator")
+		fmt.Println("\trunning -> TLS Certificate Generator")
 	}
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
