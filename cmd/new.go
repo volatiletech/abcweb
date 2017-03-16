@@ -32,8 +32,11 @@ default directory structure and configuration at the Go src import path you spec
 The app will generate in $GOPATH/src/<import_path>.
 `,
 	Example: "abcweb new github.com/yourusername/myapp",
-	PreRunE: newCmdPreRun,
-	RunE:    newCmdRun,
+	// Needs to be a persistentPreRunE to override root's config.Initialize call
+	// otherwise abcweb needs to be run from the abcweb project or the git rev-parse
+	// will cause a fatal error.
+	PersistentPreRunE: newCmdPreRun,
+	RunE:              newCmdRun,
 }
 
 func init() {

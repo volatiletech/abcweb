@@ -23,7 +23,7 @@ var RootCmd = &cobra.Command{
 	Long: `ABCWeb is a tool to help you scaffold and develop Go web applications.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
-		cnf, err = config.Init()
+		cnf, err = config.Initialize()
 		if err != nil {
 			return err
 		}

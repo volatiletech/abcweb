@@ -53,8 +53,8 @@ type Configuration struct {
 	ModeViper *viper.Viper
 }
 
-// Init the config
-func Init() (*Configuration, error) {
+// Initialize the config
+func Initialize() (*Configuration, error) {
 	c := &Configuration{}
 
 	path, err := getAppPath()
@@ -71,9 +71,9 @@ func Init() (*Configuration, error) {
 	return c, nil
 }
 
-// InitP the config but panic if anything goes wrong
-func InitP() *Configuration {
-	c, err := Init()
+// InitializeP the config but panic if anything goes wrong
+func InitializeP() *Configuration {
+	c, err := Initialize()
 	if err != nil {
 		panic(err)
 	}

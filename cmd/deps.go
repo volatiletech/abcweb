@@ -16,7 +16,11 @@ var depsCmd = &cobra.Command{
 	Long: `Download and optionally update all abcweb dependencies used by
 your generated app or the abcweb tool by executing "go get" commands`,
 	Example: "abcweb deps -u",
-	RunE:    depsCmdRun,
+	// Needs to be a persistentPreRunE to override root's config.Initialize call
+	// otherwise abcweb needs to be run from the abcweb project or the git rev-parse
+	// will cause a fatal error.
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+	RunE:              depsCmdRun,
 }
 
 func init() {

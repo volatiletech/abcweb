@@ -43,7 +43,7 @@ This tool pipes out to SQLBoiler: https://github.com/vattle/sqlboiler -- See REA
 var migrationCmd = &cobra.Command{
 	Use:   "migration <name> [flags]",
 	Short: "Generate a migration file",
-	Long: `Generate migration will generate a .sql migration file in your migrations directory.
+	Long: `Generate migration will generate a .sql migration file in your db/migrations directory.
 This tool pipes out to mig: https://github.com/nullbio/mig`,
 	Example: "abcweb gen migration add_users",
 	RunE:    migrationCmdRun,
