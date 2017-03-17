@@ -97,10 +97,10 @@ func cmdWatchCobra(cmd *cobra.Command, args []string) {
 func newAppWatcher(bindAddr, root string, ignore []string) *appWatcher {
 	watcher := &appWatcher{
 		watchedDirs: make(map[string]struct{}),
-
-		kill:      make(chan struct{}),
-		reload:    make(chan string),
-		recompile: make(chan string),
+		slowdown:    make(map[string]time.Time),
+		kill:        make(chan struct{}),
+		reload:      make(chan string),
+		recompile:   make(chan string),
 	}
 
 	watcher.Config.Bind = bindAddr
@@ -308,7 +308,7 @@ func (a *appWatcher) addRecursiveWatch(path string) error {
 	for _, d := range dirs {
 		fmt.Printf(" %s\n", d)
 		if err = a.fsWatcher.Add(d); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to add watch: %s, %v\n", a, err)
+			fmt.Fprintf(os.Stderr, "failed to add watch: %v, %v\n", a, err)
 		} else {
 			a.watchedDirs[d] = struct{}{}
 		}
@@ -403,7 +403,7 @@ func (a *appWatcher) watchOnWrite(path string) error {
 }
 
 func buildApplication(binName string) (string, bool, error) {
-	fmt.Println("building\n")
+	fmt.Printf("building\n\n")
 	b := &bytes.Buffer{}
 	cmd := exec.Command("go", "build", "-o", binName)
 	cmd.Dir = cnf.AppPath
@@ -422,7 +422,7 @@ func callGulp(path string) (bool, error) {
 		return false, nil
 	}
 
-	fmt.Println("gulping\n")
+	fmt.Printf("gulping\n\n")
 	cmd := exec.Command("gulp", toks[1])
 	cmd.Dir = cnf.AppPath
 	cmd.Stdout = os.Stdout
