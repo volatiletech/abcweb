@@ -123,6 +123,15 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 			return errors.New("cannot locate base path containing templates folder")
 		}
 
+		// Make the empty folders that cannot be committed to git.
+		for _, d := range emptyDirs {
+			emptyDir := filepath.Join(newCmdConfig.AppPath, d)
+			err := appFS.MkdirAll(emptyDir, 0755)
+			if err != nil {
+				return err
+			}
+		}
+
 		// Walk all files in the templates folder
 		basePath := filepath.Join(p.Dir, "templates")
 		err := afero.Walk(appFS, basePath, func(path string, info os.FileInfo, err error) error {

@@ -43,9 +43,28 @@ type newConfig struct {
 	Silent         bool
 }
 
+// skipDirs are the directories to skip creating for new command
 var skipDirs = []string{
 	// i18n is not implemented yet
 	"i18n",
+}
+
+// emptyDirs are the (potentially) empty directories that need to be created
+// manually because empty directories cannot be committed to git
+var emptyDirs = []string{
+	"assets/audio",
+	"assets/css",
+	"assets/fonts",
+	"assets/img",
+	"assets/js",
+	"assets/video",
+	"assets/vendor/audio",
+	"assets/vendor/css",
+	"assets/vendor/fonts",
+	"assets/vendor/img",
+	"assets/vendor/js",
+	"assets/vendor/video",
+	"db/migrations",
 }
 
 var fontAwesomeFiles = []string{
