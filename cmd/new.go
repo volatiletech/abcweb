@@ -45,7 +45,8 @@ func init() {
 	newCmd.Flags().StringP("tls-common-name", "", "localhost", "Common Name for generated TLS certificate")
 	newCmd.Flags().StringP("default-env", "", "prod", "Default $APP_ENV to use when starting server")
 	newCmd.Flags().StringP("bootstrap", "b", "flex", "Include Twitter Bootstrap 4 (none|regular|gridonly|rebootonly|gridandrebootonly)")
-	newCmd.Flags().BoolP("no-gitignore", "g", false, "Skip .gitignore file")
+	newCmd.Flags().BoolP("no-gitignore", "", false, "Skip .gitignore file")
+	newCmd.Flags().BoolP("no-gulp", "", false, "Skip generation of gulpfile.js, package.json and installation of gulp dependencies")
 	newCmd.Flags().BoolP("no-bootstrap-js", "j", false, "Skip Twitter Bootstrap 4 javascript inclusion")
 	newCmd.Flags().BoolP("no-font-awesome", "f", false, "Skip Font Awesome inclusion")
 	newCmd.Flags().BoolP("no-livereload", "l", false, "Don't support LiveReload")
@@ -68,6 +69,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 
 	newCmdConfig = newConfig{
 		NoGitIgnore:    viper.GetBool("no-gitignore"),
+		NoGulp:         viper.GetBool("no-gulp"),
 		NoBootstrapJS:  viper.GetBool("no-bootstrap-js"),
 		NoFontAwesome:  viper.GetBool("no-font-awesome"),
 		NoLiveReload:   viper.GetBool("no-livereload"),
@@ -150,6 +152,13 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if !newCmdConfig.NoGulp {
+		err = npmInstall(newCmdConfig)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = vendorSync(newCmdConfig)
 	if err != nil {
 		return err
@@ -191,6 +200,21 @@ func gitInit(cfg newConfig) error {
 	checkDep("git")
 
 	exc := exec.Command("git", "init")
+	exc.Dir = cfg.AppPath
+
+	err := exc.Run()
+
+	return err
+}
+
+func npmInstall(cfg newConfig) error {
+	if !cfg.Silent {
+		fmt.Println("\trunning -> npm install")
+	}
+
+	checkDep("npm")
+
+	exc := exec.Command("npm", "install")
 	exc.Dir = cfg.AppPath
 
 	err := exc.Run()
@@ -366,6 +390,14 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 	// Skip gitignore if requested
 	if cfg.NoGitIgnore {
 		if info.Name() == ".gitignore" || info.Name() == ".gitignore.tmpl" {
+			return true, nil
+		}
+	}
+
+	// Skip gulpjs if requested
+	if cfg.NoGulp {
+		if info.Name() == "gulpfile.js" || info.Name() == "gulpfile.js.tmpl" ||
+			info.Name() == "package.json" || info.Name() == "package.json.tmpl" {
 			return true, nil
 		}
 	}

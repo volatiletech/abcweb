@@ -30,6 +30,7 @@ type newConfig struct {
 	Bootstrap      string
 	NoBootstrapJS  bool
 	NoGitIgnore    bool
+	NoGulp         bool
 	NoFontAwesome  bool
 	NoLiveReload   bool
 	NoTLSCerts     bool
