@@ -13,10 +13,27 @@ paths = {
 	build: __dirname + '/public/assets/',
 };
 
+// The manifest file holds the mappings for the fingerprinted files,
+// example: {"bootstrap.js": "js/bootstrap-82e1ab4c0.js"}
 var manifestBase = 'public/assets';
 var manifestPath = manifestBase + '/manifest.json';
 
-// Default task executes all tasks
+// generic fingerprints and moves the regular and vendor assets of the passed in type.
+function generic(asset, pattern) {
+	if (typeof pattern === 'undefined') {
+		pattern = '/**/*'
+	}
+
+	return gulp.src([
+		paths.src + asset + pattern,
+		paths.src + 'vendor/' + asset + pattern,
+	]).pipe(rev()) // fingerprint files
+		.pipe(gulp.dest(paths.build + asset)) // write fingerprinted files
+		.pipe(rev.manifest(manifestPath, {merge: true, base: manifestBase}))
+		.pipe(gulp.dest(paths.build)); // write manifest file
+}
+
+// Default task executes all tasks. Add new tasks here as you create them.
 gulp.task('default', ['css', 'fonts', 'js', 'img', 'video', 'audio']);
 
 // CSS precompile (less & sass), minify and fingerprint
@@ -31,14 +48,7 @@ gulp.task('css', function() {
 		.pipe(rev.manifest(manifestPath, {merge: true, base: manifestBase})) 
 		.pipe(gulp.dest(paths.build)); // write manifest file
 
-	// fingerprint and move vendor files and regular files with non-standard extensions
-	return gulp.src([
-		paths.src + 'css/**/*.!(*(*.)css|*(*.)less|*(*.)scss|*(*.)sass)', 
-		paths.src + 'vendor/css/**/*.!(*(*.)css|*(*.)less|*(*.)scss|*(*.)sass)'
-	]).pipe(rev())
-		.pipe(gulp.dest(paths.build + 'css'))
-		.pipe(rev.manifest(manifestPath, {merge: true, base: manifestBase}))
-		.pipe(gulp.dest(paths.build));
+	return generic('css', '/**/*.!(*(*.)css|*(*.)less|*(*.)scss|*(*.)sass)') 
 });
 
 gulp.task('js', function() {
@@ -49,28 +59,21 @@ gulp.task('js', function() {
 		.pipe(rev.manifest(manifestPath, {merge: true, base: manifestBase}))
 		.pipe(gulp.dest(paths.build)); // write manifest file
 
-	// fingerprint and move vendor files and regular files with non-standard extensions
-	gulp.src([
-		paths.src + 'js/**/*.!(*(*.)js)',
-		paths.src + 'vendor/js/**/*.!(*(*.)js)'
-	]).pipe(rev())
-		.pipe(gulp.dest(paths.build + 'js'))
-		.pipe(rev.manifest(manifestPath, {merge: true, base: manifestBase}))
-		.pipe(gulp.dest(paths.build));
+	return generic('js', '/**/*.!(*(*.)js)')
 });
 
 gulp.task('img', function() {
-
+	return generic('img')
 });
 
 gulp.task('fonts', function() {
-
+	return generic('fonts')
 });
 
 gulp.task('video', function() {
-
+	return generic('video')
 });
 
 gulp.task('audio', function() {
-
+	return generic('audio')
 });
