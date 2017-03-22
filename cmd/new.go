@@ -397,7 +397,8 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 	// Skip gulpjs if requested
 	if cfg.NoGulp {
 		if info.Name() == "gulpfile.js" || info.Name() == "gulpfile.js.tmpl" ||
-			info.Name() == "package.json" || info.Name() == "package.json.tmpl" {
+			info.Name() == "package.json" || info.Name() == "package.json.tmpl" ||
+			info.Name() == "manifest.json" {
 			return true, nil
 		}
 	}
