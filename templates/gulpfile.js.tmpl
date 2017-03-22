@@ -1,23 +1,48 @@
 // modules
 var gulp = require('gulp');
+var rev = require('gulp-rev');
+var es = require('event-stream');
 var less = require('gulp-less');
 var sass = require('gulp-sass');
 var minifyJS = require('gulp-minify');
 var minifyCSS = require('gulp-clean-css');
-var fingerprint = require('gulp-fingerprint');
 
-// folders
-folder = {
-	src: 'assets/',
-	build: 'public/assets/',
+// paths 
+paths = {
+	src: __dirname + '/assets/',
+	build: __dirname + '/public/assets/',
 };
 
+var manifestBase = 'public/assets';
+var manifestPath = manifestBase + '/manifest.json';
+
+// Default task executes all tasks
+gulp.task('default', ['css', 'fonts', 'js', 'img', 'video', 'audio']);
+
+// CSS precompile (less & sass), minify and fingerprint
 gulp.task('css', function() {
+	es.merge(
+		gulp.src([paths.src + 'css/*.scss', paths.src + 'css/*.sass']).pipe(sass()),
+		gulp.src(paths.src + 'css/*.less').pipe(less()),
+		gulp.src(paths.src + 'css/*.css')
+	).pipe(minifyCSS()) // minify files
+		.pipe(rev()) // fingerprint files
+		.pipe(gulp.dest(paths.build + 'css')) // write compiled, minified and fingerprinted files
+		.pipe(rev.manifest(manifestPath, {
+			merge: true,
+			base: manifestBase
+		}))
+		.pipe(gulp.dest(paths.build)); // write manifest file
 
-});
-
-gulp.task('fonts', function() {
-
+	// fingerprint and move files with non-standard extensions
+	return gulp.src(paths.src + 'css/*.!(css|less|scss|sass)')
+		.pipe(rev())
+		.pipe(gulp.dest(paths.build + 'css'))
+		.pipe(rev.manifest(manifestPath, {
+			merge: true,
+			base: manifestBase
+		}))
+		.pipe(gulp.dest(paths.build));
 });
 
 gulp.task('js', function() {
@@ -28,6 +53,10 @@ gulp.task('img', function() {
 
 });
 
+gulp.task('fonts', function() {
+
+});
+
 gulp.task('video', function() {
 
 });
@@ -35,3 +64,8 @@ gulp.task('video', function() {
 gulp.task('audio', function() {
 
 });
+
+// Fingerprint assets
+function fingerprint() {
+
+}
