@@ -64,6 +64,7 @@ var emptyDirs = []string{
 	"assets/vendor/img",
 	"assets/vendor/js",
 	"assets/vendor/video",
+	"public/assets",
 	"db/migrations",
 }
 
