@@ -57,7 +57,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	npmInstallArgs := [][]string{
-		{"gulp-cli"},
+		{"gulpjs/gulp.git#4.0"},
 	}
 
 	prependArgs := []string{"get"}
@@ -72,30 +72,6 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		goGetArgs[i] = append(prependArgs, goGetArgs[i]...)
 	}
 
-	fmt.Printf("Retrieving all Go dependencies using \"go get\":\n\n")
-
-	for _, goGetArg := range goGetArgs {
-		fmt.Printf("%s ... ", goGetArg[len(goGetArg)-1])
-
-		exc := exec.Command("go", goGetArg...)
-		out, err := exc.CombinedOutput()
-
-		if err != nil {
-			fmt.Printf("ERROR\n\n")
-		} else {
-			fmt.Printf("SUCCESS\n")
-		}
-
-		if len(out) > 0 {
-			fmt.Print(string(out))
-		}
-
-		if err != nil {
-			fmt.Printf("%s\n\n", err)
-			os.Exit(1)
-		}
-	}
-
 	if !viper.GetBool("no-gulp") {
 		prependArgs = []string{"install", "--global"}
 		if viper.GetBool("verbose") {
@@ -106,7 +82,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 			npmInstallArgs[i] = append(prependArgs, npmInstallArgs[i]...)
 		}
 
-		fmt.Printf("\nRetrieving all Nodejs dependencies using \"npm install --global\":\n\n")
+		fmt.Printf("Retrieving all Nodejs dependencies using \"npm install --global\":\n\n")
 
 		_, err = exec.LookPath("npm")
 		if err != nil {
@@ -146,7 +122,31 @@ https://docs.npmjs.com/getting-started/fixing-npm-permissions
 		}
 	}
 
-	fmt.Printf("All dependencies successfully installed.\n\n")
+	fmt.Printf("\nRetrieving all Go dependencies using \"go get\":\n\n")
+
+	for _, goGetArg := range goGetArgs {
+		fmt.Printf("%s ... ", goGetArg[len(goGetArg)-1])
+
+		exc := exec.Command("go", goGetArg...)
+		out, err := exc.CombinedOutput()
+
+		if err != nil {
+			fmt.Printf("ERROR\n\n")
+		} else {
+			fmt.Printf("SUCCESS\n")
+		}
+
+		if len(out) > 0 {
+			fmt.Print(string(out))
+		}
+
+		if err != nil {
+			fmt.Printf("%s\n\n", err)
+			os.Exit(1)
+		}
+	}
+
+	fmt.Printf("\nAll dependencies successfully installed.\n\n")
 
 	return err
 }
