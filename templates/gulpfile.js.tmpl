@@ -114,9 +114,5 @@ gulp.task('minify', gulp.parallel('js-minify', 'css-minify'));
 // then finally the fingerprint and manifest generation task.
 gulp.task('build', gulp.series('clean', 'compile', 'minify', 'manifest'));
 
-/**
-	Default task.
-*/
-
-gulp.task('default', gulp.series('compile'));
 // Default task executes all compile and move tasks.
+gulp.task('default', gulp.series('compile'));
