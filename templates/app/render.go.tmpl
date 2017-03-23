@@ -17,6 +17,7 @@ var appHelpers = template.FuncMap{
 	"videoPath": func(s string) string { return "/assets/video/" + s },
 	"audioPath": func(s string) string { return "/assets/audio/" + s },
 	"fontPath": func(s string) string { return "/assets/fonts/" + s },
+	"assetPath": func(s string) string { return "/assets/" + s },
 }
 
 // InitRenderer initializes the renderer using the app configuration.
