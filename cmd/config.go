@@ -20,28 +20,31 @@ type migrateConfig struct {
 }
 
 type newConfig struct {
-	AppPath        string
-	ImportPath     string
-	AppName        string
-	TLSCommonName  string
-	ProdStorer     string
-	DevStorer      string
-	DefaultEnv     string
-	Bootstrap      string
-	NoBootstrapJS  bool
-	NoGitIgnore    bool
-	NoGulp         bool
-	NoFontAwesome  bool
-	NoLiveReload   bool
-	NoTLSCerts     bool
-	NoReadme       bool
-	NoConfig       bool
-	NoSessions     bool
-	NoRequestID    bool
-	ForceOverwrite bool
-	TLSCertsOnly   bool
-	NoHTTPRedirect bool
-	Silent         bool
+	AppPath          string
+	ImportPath       string
+	AppName          string
+	TLSCommonName    string
+	ProdStorer       string
+	DevStorer        string
+	DefaultEnv       string
+	Bootstrap        string
+	NoBootstrapJS    bool
+	NoGitIgnore      bool
+	NoGulp           bool
+	NoFontAwesome    bool
+	NoLiveReload     bool
+	NoTLSCerts       bool
+	NoReadme         bool
+	NoConfig         bool
+	NoSessions       bool
+	NoRequestID      bool
+	ForceOverwrite   bool
+	TLSCertsOnly     bool
+	NoHTTPRedirect   bool
+	SkipNPMInstall   bool
+	SkipGovendorSync bool
+	SkipGitInit      bool
+	Silent           bool
 }
 
 // skipDirs are the directories to skip creating for new command

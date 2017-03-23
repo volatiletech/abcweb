@@ -58,6 +58,9 @@ func init() {
 	newCmd.Flags().BoolP("tls-certs-only", "", false, "Only generate self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-http-redirect", "", false, "Disable the http -> https redirect when using TLS")
 	newCmd.Flags().BoolP("no-request-id", "", false, "Disable the Request ID middleware and Request ID logging")
+	newCmd.Flags().BoolP("skip-npm-install", "", false, "Skip running npm install command")
+	newCmd.Flags().BoolP("skip-govendor-sync", "", false, "Skip running govendor sync command")
+	newCmd.Flags().BoolP("skip-git-init", "", false, "Skip running git init command")
 	newCmd.Flags().BoolP("silent", "", false, "Disable console output")
 
 	RootCmd.AddCommand(newCmd)
@@ -68,25 +71,28 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 	var err error
 
 	newCmdConfig = newConfig{
-		NoGitIgnore:    viper.GetBool("no-gitignore"),
-		NoGulp:         viper.GetBool("no-gulp"),
-		NoBootstrapJS:  viper.GetBool("no-bootstrap-js"),
-		NoFontAwesome:  viper.GetBool("no-font-awesome"),
-		NoLiveReload:   viper.GetBool("no-livereload"),
-		NoSessions:     viper.GetBool("no-sessions"),
-		NoTLSCerts:     viper.GetBool("no-tls-certs"),
-		TLSCertsOnly:   viper.GetBool("tls-certs-only"),
-		NoReadme:       viper.GetBool("no-readme"),
-		NoConfig:       viper.GetBool("no-config"),
-		NoRequestID:    viper.GetBool("no-request-id"),
-		ForceOverwrite: viper.GetBool("force-overwrite"),
-		NoHTTPRedirect: viper.GetBool("no-http-redirect"),
-		Silent:         viper.GetBool("silent"),
-		ProdStorer:     viper.GetString("sessions-prod-storer"),
-		DevStorer:      viper.GetString("sessions-dev-storer"),
-		TLSCommonName:  viper.GetString("tls-common-name"),
-		DefaultEnv:     viper.GetString("default-env"),
-		Bootstrap:      strings.ToLower(viper.GetString("bootstrap")),
+		NoGitIgnore:      viper.GetBool("no-gitignore"),
+		NoGulp:           viper.GetBool("no-gulp"),
+		NoBootstrapJS:    viper.GetBool("no-bootstrap-js"),
+		NoFontAwesome:    viper.GetBool("no-font-awesome"),
+		NoLiveReload:     viper.GetBool("no-livereload"),
+		NoSessions:       viper.GetBool("no-sessions"),
+		NoTLSCerts:       viper.GetBool("no-tls-certs"),
+		TLSCertsOnly:     viper.GetBool("tls-certs-only"),
+		NoReadme:         viper.GetBool("no-readme"),
+		NoConfig:         viper.GetBool("no-config"),
+		NoRequestID:      viper.GetBool("no-request-id"),
+		ForceOverwrite:   viper.GetBool("force-overwrite"),
+		NoHTTPRedirect:   viper.GetBool("no-http-redirect"),
+		SkipNPMInstall:   viper.GetBool("skip-npm-install"),
+		SkipGovendorSync: viper.GetBool("skip-govendor-sync"),
+		SkipGitInit:      viper.GetBool("skip-git-init"),
+		Silent:           viper.GetBool("silent"),
+		ProdStorer:       viper.GetString("sessions-prod-storer"),
+		DevStorer:        viper.GetString("sessions-dev-storer"),
+		TLSCommonName:    viper.GetString("tls-common-name"),
+		DefaultEnv:       viper.GetString("default-env"),
+		Bootstrap:        strings.ToLower(viper.GetString("bootstrap")),
 	}
 
 	validBootstrap := []string{"none", "flex", "regular", "gridonly", "rebootonly", "gridandrebootonly"}
@@ -152,21 +158,25 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if !newCmdConfig.NoGulp {
+	if !newCmdConfig.NoGulp && !newCmdConfig.SkipNPMInstall {
 		err = npmInstall(newCmdConfig)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = vendorSync(newCmdConfig)
-	if err != nil {
-		return err
+	if !newCmdConfig.SkipGovendorSync {
+		err = vendorSync(newCmdConfig)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = gitInit(newCmdConfig)
-	if err != nil {
-		return err
+	if !newCmdConfig.SkipGitInit {
+		err = gitInit(newCmdConfig)
+		if err != nil {
+			return err
+		}
 	}
 
 	if !newCmdConfig.Silent {
