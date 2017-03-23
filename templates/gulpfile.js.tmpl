@@ -1,4 +1,5 @@
 var gulp = require('gulp');
+var clean = require('gulp-clean');
 var rev = require('gulp-rev');
 var revdel = require('gulp-rev-delete-original');
 var es = require('event-stream');
@@ -90,20 +91,32 @@ gulp.task('manifest', function() {
 });
 
 /**
+	Clean build assets directory to prevent left-over files.
+*/
+
+gulp.task('clean', function() {
+	return gulp.src(paths.build, {read: false})
+		.pipe(clean());
+});
+
+/**
 	Wrapper tasks.
 */
 
-// Default task executes all compile and move tasks.
-gulp.task('default', gulp.parallel('js', 'css', 'fonts', 'img', 'video', 'audio'));
+// Compile task executes all compile and move tasks.
+gulp.task('compile', gulp.parallel('js', 'css', 'fonts', 'img', 'video', 'audio'));
+
+// Minify task executes all minify tasks.
+gulp.task('minify', gulp.parallel('js-minify', 'css-minify'));
 
 // Build task executes compile and move tasks,
 // then minify tasks,
 // then finally the fingerprint and manifest generation task.
-gulp.task(
-	'build', 
-	gulp.series(
-		gulp.parallel('js', 'css', 'fonts', 'img', 'video', 'audio'),
-		gulp.parallel('js-minify', 'css-minify'),
-		'manifest'
-	)
-);
+gulp.task('build', gulp.series('clean', 'compile', 'minify', 'manifest'));
+
+/**
+	Default task.
+*/
+
+gulp.task('default', gulp.series('compile'));
+// Default task executes all compile and move tasks.
