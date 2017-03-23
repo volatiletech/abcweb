@@ -1,79 +1,109 @@
-// modules
 var gulp = require('gulp');
 var rev = require('gulp-rev');
+var revdel = require('gulp-rev-delete-original');
 var es = require('event-stream');
 var less = require('gulp-less');
 var sass = require('gulp-sass');
 var minifyJS = require('gulp-minify');
 var minifyCSS = require('gulp-clean-css');
 
-// paths 
+// Paths to the assets.
 paths = {
 	src: __dirname + '/assets/',
 	build: __dirname + '/public/assets/',
 };
 
 // The manifest file holds the mappings for the fingerprinted files,
-// example: {"bootstrap.js": "js/bootstrap-82e1ab4c0.js"}
+// example: {"js/bootstrap.js": "js/bootstrap-82e1ab4c0.js"}
 var manifestBase = 'public/assets';
 var manifestPath = manifestBase + '/manifest.json';
 
-// generic fingerprints and moves the regular and vendor assets of the passed in type.
-function generic(asset, pattern) {
-	if (typeof pattern === 'undefined') {
-		pattern = '/**/*'
-	}
+/**
+	Compile and move tasks.
+*/
 
-	return gulp.src([
-		paths.src + asset + pattern,
-		paths.src + 'vendor/' + asset + pattern,
-	]).pipe(rev()) // fingerprint files
-		.pipe(gulp.dest(paths.build + asset)) // write fingerprinted files
-		.pipe(rev.manifest(manifestPath, {merge: true, base: manifestBase}))
-		.pipe(gulp.dest(paths.build)); // write manifest file
-}
-
-// Default task executes all tasks. Add new tasks here as you create them.
-gulp.task('default', ['js', 'css', 'fonts', 'img', 'video', 'audio']);
-
-// CSS precompile (less & sass), minify and fingerprint
 gulp.task('css', function() {
-	es.merge(
+	return es.merge(
 		gulp.src([paths.src + 'css/**/*.scss', paths.src + 'css/**/*.sass']).pipe(sass()),
 		gulp.src(paths.src + 'css/**/*.less').pipe(less()),
-		gulp.src(paths.src + 'css/**/*.css')
-	).pipe(minifyCSS()) // minify files
-		.pipe(rev()) // fingerprint files
-		.pipe(gulp.dest(paths.build + 'css')) // write compiled, minified and fingerprinted files
-		.pipe(rev.manifest(manifestPath, {merge: true, base: manifestBase})) 
-		.pipe(gulp.dest(paths.build)); // write manifest file
-
-	return generic('css', '/**/*.!(*(*.)css|*(*.)less|*(*.)scss|*(*.)sass)') 
+		gulp.src([
+			paths.src + 'css/**/*.!(*(*.)scss|*(*.)sass|*(*.)less)', 
+			paths.src + 'vendor/css/**/*.!(*(*.)scss|*(*.)sass|*(*.)less)'
+		])
+	).pipe(gulp.dest(paths.build + 'css'))
 });
 
 gulp.task('js', function() {
-	gulp.src(paths.src + 'js/**/*.js')
-		.pipe(minifyJS({noSource: true, ext: {min: '.js'}})) // minify files
-		.pipe(rev()) // fingerprint files
-		.pipe(gulp.dest(paths.build + 'js')) // write minified and fingerprinted files
-		.pipe(rev.manifest(manifestPath, {merge: true, base: manifestBase}))
-		.pipe(gulp.dest(paths.build)); // write manifest file
-
-	return generic('js', '/**/*.!(*(*.)js)')
+	return gulp.src([paths.src + 'js/**/*', paths.src + 'vendor/js/**/*'])
+		.pipe(gulp.dest(paths.build + 'js'))
 });
 
 gulp.task('img', function() {
-	return generic('img')
+	return gulp.src([paths.src + 'img/**/*', paths.src + 'vendor/img/**/*'])
+		.pipe(gulp.dest(paths.build + 'img'))
 });
 
 gulp.task('fonts', function() {
-	return generic('fonts')
+	return gulp.src([paths.src + 'fonts/**/*', paths.src + 'vendor/fonts/**/*'])
+		.pipe(gulp.dest(paths.build + 'fonts'))
 });
 
 gulp.task('video', function() {
-	return generic('video')
+	return gulp.src([paths.src + 'video/**/*', paths.src + 'vendor/video/**/*'])
+		.pipe(gulp.dest(paths.build + 'video'))
 });
 
 gulp.task('audio', function() {
-	return generic('audio')
+	return gulp.src([paths.src + 'audio/**/*', paths.src + 'vendor/audio/**/*'])
+		.pipe(gulp.dest(paths.build + 'audio'))
 });
+
+/**
+	Minify tasks.
+*/
+
+gulp.task('css-minify', function() {
+	return gulp.src(paths.build + 'css/**/*.css')
+		.pipe(minifyCSS())
+		.pipe(gulp.dest(paths.build + 'css'));
+});
+
+gulp.task('js-minify', function() {
+	return gulp.src(paths.build + 'js/**/*.js')
+		.pipe(minifyJS({noSource: true, ext: {min: '.js'}}))
+		.pipe(gulp.dest(paths.build + 'js'));
+});
+
+/**
+	Fingerprint assets and generate manifest file.
+*/
+
+gulp.task('manifest', function() {
+	return gulp.src(paths.build + '**/*')
+		.pipe(rev())
+		.pipe(revdel())
+		.pipe(gulp.dest(function(file) {
+			return file.base
+		}))
+		.pipe(rev.manifest(manifestPath, {base: manifestBase}))
+		.pipe(gulp.dest(paths.build));
+});
+
+/**
+	Wrapper tasks.
+*/
+
+// Default task executes all compile and move tasks.
+gulp.task('default', gulp.parallel('js', 'css', 'fonts', 'img', 'video', 'audio'));
+
+// Build task executes compile and move tasks,
+// then minify tasks,
+// then finally the fingerprint and manifest generation task.
+gulp.task(
+	'build', 
+	gulp.series(
+		gulp.parallel('js', 'css', 'fonts', 'img', 'video', 'audio'),
+		gulp.parallel('js-minify', 'css-minify'),
+		'manifest'
+	)
+);
