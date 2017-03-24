@@ -48,7 +48,6 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"github.com/kardianos/govendor"},
 		{"github.com/go-sql-driver/mysql"},
 		{"github.com/lib/pq"},
-		{"github.com/mattn/go-sqlite3"},
 		{"github.com/nullbio/mig"},
 		{"github.com/nullbio/mig/cmd/mig"},
 		{"github.com/spf13/cobra"},
@@ -86,11 +85,11 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 
 		_, err = exec.LookPath("npm")
 		if err != nil {
-			fmt.Printf(`Error: npm could not be found in your $PATH. If you have not already installed nodejs 
-and npm you must do so before proceeding. Please follow the instructions at: 
+			fmt.Printf(`Error: npm could not be found in your $PATH. If you have not already installed nodejs
+and npm you must do so before proceeding. Please follow the instructions at:
 https://docs.npmjs.com/getting-started/installing-node
 
-If you receive permission related errors, please apply the following fix: 
+If you receive permission related errors, please apply the following fix:
 https://docs.npmjs.com/getting-started/fixing-npm-permissions
 `)
 			os.Exit(1)
@@ -114,7 +113,7 @@ https://docs.npmjs.com/getting-started/fixing-npm-permissions
 
 			if err != nil {
 				fmt.Printf("%s\n\n", err)
-				fmt.Printf(`Note: If you are receiving a permission related exit status or error, please apply the following fix: 
+				fmt.Printf(`Note: If you are receiving a permission related exit status or error, please apply the following fix:
 https://docs.npmjs.com/getting-started/fixing-npm-permissions
 `)
 				os.Exit(1)
