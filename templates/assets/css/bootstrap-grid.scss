@@ -38,6 +38,6 @@ html {
 @import "../vendor/css/mixins/grid-framework";
 @import "../vendor/css/mixins/grid";
 
-@import "../vendor/css/custom";
+@import "custom"; // Custom variable overrides
 
 @import "../vendor/css/grid";

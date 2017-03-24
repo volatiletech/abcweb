@@ -1,12 +1,5 @@
 var gulp = require('gulp');
-var clean = require('gulp-clean');
-var rev = require('gulp-rev');
-var revdel = require('gulp-rev-delete-original');
-var es = require('event-stream');
-var less = require('gulp-less');
-var sass = require('gulp-sass');
-var minifyJS = require('gulp-minify');
-var minifyCSS = require('gulp-clean-css');
+var es   = require('event-stream');
 
 // Paths to the assets.
 paths = {
@@ -23,38 +16,40 @@ var manifestPath = manifestBase + '/manifest.json';
 	Compile and move tasks.
 */
 
-gulp.task('css', function() {
+gulp.task('compile-css', function() {
+	var less    = require('gulp-less');
+	var sass    = require('gulp-sass');
+	var postcss = require('gulp-postcss');
+
 	return es.merge(
 		gulp.src([paths.src + 'css/**/*.scss', paths.src + 'css/**/*.sass']).pipe(sass()),
 		gulp.src(paths.src + 'css/**/*.less').pipe(less()),
-		gulp.src([
-			paths.src + 'css/**/*.!(*(*.)scss|*(*.)sass|*(*.)less)', 
-			paths.src + 'vendor/css/**/*.!(*(*.)scss|*(*.)sass|*(*.)less)'
-		])
-	).pipe(gulp.dest(paths.build + 'css'))
+		gulp.src([paths.src + 'css/**/*.css', paths.src + 'vendor/css/**/*.css'])
+	).pipe(postcss([require('autoprefixer', 'postcss-flexbug-fixes')]))
+		.pipe(gulp.dest(paths.build + 'css'))
 });
 
-gulp.task('js', function() {
-	return gulp.src([paths.src + 'js/**/*', paths.src + 'vendor/js/**/*'])
+gulp.task('compile-js', function() {
+	return gulp.src([paths.src + 'js/**/*.js', paths.src + 'vendor/js/**/*.js'])
 		.pipe(gulp.dest(paths.build + 'js'))
 });
 
-gulp.task('img', function() {
+gulp.task('compile-img', function() {
 	return gulp.src([paths.src + 'img/**/*', paths.src + 'vendor/img/**/*'])
 		.pipe(gulp.dest(paths.build + 'img'))
 });
 
-gulp.task('fonts', function() {
+gulp.task('compile-fonts', function() {
 	return gulp.src([paths.src + 'fonts/**/*', paths.src + 'vendor/fonts/**/*'])
 		.pipe(gulp.dest(paths.build + 'fonts'))
 });
 
-gulp.task('video', function() {
+gulp.task('compile-video', function() {
 	return gulp.src([paths.src + 'video/**/*', paths.src + 'vendor/video/**/*'])
 		.pipe(gulp.dest(paths.build + 'video'))
 });
 
-gulp.task('audio', function() {
+gulp.task('compile-audio', function() {
 	return gulp.src([paths.src + 'audio/**/*', paths.src + 'vendor/audio/**/*'])
 		.pipe(gulp.dest(paths.build + 'audio'))
 });
@@ -63,13 +58,17 @@ gulp.task('audio', function() {
 	Minify tasks.
 */
 
-gulp.task('css-minify', function() {
+gulp.task('minify-css', function() {
+	var minifyCSS = require('gulp-clean-css');
+
 	return gulp.src(paths.build + 'css/**/*.css')
 		.pipe(minifyCSS())
 		.pipe(gulp.dest(paths.build + 'css'));
 });
 
-gulp.task('js-minify', function() {
+gulp.task('minify-js', function() {
+	var minifyJS = require('gulp-minify');
+
 	return gulp.src(paths.build + 'js/**/*.js')
 		.pipe(minifyJS({noSource: true, ext: {min: '.js'}}))
 		.pipe(gulp.dest(paths.build + 'js'));
@@ -80,6 +79,9 @@ gulp.task('js-minify', function() {
 */
 
 gulp.task('manifest', function() {
+	var rev    = require('gulp-rev');
+	var revdel = require('gulp-rev-delete-original');
+
 	return gulp.src(paths.build + '**/*')
 		.pipe(rev())
 		.pipe(revdel())
@@ -95,6 +97,8 @@ gulp.task('manifest', function() {
 */
 
 gulp.task('clean', function() {
+	var clean = require('gulp-clean');
+
 	return gulp.src(paths.build, {read: false})
 		.pipe(clean());
 });
@@ -103,11 +107,50 @@ gulp.task('clean', function() {
 	Wrapper tasks.
 */
 
+gulp.task('watch', function() {
+	var watch   = require('gulp-watch');
+	var less    = require('gulp-less');
+	var sass    = require('gulp-sass');
+	var postcss = require('gulp-postcss');
+	var plumber = require('gulp-plumber');
+	
+	es.merge(
+		watch([paths.src + 'css/**/*.scss', paths.src + 'css/**/*.sass'], { ignoreInitial: false })
+			.pipe(plumber())
+			.pipe(sass()),
+		watch(paths.src + 'css/**/*.less', { ignoreInitial: false })
+			.pipe(plumber())
+			.pipe(less()),
+		watch([paths.src + 'css/**/*.css', paths.src + 'vendor/css/**/*.css'], { ignoreInitial: false })
+	).pipe(postcss([require('autoprefixer', 'postcss-flexbug-fixes')]))
+		.pipe(gulp.dest(paths.build + 'css'))
+
+	watch([paths.src + 'js/**/*.js', paths.src + 'vendor/js/**/*.js'], { ignoreInitial: false })
+		.pipe(plumber())
+		.pipe(gulp.dest(paths.build + 'js'))
+
+	watch([paths.src + 'img/**/*', paths.src + 'vendor/img/**/*'], { ignoreInitial: false })
+		.pipe(plumber())
+		.pipe(gulp.dest(paths.build + 'img'))
+
+	watch([paths.src + 'fonts/**/*', paths.src + 'vendor/fonts/**/*'], { ignoreInitial: false })
+		.pipe(plumber())
+		.pipe(gulp.dest(paths.build + 'fonts'))
+
+	watch([paths.src + 'video/**/*', paths.src + 'vendor/video/**/*'], { ignoreInitial: false })
+		.pipe(plumber())
+		.pipe(gulp.dest(paths.build + 'video'))
+
+	return watch([paths.src + 'audio/**/*', paths.src + 'vendor/audio/**/*'], { ignoreInitial: false })
+		.pipe(plumber())
+		.pipe(gulp.dest(paths.build + 'audio'))
+});
+
 // Compile task executes all compile and move tasks.
-gulp.task('compile', gulp.parallel('js', 'css', 'fonts', 'img', 'video', 'audio'));
+gulp.task('compile', gulp.parallel('compile-js', 'compile-css', 'compile-fonts', 'compile-img', 'compile-video', 'compile-audio'));
 
 // Minify task executes all minify tasks.
-gulp.task('minify', gulp.parallel('js-minify', 'css-minify'));
+gulp.task('minify', gulp.parallel('minify-js', 'minify-css'));
 
 // Build task executes compile and move tasks,
 // then minify tasks,

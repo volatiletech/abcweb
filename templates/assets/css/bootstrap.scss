@@ -8,7 +8,7 @@
 // Core variables and mixins
 @import "../vendor/css/variables";
 @import "../vendor/css/mixins";
-@import "../vendor/css/custom";
+@import "custom"; // Custom variable overrides
 
 // Reset and dependencies
 @import "../vendor/css/normalize";

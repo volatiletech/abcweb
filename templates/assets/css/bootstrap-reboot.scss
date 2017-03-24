@@ -4,7 +4,7 @@
 
 @import "../vendor/css/variables";
 @import "../vendor/css/mixins";
-@import "../vendor/css/custom";
+@import "custom"; // Custom variable overrides
 
 @import "../vendor/css/normalize";
 @import "../vendor/css/reboot";
