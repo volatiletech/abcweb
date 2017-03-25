@@ -19,8 +19,11 @@ your generated app or the abcweb tool by executing "go get" commands`,
 	// Needs to be a persistentPreRunE to override root's config.Initialize call
 	// otherwise abcweb needs to be run from the abcweb project or the git rev-parse
 	// will cause a fatal error.
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
-	RunE:              depsCmdRun,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		viper.BindPFlags(cmd.Flags())
+		return nil
+	},
+	RunE: depsCmdRun,
 }
 
 func init() {
@@ -29,7 +32,6 @@ func init() {
 	depsCmd.Flags().BoolP("no-gulp", "", false, "Skip installing gulp.js dependencies")
 
 	RootCmd.AddCommand(depsCmd)
-	viper.BindPFlags(depsCmd.Flags())
 }
 
 func depsCmdRun(cmd *cobra.Command, args []string) error {
@@ -70,6 +72,8 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 	for i := 0; i < len(goGetArgs); i++ {
 		goGetArgs[i] = append(prependArgs, goGetArgs[i]...)
 	}
+
+	fmt.Printf("%t\n\n", viper.GetBool("no-gulp"))
 
 	if !viper.GetBool("no-gulp") {
 		prependArgs = []string{"install", "--global"}

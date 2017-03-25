@@ -22,11 +22,12 @@ func init() {
 	buildCmd.Flags().BoolP("silent", "", false, "Disable console output")
 
 	RootCmd.AddCommand(buildCmd)
-	viper.BindPFlags(buildCmd.Flags())
 }
 
 func buildCmdPreRun(cmd *cobra.Command, args []string) error {
 	var err error
+
+	viper.BindPFlags(cmd.Flags())
 
 	//	buildCmdConfig = newConfig{
 	//		NoGitIgnore: viper.GetBool("no-gitignore"),

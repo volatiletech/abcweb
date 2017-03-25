@@ -1,6 +1,9 @@
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
 
 // devCmd represents the "dev" command
 var devCmd = &cobra.Command{
@@ -21,5 +24,7 @@ func init() {
 }
 
 func devCmdRun(cmd *cobra.Command, args []string) error {
+	viper.BindPFlags(cmd.Flags())
+
 	return nil
 }

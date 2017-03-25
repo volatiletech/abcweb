@@ -63,7 +63,10 @@ func init() {
 	cmdWatch.Flags().StringSliceP("ignore", "i", nil, "Folders to not watch, relative the app path")
 
 	RootCmd.AddCommand(cmdWatch)
-	viper.BindPFlags(cmdWatch.Flags())
+
+	cmdWatch.PreRun = func(cmd *cobra.Command, args []string) {
+		viper.BindPFlags(cmd.Flags())
+	}
 }
 
 type appWatcher struct {
