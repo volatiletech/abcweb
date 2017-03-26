@@ -59,3 +59,13 @@ The HTTP2 spec specifies that concatenating files is no longer recommended
 because HTTP2 supports multiplexing and retrieves files in parallel. Having
 them as separate files provides speed advantages.
 
+
+
+### Dependencies
+
+Bootstrap 4 dependencies
+
+https://jquery.com/
+http://tether.io/
+http://transitionjs.org/
+

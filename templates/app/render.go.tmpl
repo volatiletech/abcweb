@@ -2,6 +2,8 @@ package app
 
 import (
 	"html/template"
+	"bytes"
+	"fmt"
 
 	"{{.ImportPath}}/rendering"
 	"github.com/unrolled/render"
@@ -18,6 +20,10 @@ var appHelpers = template.FuncMap{
 	"audioPath": func(s string) string { return "/assets/audio/" + s },
 	"fontPath": func(s string) string { return "/assets/fonts/" + s },
 	"assetPath": func(s string) string { return "/assets/" + s },
+	{{- if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
+	// return all javascript include tags for all twitter bootstrap js plugins
+	"jsBootstrap": jsBootstrap,
+	{{- end}}
 }
 
 // InitRenderer initializes the renderer using the app configuration.
@@ -41,3 +47,30 @@ func (s *State) InitRenderer() {
 		}),
 	}
 }
+
+{{- if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
+// jsBootstrap returns all javascript include tags for 
+// all twitter bootstrap js plugins
+func jsBootstrap() template.HTML {
+	files := []string{
+		"/assets/js/bootstrap/transition.js",
+		"/assets/js/bootstrap/util.js",
+		"/assets/js/bootstrap/alert.js",
+		"/assets/js/bootstrap/button.js",
+		"/assets/js/bootstrap/carousel.js",
+		"/assets/js/bootstrap/collapse.js",
+		"/assets/js/bootstrap/dropdown.js",
+		"/assets/js/bootstrap/modal.js",
+		"/assets/js/bootstrap/popover.js",
+		"/assets/js/bootstrap/scrollspy.js",
+		"/assets/js/bootstrap/tab.js",
+		"/assets/js/bootstrap/tooltip.js",
+	}
+
+	buf := bytes.Buffer{}
+	for _, file := range files {
+		buf.WriteString(fmt.Sprintf("<script src=\"%s\"></script>\n", file))
+	}
+	return template.HTML(buf.String())
+}
+{{- end}}

@@ -13,30 +13,32 @@
 		<link rel="icon" href="/favicon.ico">
 
 		{{if eq .Bootstrap "regular" -}}
-		<link href="{{"{"}}{ cssPath "bootstrap.css" }{{"}"}}" rel="stylesheet">
-		{{- else if eq .Bootstrap "flex" -}}
-		<link href="{{"{"}}{ cssPath "bootstrap-flex.css" }{{"}"}}" rel="stylesheet">
+		<link href="{{"{"}}{ cssPath "bootstrap/bootstrap.css" }{{"}"}}" rel="stylesheet">
 		{{- else if eq .Bootstrap "gridonly" -}}
-		<link href="{{"{"}}{ cssPath "bootstrap-grid.css" }{{"}"}}" rel="stylesheet">
+		<link href="{{"{"}}{ cssPath "bootstrap/bootstrap-grid.css" }{{"}"}}" rel="stylesheet">
 		{{- else if eq .Bootstrap "rebootonly" -}}
-		<link href="{{"{"}}{ cssPath "bootstrap-reboot.css" }{{"}"}}" rel="stylesheet">
+		<link href="{{"{"}}{ cssPath "bootstrap/bootstrap-reboot.css" }{{"}"}}" rel="stylesheet">
 		{{- else if eq .Bootstrap "gridandrebootonly" -}}
-		<link href="{{"{"}}{ cssPath "bootstrap-grid.css" }{{"}"}}" rel="stylesheet">
-		<link href="{{"{"}}{ cssPath "bootstrap-reboot.css" }{{"}"}}" rel="stylesheet">
+		<link href="{{"{"}}{ cssPath "bootstrap/bootstrap-grid.css" }{{"}"}}" rel="stylesheet">
+		<link href="{{"{"}}{ cssPath "bootstrap/bootstrap-reboot.css" }{{"}"}}" rel="stylesheet">
 		{{- end}}
 		{{if not .NoFontAwesome -}}
-		<link href="{{"{"}}{ cssPath "font-awesome.css" }{{"}"}}" rel="stylesheet">
+		<link href="{{"{"}}{ cssPath "font-awesome/font-awesome.css" }{{"}"}}" rel="stylesheet">
 		{{- end}}
 		<link href="{{"{"}}{ cssPath "main.css" }{{"}"}}" rel="stylesheet">
 	</head>
 	<body>
 		{{"{"}}{ yield }{{"}"}}
-		{{- if (and (or (eq .Bootstrap "regular") (eq .Bootstrap "flex")) (not .NoBootstrapJS)) -}}
+
+		{{- if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
 		<!-- jquery is a twitter bootstrap dependency -->
 		<script src="{{"{"}}{ jsPath "jquery-3.1.1.js" }{{"}"}}"></script>
+
 		<!-- tether is a twitter bootstrap tooltips dependency -->
 		<script src="{{"{"}}{ jsPath "tether.js" }{{"}"}}"></script>
-		<script src="{{"{"}}{ jsPath "bootstrap.js" }{{"}"}}"></script>
+
+		<!-- include all twitter bootstrap javascript plugins -->
+		{{"{"}}{ jsBootstrap }{{"}"}}
 		{{- end}}
 	</body>
 </html>
