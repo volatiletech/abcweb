@@ -6,49 +6,49 @@
  */
 
 // Core variables and mixins
-@import "../vendor/css/variables";
-@import "../vendor/css/mixins";
+@import "../vendor/css/bootstrap/variables";
+@import "../vendor/css/bootstrap/mixins";
 @import "custom"; // Custom variable overrides
 
 // Reset and dependencies
-@import "../vendor/css/normalize";
-@import "../vendor/css/print";
+@import "../vendor/css/bootstrap/normalize";
+@import "../vendor/css/bootstrap/print";
 
 // Core CSS
-@import "../vendor/css/reboot";
-@import "../vendor/css/type";
-@import "../vendor/css/images";
-@import "../vendor/css/code";
-@import "../vendor/css/grid";
-@import "../vendor/css/tables";
-@import "../vendor/css/forms";
-@import "../vendor/css/buttons";
+@import "../vendor/css/bootstrap/reboot";
+@import "../vendor/css/bootstrap/type";
+@import "../vendor/css/bootstrap/images";
+@import "../vendor/css/bootstrap/code";
+@import "../vendor/css/bootstrap/grid";
+@import "../vendor/css/bootstrap/tables";
+@import "../vendor/css/bootstrap/forms";
+@import "../vendor/css/bootstrap/buttons";
 
 // Components
-@import "../vendor/css/transitions";
-@import "../vendor/css/dropdown";
-@import "../vendor/css/button-group";
-@import "../vendor/css/input-group";
-@import "../vendor/css/custom-forms";
-@import "../vendor/css/nav";
-@import "../vendor/css/navbar";
-@import "../vendor/css/card";
-@import "../vendor/css/breadcrumb";
-@import "../vendor/css/pagination";
-@import "../vendor/css/badge";
-@import "../vendor/css/jumbotron";
-@import "../vendor/css/alert";
-@import "../vendor/css/progress";
-@import "../vendor/css/media";
-@import "../vendor/css/list-group";
-@import "../vendor/css/responsive-embed";
-@import "../vendor/css/close";
+@import "../vendor/css/bootstrap/transitions";
+@import "../vendor/css/bootstrap/dropdown";
+@import "../vendor/css/bootstrap/button-group";
+@import "../vendor/css/bootstrap/input-group";
+@import "../vendor/css/bootstrap/custom-forms";
+@import "../vendor/css/bootstrap/nav";
+@import "../vendor/css/bootstrap/navbar";
+@import "../vendor/css/bootstrap/card";
+@import "../vendor/css/bootstrap/breadcrumb";
+@import "../vendor/css/bootstrap/pagination";
+@import "../vendor/css/bootstrap/badge";
+@import "../vendor/css/bootstrap/jumbotron";
+@import "../vendor/css/bootstrap/alert";
+@import "../vendor/css/bootstrap/progress";
+@import "../vendor/css/bootstrap/media";
+@import "../vendor/css/bootstrap/list-group";
+@import "../vendor/css/bootstrap/responsive-embed";
+@import "../vendor/css/bootstrap/close";
 
 // Components w/ JavaScript
-@import "../vendor/css/modal";
-@import "../vendor/css/tooltip";
-@import "../vendor/css/popover";
-@import "../vendor/css/carousel";
+@import "../vendor/css/bootstrap/modal";
+@import "../vendor/css/bootstrap/tooltip";
+@import "../vendor/css/bootstrap/popover";
+@import "../vendor/css/bootstrap/carousel";
 
 // Utility classes
-@import "../vendor/css/utilities";
+@import "../vendor/css/bootstrap/utilities";

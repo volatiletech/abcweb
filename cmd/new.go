@@ -44,7 +44,7 @@ func init() {
 	newCmd.Flags().StringP("sessions-dev-storer", "d", "cookie", "Session storer to use in development mode")
 	newCmd.Flags().StringP("tls-common-name", "", "localhost", "Common Name for generated TLS certificate")
 	newCmd.Flags().StringP("default-env", "", "prod", "Default $APP_ENV to use when starting server")
-	newCmd.Flags().StringP("bootstrap", "b", "flex", "Include Twitter Bootstrap 4 (none|regular|gridonly|rebootonly|gridandrebootonly)")
+	newCmd.Flags().StringP("bootstrap", "b", "regular", "Include Twitter Bootstrap 4 (none|gridonly|rebootonly|gridandrebootonly)")
 	newCmd.Flags().BoolP("no-gitignore", "", false, "Skip .gitignore file")
 	newCmd.Flags().BoolP("no-gulp", "", false, "Skip generation of gulpfile.js, package.json and installation of gulp dependencies")
 	newCmd.Flags().BoolP("no-bootstrap-js", "j", false, "Skip Twitter Bootstrap 4 javascript inclusion")
@@ -96,7 +96,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		Bootstrap:        strings.ToLower(viper.GetString("bootstrap")),
 	}
 
-	validBootstrap := []string{"none", "flex", "regular", "gridonly", "rebootonly", "gridandrebootonly"}
+	validBootstrap := []string{"none", "regular", "gridonly", "rebootonly", "gridandrebootonly"}
 	found := false
 	for _, v := range validBootstrap {
 		if newCmdConfig.Bootstrap == v {
@@ -106,7 +106,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if !found {
-		return fmt.Errorf("invalid bootstrap option (%q) supplied, valid options are: none|flex|regular|gridonly|rebootonly|gridandrebootonly", newCmdConfig.Bootstrap)
+		return fmt.Errorf("invalid bootstrap option (%q) supplied, valid options are: none|regular|gridonly|rebootonly|gridandrebootonly", newCmdConfig.Bootstrap)
 	}
 
 	newCmdConfig.AppPath, newCmdConfig.ImportPath, newCmdConfig.AppName, err = getAppPath(args)
@@ -379,6 +379,12 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 
 	// Skip directories defined in skipDirs slice
 	if info.IsDir() {
+		if cfg.Bootstrap == "none" &&
+			(strings.HasSuffix(path, "/templates/assets/vendor/css/bootstrap") || strings.HasSuffix(path, "/templates/assets/vendor/js/bootstrap")) {
+			return true, filepath.SkipDir
+		} else if cfg.NoBootstrapJS && strings.HasSuffix(path, "/templates/assets/vendor/js/bootstrap") {
+			return true, filepath.SkipDir
+		}
 		for _, skipDir := range skipDirs {
 			if info.Name() == skipDir {
 				return true, filepath.SkipDir
@@ -434,8 +440,6 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 	var bsArr []string
 	if cfg.Bootstrap == "none" {
 		bsArr = bootstrapNone
-	} else if cfg.Bootstrap == "flex" {
-		bsArr = bootstrapFlex
 	} else if cfg.Bootstrap == "regular" {
 		bsArr = bootstrapRegular
 	} else if cfg.Bootstrap == "gridonly" {

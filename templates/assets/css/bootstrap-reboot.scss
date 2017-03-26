@@ -2,9 +2,9 @@
 //
 // Includes only Normalize and our custom Reboot reset.
 
-@import "../vendor/css/variables";
-@import "../vendor/css/mixins";
+@import "../vendor/css/bootstrap/variables";
+@import "../vendor/css/bootstrap/mixins";
 @import "custom"; // Custom variable overrides
 
-@import "../vendor/css/normalize";
-@import "../vendor/css/reboot";
+@import "../vendor/css/bootstrap/normalize";
+@import "../vendor/css/bootstrap/reboot";

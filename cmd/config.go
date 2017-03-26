@@ -80,57 +80,42 @@ var fontAwesomeFiles = []string{
 	"fontawesome-webfont.woff2",
 }
 
+// Exclude the following files
 var bootstrapNone = []string{
-	"bootstrap-flex.css",
-	"bootstrap-flex.css",
-	"bootstrap-grid.css",
-	"bootstrap-reboot.css",
-	"bootstrap.css",
-	"bootstrap.js",
+	"bootstrap.scss",
+	"bootstrap-grid.scss",
+	"bootstrap-reboot.scss",
+	"_custom.scss",
 	"jquery-3.1.1.js",
 	"tether.js",
 }
 
 var bootstrapRegular = []string{
-	"bootstrap-flex.css",
-	"bootstrap-grid.css",
-	"bootstrap-reboot.css",
-}
-
-var bootstrapFlex = []string{
-	"bootstrap-grid.css",
-	"bootstrap-reboot.css",
-	"bootstrap.css",
+	"bootstrap-grid.scss",
+	"bootstrap-reboot.scss",
 }
 
 var bootstrapGridOnly = []string{
-	"bootstrap-flex.css",
-	"bootstrap-reboot.css",
-	"bootstrap.css",
-	"bootstrap.js",
+	"bootstrap-reboot.scss",
+	"bootstrap.scss",
 	"jquery-3.1.1.js",
 	"tether.js",
 }
 
 var bootstrapRebootOnly = []string{
-	"bootstrap-flex.css",
-	"bootstrap-grid.css",
-	"bootstrap.css",
-	"bootstrap.js",
+	"bootstrap-grid.scss",
+	"bootstrap.scss",
 	"jquery-3.1.1.js",
 	"tether.js",
 }
 
 var bootstrapGridRebootOnly = []string{
-	"bootstrap-flex.css",
-	"bootstrap.css",
-	"bootstrap.js",
+	"bootstrap.scss",
 	"jquery-3.1.1.js",
 	"tether.js",
 }
 
 var bootstrapJSFiles = []string{
-	"bootstrap.js",
 	"jquery-3.1.1.js",
 	"tether.js",
 }
