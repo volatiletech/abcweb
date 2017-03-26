@@ -13,29 +13,29 @@
 		<link rel="icon" href="/favicon.ico">
 
 		{{if eq .Bootstrap "regular" -}}
-		<link href="{{"{"}}{ cssPath "bootstrap/bootstrap.css" }{{"}"}}" rel="stylesheet">
+		{{"{"}}{ cssPath "bootstrap/bootstrap.css" | cssTag }{{"}"}}
 		{{- else if eq .Bootstrap "gridonly" -}}
-		<link href="{{"{"}}{ cssPath "bootstrap/bootstrap-grid.css" }{{"}"}}" rel="stylesheet">
+		{{"{"}}{ cssPath "bootstrap/bootstrap-grid.css" | cssTag }{{"}"}}
 		{{- else if eq .Bootstrap "rebootonly" -}}
-		<link href="{{"{"}}{ cssPath "bootstrap/bootstrap-reboot.css" }{{"}"}}" rel="stylesheet">
+		{{"{"}}{ cssPath "bootstrap/bootstrap-reboot.css" | cssTag }{{"}"}}
 		{{- else if eq .Bootstrap "gridandrebootonly" -}}
-		<link href="{{"{"}}{ cssPath "bootstrap/bootstrap-grid.css" }{{"}"}}" rel="stylesheet">
-		<link href="{{"{"}}{ cssPath "bootstrap/bootstrap-reboot.css" }{{"}"}}" rel="stylesheet">
+		{{"{"}}{ cssPath "bootstrap/bootstrap-grid.css" | cssTag }{{"}"}}
+		{{"{"}}{ cssPath "bootstrap/bootstrap-reboot.css" | cssTag }{{"}"}}
 		{{- end}}
 		{{if not .NoFontAwesome -}}
-		<link href="{{"{"}}{ cssPath "font-awesome/font-awesome.css" }{{"}"}}" rel="stylesheet">
+		{{"{"}}{ cssPath "font-awesome/font-awesome.css" | cssTag }{{"}"}}
 		{{- end}}
-		<link href="{{"{"}}{ cssPath "main.css" }{{"}"}}" rel="stylesheet">
+		{{"{"}}{ cssPath "main.css" | cssTag }{{"}"}}
 	</head>
 	<body>
 		{{"{"}}{ yield }{{"}"}}
 
 		{{- if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
 		<!-- jquery is a twitter bootstrap dependency -->
-		<script src="{{"{"}}{ jsPath "jquery-3.1.1.js" }{{"}"}}"></script>
+		{{"{"}}{ jsPath "jquery-3.1.1.js" | jsTag }{{"}"}}
 
 		<!-- tether is a twitter bootstrap tooltips dependency -->
-		<script src="{{"{"}}{ jsPath "tether.js" }{{"}"}}"></script>
+		{{"{"}}{ jsPath "tether.js" | jsTag }{{"}"}}
 
 		<!-- include all twitter bootstrap javascript plugins -->
 		{{"{"}}{ jsBootstrap }{{"}"}}

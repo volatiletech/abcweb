@@ -20,7 +20,12 @@ var appHelpers = template.FuncMap{
 	"audioPath": func(s string) string { return "/assets/audio/" + s },
 	"fontPath": func(s string) string { return "/assets/fonts/" + s },
 	"assetPath": func(s string) string { return "/assets/" + s },
-	{{- if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
+	
+	// wrap full asset paths in include tags
+	"cssTag": cssTag,
+	"jsTag":  jsTag,
+
+	{{if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
 	// return all javascript include tags for all twitter bootstrap js plugins
 	"jsBootstrap": jsBootstrap,
 	{{- end}}
@@ -48,7 +53,17 @@ func (s *State) InitRenderer() {
 	}
 }
 
-{{- if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
+// cssTag wraps the asset path in a css link include tag
+func cssTag(s string) template.HTML {
+	return template.HTML(fmt.Sprintf("<link href=\"%s\" rel=\"stylesheet\">", s))
+}
+
+// jsTag wraps the asset path in a javascript script include tag
+func jsTag(s string) template.HTML {
+	return template.HTML(fmt.Sprintf("<script src=\"%s\"></script>", s))
+}
+
+{{if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
 // jsBootstrap returns all javascript include tags for 
 // all twitter bootstrap js plugins
 func jsBootstrap() template.HTML {
