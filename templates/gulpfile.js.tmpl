@@ -5,6 +5,7 @@ var es   = require('event-stream');
 paths = {
 	src: __dirname + '/assets/',
 	build: __dirname + '/public/assets/',
+	templates: __dirname + '/templates/**/*',
 };
 
 // The manifest file holds the mappings for the fingerprinted files,
@@ -107,45 +108,6 @@ gulp.task('clean', function() {
 	Wrapper tasks.
 */
 
-gulp.task('watch', function() {
-	var watch   = require('gulp-watch');
-	var less    = require('gulp-less');
-	var sass    = require('gulp-sass');
-	var postcss = require('gulp-postcss');
-	var plumber = require('gulp-plumber');
-	
-	es.merge(
-		watch([paths.src + 'css/**/*.scss', paths.src + 'css/**/*.sass'], { ignoreInitial: false })
-			.pipe(plumber())
-			.pipe(sass()),
-		watch(paths.src + 'css/**/*.less', { ignoreInitial: false })
-			.pipe(plumber())
-			.pipe(less()),
-		watch([paths.src + 'css/**/*.css', paths.src + 'vendor/css/**/*.css'], { ignoreInitial: false })
-	).pipe(postcss([require('autoprefixer', 'postcss-flexbug-fixes')]))
-		.pipe(gulp.dest(paths.build + 'css'))
-
-	watch([paths.src + 'js/**/*.js', paths.src + 'vendor/js/**/*.js'], { ignoreInitial: false })
-		.pipe(plumber())
-		.pipe(gulp.dest(paths.build + 'js'))
-
-	watch([paths.src + 'img/**/*', paths.src + 'vendor/img/**/*'], { ignoreInitial: false })
-		.pipe(plumber())
-		.pipe(gulp.dest(paths.build + 'img'))
-
-	watch([paths.src + 'fonts/**/*', paths.src + 'vendor/fonts/**/*'], { ignoreInitial: false })
-		.pipe(plumber())
-		.pipe(gulp.dest(paths.build + 'fonts'))
-
-	watch([paths.src + 'video/**/*', paths.src + 'vendor/video/**/*'], { ignoreInitial: false })
-		.pipe(plumber())
-		.pipe(gulp.dest(paths.build + 'video'))
-
-	return watch([paths.src + 'audio/**/*', paths.src + 'vendor/audio/**/*'], { ignoreInitial: false })
-		.pipe(plumber())
-		.pipe(gulp.dest(paths.build + 'audio'))
-});
-
 // Compile task executes all compile and move tasks.
 gulp.task('compile', gulp.parallel('compile-js', 'compile-css', 'compile-fonts', 'compile-img', 'compile-video', 'compile-audio'));
 
@@ -159,3 +121,58 @@ gulp.task('build', gulp.series('clean', 'compile', 'minify', 'manifest'));
 
 // Default task executes all compile and move tasks.
 gulp.task('default', gulp.series('compile'));
+
+// Watch task compiles all assets on start, then watches assets and html templates
+// for change, recompiles them and signals livereload to reload the browser.
+gulp.task('watch', gulp.series('compile', function() {
+	var watch      = require('gulp-watch');
+	var less       = require('gulp-less');
+	var sass       = require('gulp-sass');
+	var postcss    = require('gulp-postcss');
+	var plumber    = require('gulp-plumber');
+	var livereload = require('gulp-livereload');
+
+
+	livereload.listen();
+	
+	es.merge(
+		watch([paths.src + 'css/**/*.scss', paths.src + 'css/**/*.sass'])
+			.pipe(plumber())
+			.pipe(sass()),
+		watch(paths.src + 'css/**/*.less', { ignoreInitial: true })
+			.pipe(plumber())
+			.pipe(less()),
+		watch([paths.src + 'css/**/*.css', paths.src + 'vendor/css/**/*.css'])
+	).pipe(postcss([require('autoprefixer', 'postcss-flexbug-fixes')]))
+		.pipe(gulp.dest(paths.build + 'css'))
+		.pipe(livereload())
+
+	watch([paths.src + 'js/**/*.js', paths.src + 'vendor/js/**/*.js'])
+		.pipe(plumber())
+		.pipe(gulp.dest(paths.build + 'js'))
+		.pipe(livereload())
+
+	watch([paths.src + 'img/**/*', paths.src + 'vendor/img/**/*'])
+		.pipe(plumber())
+		.pipe(gulp.dest(paths.build + 'img'))
+		.pipe(livereload())
+
+	watch([paths.src + 'fonts/**/*', paths.src + 'vendor/fonts/**/*'])
+		.pipe(plumber())
+		.pipe(gulp.dest(paths.build + 'fonts'))
+		.pipe(livereload())
+
+	watch([paths.src + 'video/**/*', paths.src + 'vendor/video/**/*'])
+		.pipe(plumber())
+		.pipe(gulp.dest(paths.build + 'video'))
+		.pipe(livereload())
+
+	watch([paths.src + 'audio/**/*', paths.src + 'vendor/audio/**/*'])
+		.pipe(plumber())
+		.pipe(gulp.dest(paths.build + 'audio'))
+		.pipe(livereload())
+
+	// Watch html templates
+	return watch(paths.templates)
+		.pipe(livereload())
+}));
