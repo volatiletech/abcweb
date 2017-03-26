@@ -70,16 +70,6 @@ var emptyDirs = []string{
 	"db/migrations",
 }
 
-var fontAwesomeFiles = []string{
-	"font-awesome.css",
-	"FontAwesome.otf",
-	"fontawesome-webfont.eot",
-	"fontawesome-webfont.svg",
-	"fontawesome-webfont.ttf",
-	"fontawesome-webfont.woff",
-	"fontawesome-webfont.woff2",
-}
-
 // Exclude the following files
 var bootstrapNone = []string{
 	"bootstrap.scss",

@@ -379,12 +379,17 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 
 	// Skip directories defined in skipDirs slice
 	if info.IsDir() {
-		if cfg.Bootstrap == "none" &&
-			(strings.HasSuffix(path, "/templates/assets/vendor/css/bootstrap") || strings.HasSuffix(path, "/templates/assets/vendor/js/bootstrap")) {
+		// Skip Twitter Bootstrap if requested
+		if cfg.Bootstrap == "none" && info.Name() == "bootstrap" {
 			return true, filepath.SkipDir
 		} else if cfg.NoBootstrapJS && strings.HasSuffix(path, "/templates/assets/vendor/js/bootstrap") {
 			return true, filepath.SkipDir
 		}
+		// Skip FontAwesome files if requested
+		if cfg.NoFontAwesome && info.Name() == "font-awesome" {
+			return true, filepath.SkipDir
+		}
+
 		for _, skipDir := range skipDirs {
 			if info.Name() == skipDir {
 				return true, filepath.SkipDir
@@ -425,15 +430,6 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" ||
 			info.Name() == "database.toml" || info.Name() == "database.toml.tmpl" {
 			return true, nil
-		}
-	}
-
-	// Skip FontAwesome files if requested
-	if cfg.NoFontAwesome {
-		for _, faFile := range fontAwesomeFiles {
-			if info.Name() == faFile || info.Name() == faFile+".tmpl" {
-				return true, nil
-			}
 		}
 	}
 
