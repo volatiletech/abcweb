@@ -1,17 +1,24 @@
 var gulp = require('gulp');
+var util = require('gulp-util');
 var es   = require('event-stream');
 
-// Paths to the assets.
-paths = {
-	src: __dirname + '/assets/',
-	build: __dirname + '/public/assets/',
-	templates: __dirname + '/templates/**/*',
-};
+var config = {
+	// paths to the assets.
+	paths: {
+		src: __dirname + '/assets/',
+		build: __dirname + '/public/assets/',
+		templates: __dirname + '/templates/**/*',
+	},
 
-// The manifest file holds the mappings for the fingerprinted files,
-// example: {"js/bootstrap.js": "js/bootstrap-82e1ab4c0.js"}
-var manifestBase = 'public/assets';
-var manifestPath = manifestBase + '/manifest.json';
+	// The manifest file holds the mappings for the fingerprinted files,
+	// example: {"js/bootstrap.js": "js/bootstrap-82e1ab4c0.js"}
+	manifestBase: 'public/assets',
+	manifestPath: 'public/assets/manifest.json',
+
+	// set undefined value to false. set production mode to true by
+	// passing in --production, i.e: gulp compile --production
+	production: !!util.env.production
+}
 
 /**
 	Compile and move tasks.
@@ -23,36 +30,46 @@ gulp.task('compile-css', function() {
 	var postcss = require('gulp-postcss');
 
 	return es.merge(
-		gulp.src([paths.src + 'css/**/*.scss', paths.src + 'css/**/*.sass']).pipe(sass()),
-		gulp.src(paths.src + 'css/**/*.less').pipe(less()),
-		gulp.src([paths.src + 'css/**/*.css', paths.src + 'vendor/css/**/*.css'])
+		gulp.src([config.paths.src + 'css/**/*.scss', config.paths.src + 'css/**/*.sass']).pipe(sass()),
+		gulp.src(config.paths.src + 'css/**/*.less').pipe(less()),
+		gulp.src([config.paths.src + 'css/**/*.css', config.paths.src + 'vendor/css/**/*.css'])
 	).pipe(postcss([require('autoprefixer', 'postcss-flexbug-fixes')]))
-		.pipe(gulp.dest(paths.build + 'css'))
+		.pipe(gulp.dest(config.paths.build + 'css'))
 });
 
 gulp.task('compile-js', function() {
-	return gulp.src([paths.src + 'js/**/*.js', paths.src + 'vendor/js/**/*.js'])
-		.pipe(gulp.dest(paths.build + 'js'))
+	var glob = [
+		config.paths.src + 'js/**/*.js', 
+		config.paths.src + 'vendor/js/**/*.js'
+	]
+
+	// ignore specific files when in production mode
+	if (config.production) {
+		glob.push('!' + config.paths.src + 'vendor/js/livereload.js')
+	}
+
+	return gulp.src(glob)
+		.pipe(gulp.dest(config.paths.build + 'js'))
 });
 
 gulp.task('compile-img', function() {
-	return gulp.src([paths.src + 'img/**/*', paths.src + 'vendor/img/**/*'])
-		.pipe(gulp.dest(paths.build + 'img'))
+	return gulp.src([config.paths.src + 'img/**/*', config.paths.src + 'vendor/img/**/*'])
+		.pipe(gulp.dest(config.paths.build + 'img'))
 });
 
 gulp.task('compile-fonts', function() {
-	return gulp.src([paths.src + 'fonts/**/*', paths.src + 'vendor/fonts/**/*'])
-		.pipe(gulp.dest(paths.build + 'fonts'))
+	return gulp.src([config.paths.src + 'fonts/**/*', config.paths.src + 'vendor/fonts/**/*'])
+		.pipe(gulp.dest(config.paths.build + 'fonts'))
 });
 
 gulp.task('compile-video', function() {
-	return gulp.src([paths.src + 'video/**/*', paths.src + 'vendor/video/**/*'])
-		.pipe(gulp.dest(paths.build + 'video'))
+	return gulp.src([config.paths.src + 'video/**/*', config.paths.src + 'vendor/video/**/*'])
+		.pipe(gulp.dest(config.paths.build + 'video'))
 });
 
 gulp.task('compile-audio', function() {
-	return gulp.src([paths.src + 'audio/**/*', paths.src + 'vendor/audio/**/*'])
-		.pipe(gulp.dest(paths.build + 'audio'))
+	return gulp.src([config.paths.src + 'audio/**/*', config.paths.src + 'vendor/audio/**/*'])
+		.pipe(gulp.dest(config.paths.build + 'audio'))
 });
 
 /**
@@ -62,17 +79,17 @@ gulp.task('compile-audio', function() {
 gulp.task('minify-css', function() {
 	var minifyCSS = require('gulp-clean-css');
 
-	return gulp.src(paths.build + 'css/**/*.css')
+	return gulp.src(config.paths.build + 'css/**/*.css')
 		.pipe(minifyCSS())
-		.pipe(gulp.dest(paths.build + 'css'));
+		.pipe(gulp.dest(config.paths.build + 'css'));
 });
 
 gulp.task('minify-js', function() {
 	var minifyJS = require('gulp-minify');
 
-	return gulp.src(paths.build + 'js/**/*.js')
+	return gulp.src(config.paths.build + 'js/**/*.js')
 		.pipe(minifyJS({noSource: true, ext: {min: '.js'}}))
-		.pipe(gulp.dest(paths.build + 'js'));
+		.pipe(gulp.dest(config.paths.build + 'js'));
 });
 
 /**
@@ -83,14 +100,14 @@ gulp.task('manifest', function() {
 	var rev    = require('gulp-rev');
 	var revdel = require('gulp-rev-delete-original');
 
-	return gulp.src(paths.build + '**/*')
+	return gulp.src(config.paths.build + '**/*')
 		.pipe(rev())
 		.pipe(revdel())
 		.pipe(gulp.dest(function(file) {
 			return file.base
 		}))
-		.pipe(rev.manifest(manifestPath, {base: manifestBase}))
-		.pipe(gulp.dest(paths.build));
+		.pipe(rev.manifest(config.manifestPath, {base: config.manifestBase}))
+		.pipe(gulp.dest(config.paths.build));
 });
 
 /**
@@ -100,7 +117,7 @@ gulp.task('manifest', function() {
 gulp.task('clean', function() {
 	var clean = require('gulp-clean');
 
-	return gulp.src(paths.build, {read: false})
+	return gulp.src(config.paths.build, {read: false})
 		.pipe(clean());
 });
 
@@ -117,7 +134,11 @@ gulp.task('minify', gulp.parallel('minify-js', 'minify-css'));
 // Build task executes compile and move tasks,
 // then minify tasks,
 // then finally the fingerprint and manifest generation task.
-gulp.task('build', gulp.series('clean', 'compile', 'minify', 'manifest'));
+gulp.task('build', gulp.series(function(cb) {
+	// build can only be used for production mode.
+	config.production = true
+	cb()
+}, 'clean', 'compile', 'minify', 'manifest'));
 
 // Default task executes all compile and move tasks.
 gulp.task('default', gulp.series('compile'));
@@ -132,47 +153,46 @@ gulp.task('watch', gulp.series('compile', function() {
 	var plumber    = require('gulp-plumber');
 	var livereload = require('gulp-livereload');
 
-
 	livereload.listen();
 	
 	es.merge(
-		watch([paths.src + 'css/**/*.scss', paths.src + 'css/**/*.sass'])
+		watch([config.paths.src + 'css/**/*.scss', config.paths.src + 'css/**/*.sass'])
 			.pipe(plumber())
 			.pipe(sass()),
-		watch(paths.src + 'css/**/*.less', { ignoreInitial: true })
+		watch(config.paths.src + 'css/**/*.less', { ignoreInitial: true })
 			.pipe(plumber())
 			.pipe(less()),
-		watch([paths.src + 'css/**/*.css', paths.src + 'vendor/css/**/*.css'])
+		watch([config.paths.src + 'css/**/*.css', config.paths.src + 'vendor/css/**/*.css'])
 	).pipe(postcss([require('autoprefixer', 'postcss-flexbug-fixes')]))
-		.pipe(gulp.dest(paths.build + 'css'))
+		.pipe(gulp.dest(config.paths.build + 'css'))
 		.pipe(livereload())
 
-	watch([paths.src + 'js/**/*.js', paths.src + 'vendor/js/**/*.js'])
+	watch([config.paths.src + 'js/**/*.js', config.paths.src + 'vendor/js/**/*.js'])
 		.pipe(plumber())
-		.pipe(gulp.dest(paths.build + 'js'))
+		.pipe(gulp.dest(config.paths.build + 'js'))
 		.pipe(livereload())
 
-	watch([paths.src + 'img/**/*', paths.src + 'vendor/img/**/*'])
+	watch([config.paths.src + 'img/**/*', config.paths.src + 'vendor/img/**/*'])
 		.pipe(plumber())
-		.pipe(gulp.dest(paths.build + 'img'))
+		.pipe(gulp.dest(config.paths.build + 'img'))
 		.pipe(livereload())
 
-	watch([paths.src + 'fonts/**/*', paths.src + 'vendor/fonts/**/*'])
+	watch([config.paths.src + 'fonts/**/*', config.paths.src + 'vendor/fonts/**/*'])
 		.pipe(plumber())
-		.pipe(gulp.dest(paths.build + 'fonts'))
+		.pipe(gulp.dest(config.paths.build + 'fonts'))
 		.pipe(livereload())
 
-	watch([paths.src + 'video/**/*', paths.src + 'vendor/video/**/*'])
+	watch([config.paths.src + 'video/**/*', config.paths.src + 'vendor/video/**/*'])
 		.pipe(plumber())
-		.pipe(gulp.dest(paths.build + 'video'))
+		.pipe(gulp.dest(config.paths.build + 'video'))
 		.pipe(livereload())
 
-	watch([paths.src + 'audio/**/*', paths.src + 'vendor/audio/**/*'])
+	watch([config.paths.src + 'audio/**/*', config.paths.src + 'vendor/audio/**/*'])
 		.pipe(plumber())
-		.pipe(gulp.dest(paths.build + 'audio'))
+		.pipe(gulp.dest(config.paths.build + 'audio'))
 		.pipe(livereload())
 
 	// Watch html templates
-	return watch(paths.templates)
+	return watch(config.paths.templates)
 		.pipe(livereload())
 }));

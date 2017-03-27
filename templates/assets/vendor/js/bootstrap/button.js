@@ -1,3 +1,7 @@
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 /**
  * --------------------------------------------------------------------------
  * Bootstrap (v4.0.0-alpha.6): button.js
@@ -5,8 +9,7 @@
  * --------------------------------------------------------------------------
  */
 
-const Button = (($) => {
-
+var Button = function ($) {
 
   /**
    * ------------------------------------------------------------------------
@@ -14,33 +17,31 @@ const Button = (($) => {
    * ------------------------------------------------------------------------
    */
 
-  const NAME                = 'button'
-  const VERSION             = '4.0.0-alpha.6'
-  const DATA_KEY            = 'bs.button'
-  const EVENT_KEY           = `.${DATA_KEY}`
-  const DATA_API_KEY        = '.data-api'
-  const JQUERY_NO_CONFLICT  = $.fn[NAME]
+  var NAME = 'button';
+  var VERSION = '4.0.0-alpha.6';
+  var DATA_KEY = 'bs.button';
+  var EVENT_KEY = '.' + DATA_KEY;
+  var DATA_API_KEY = '.data-api';
+  var JQUERY_NO_CONFLICT = $.fn[NAME];
 
-  const ClassName = {
-    ACTIVE : 'active',
-    BUTTON : 'btn',
-    FOCUS  : 'focus'
-  }
+  var ClassName = {
+    ACTIVE: 'active',
+    BUTTON: 'btn',
+    FOCUS: 'focus'
+  };
 
-  const Selector = {
-    DATA_TOGGLE_CARROT : '[data-toggle^="button"]',
-    DATA_TOGGLE        : '[data-toggle="buttons"]',
-    INPUT              : 'input',
-    ACTIVE             : '.active',
-    BUTTON             : '.btn'
-  }
+  var Selector = {
+    DATA_TOGGLE_CARROT: '[data-toggle^="button"]',
+    DATA_TOGGLE: '[data-toggle="buttons"]',
+    INPUT: 'input',
+    ACTIVE: '.active',
+    BUTTON: '.btn'
+  };
 
-  const Event = {
-    CLICK_DATA_API      : `click${EVENT_KEY}${DATA_API_KEY}`,
-    FOCUS_BLUR_DATA_API : `focus${EVENT_KEY}${DATA_API_KEY} `
-                        + `blur${EVENT_KEY}${DATA_API_KEY}`
-  }
-
+  var Event = {
+    CLICK_DATA_API: 'click' + EVENT_KEY + DATA_API_KEY,
+    FOCUS_BLUR_DATA_API: 'focus' + EVENT_KEY + DATA_API_KEY + ' ' + ('blur' + EVENT_KEY + DATA_API_KEY)
+  };
 
   /**
    * ------------------------------------------------------------------------
@@ -48,89 +49,84 @@ const Button = (($) => {
    * ------------------------------------------------------------------------
    */
 
-  class Button {
+  var Button = function () {
+    function Button(element) {
+      _classCallCheck(this, Button);
 
-    constructor(element) {
-      this._element = element
+      this._element = element;
     }
-
 
     // getters
 
-    static get VERSION() {
-      return VERSION
-    }
-
-
     // public
 
-    toggle() {
-      let triggerChangeEvent = true
-      const rootElement      = $(this._element).closest(
-        Selector.DATA_TOGGLE
-      )[0]
+    Button.prototype.toggle = function toggle() {
+      var triggerChangeEvent = true;
+      var rootElement = $(this._element).closest(Selector.DATA_TOGGLE)[0];
 
       if (rootElement) {
-        const input = $(this._element).find(Selector.INPUT)[0]
+        var input = $(this._element).find(Selector.INPUT)[0];
 
         if (input) {
           if (input.type === 'radio') {
-            if (input.checked &&
-              $(this._element).hasClass(ClassName.ACTIVE)) {
-              triggerChangeEvent = false
-
+            if (input.checked && $(this._element).hasClass(ClassName.ACTIVE)) {
+              triggerChangeEvent = false;
             } else {
-              const activeElement = $(rootElement).find(Selector.ACTIVE)[0]
+              var activeElement = $(rootElement).find(Selector.ACTIVE)[0];
 
               if (activeElement) {
-                $(activeElement).removeClass(ClassName.ACTIVE)
+                $(activeElement).removeClass(ClassName.ACTIVE);
               }
             }
           }
 
           if (triggerChangeEvent) {
-            input.checked = !$(this._element).hasClass(ClassName.ACTIVE)
-            $(input).trigger('change')
+            input.checked = !$(this._element).hasClass(ClassName.ACTIVE);
+            $(input).trigger('change');
           }
 
-          input.focus()
+          input.focus();
         }
-
       }
 
-      this._element.setAttribute('aria-pressed',
-        !$(this._element).hasClass(ClassName.ACTIVE))
+      this._element.setAttribute('aria-pressed', !$(this._element).hasClass(ClassName.ACTIVE));
 
       if (triggerChangeEvent) {
-        $(this._element).toggleClass(ClassName.ACTIVE)
+        $(this._element).toggleClass(ClassName.ACTIVE);
       }
-    }
+    };
 
-    dispose() {
-      $.removeData(this._element, DATA_KEY)
-      this._element = null
-    }
-
+    Button.prototype.dispose = function dispose() {
+      $.removeData(this._element, DATA_KEY);
+      this._element = null;
+    };
 
     // static
 
-    static _jQueryInterface(config) {
+    Button._jQueryInterface = function _jQueryInterface(config) {
       return this.each(function () {
-        let data = $(this).data(DATA_KEY)
+        var data = $(this).data(DATA_KEY);
 
         if (!data) {
-          data = new Button(this)
-          $(this).data(DATA_KEY, data)
+          data = new Button(this);
+          $(this).data(DATA_KEY, data);
         }
 
         if (config === 'toggle') {
-          data[config]()
+          data[config]();
         }
-      })
-    }
+      });
+    };
 
-  }
+    _createClass(Button, null, [{
+      key: 'VERSION',
+      get: function get() {
+        return VERSION;
+      }
+    }]);
 
+    return Button;
+  }();
 
   /**
    * ------------------------------------------------------------------------
@@ -138,23 +134,20 @@ const Button = (($) => {
    * ------------------------------------------------------------------------
    */
 
-  $(document)
-    .on(Event.CLICK_DATA_API, Selector.DATA_TOGGLE_CARROT, (event) => {
-      event.preventDefault()
+  $(document).on(Event.CLICK_DATA_API, Selector.DATA_TOGGLE_CARROT, function (event) {
+    event.preventDefault();
 
-      let button = event.target
+    var button = event.target;
 
-      if (!$(button).hasClass(ClassName.BUTTON)) {
-        button = $(button).closest(Selector.BUTTON)
-      }
+    if (!$(button).hasClass(ClassName.BUTTON)) {
+      button = $(button).closest(Selector.BUTTON);
+    }
 
-      Button._jQueryInterface.call($(button), 'toggle')
-    })
-    .on(Event.FOCUS_BLUR_DATA_API, Selector.DATA_TOGGLE_CARROT, (event) => {
-      const button = $(event.target).closest(Selector.BUTTON)[0]
-      $(button).toggleClass(ClassName.FOCUS, /^focus(in)?$/.test(event.type))
-    })
-
+    Button._jQueryInterface.call($(button), 'toggle');
+  }).on(Event.FOCUS_BLUR_DATA_API, Selector.DATA_TOGGLE_CARROT, function (event) {
+    var button = $(event.target).closest(Selector.BUTTON)[0];
+    $(button).toggleClass(ClassName.FOCUS, /^focus(in)?$/.test(event.type));
+  });
 
   /**
    * ------------------------------------------------------------------------
@@ -162,15 +155,13 @@ const Button = (($) => {
    * ------------------------------------------------------------------------
    */
 
-  $.fn[NAME]             = Button._jQueryInterface
-  $.fn[NAME].Constructor = Button
-  $.fn[NAME].noConflict  = function () {
-    $.fn[NAME] = JQUERY_NO_CONFLICT
-    return Button._jQueryInterface
-  }
+  $.fn[NAME] = Button._jQueryInterface;
+  $.fn[NAME].Constructor = Button;
+  $.fn[NAME].noConflict = function () {
+    $.fn[NAME] = JQUERY_NO_CONFLICT;
+    return Button._jQueryInterface;
+  };
 
-  return Button
-
-})(jQuery)
-
-export default Button
+  return Button;
+}(jQuery);
+//# sourceMappingURL=button.js.map
