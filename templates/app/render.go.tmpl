@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"{{.ImportPath}}/rendering"
+	"{{.ImportPath}}/config"
 	"github.com/unrolled/render"
 )
 
@@ -35,6 +36,12 @@ var appHelpers = template.FuncMap{
 // If you need to use multiple renderers, you can add more Renderer
 // variables to your State object and initialize them here.
 func (s *State) InitRenderer() {
+	// create an appConfig helper function for use within templates.
+	// This helper func provides access to the s.AppConfig variables.
+	appHelpers["appConfig"] = func() config.AppConfig {
+		return *s.AppConfig
+	}
+
 	s.Render = &rendering.Render{
 		Render: render.New(render.Options{
 			Directory:     s.AppConfig.Templates,

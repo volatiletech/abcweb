@@ -1,0 +1,25 @@
+# this is the root of your application relavite to your configuration file:
+app_root = "."
+
+# a list of folders you don't want to watch. the folders you ignore, the faster things will be:
+ignored_folders = ["vendor", "log", "tmp"]
+
+# a list of file extensions you want to watch for changes:
+included_extensions = [".go"]
+
+# the directory you want to build your binary in:
+build_path = "/tmp"
+
+# `fsnotify` can trigger many events at once when you change a file.
+# in order to help cut down on the amount of builds that occur, a delay
+# is used to let the extra events fly away.
+build_delay = 200
+
+# what would you like to call the built binary:
+binary_name = "{{.AppName}}-build"
+
+# any extra commands you want to send to the built binary when it is run:
+command_flags = []
+
+# do you want to use colors when printing out log messages:
+enable_colors = true

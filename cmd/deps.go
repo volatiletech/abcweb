@@ -54,6 +54,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"github.com/nullbio/mig/cmd/mig"},
 		{"github.com/spf13/cobra"},
 		{"github.com/spf13/viper"},
+		{"github.com/markbates/refresh"},
 		{"-t", "github.com/vattle/sqlboiler"},
 	}
 
