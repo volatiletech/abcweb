@@ -67,6 +67,8 @@ func devCmdRun(cmd *cobra.Command, args []string) {
 				os.Exit(1)
 			}
 		}()
+		// Delay build so terminal output is grouped together for first run.
+		time.Sleep(1500 * time.Millisecond)
 		go func() {
 			err := startRefresh(ctx)
 			if err != nil {
