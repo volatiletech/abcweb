@@ -15,7 +15,6 @@ func (s *State) InitMiddleware() {
 	m := middleware.Middleware{
 		Log: s.Log,
 	}
-
 	
 	// Display "abcweb dev" build errors in the browser.
 	if !s.AppConfig.ProdLogger {
