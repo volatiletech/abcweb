@@ -21,7 +21,7 @@ func (s *State) InitLogger() {
 
 	// Change the log output from os.Stderr to os.Stdout to prevent
 	// the abcweb dev command from displaying duplicate lines
-	cfg.OutputPaths[0] = "stdout"
+	cfg.OutputPaths = []string{"stdout"}
 
 	s.Log, err = cfg.Build()
 	if err != nil {
