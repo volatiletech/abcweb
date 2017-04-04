@@ -5,6 +5,7 @@ import (
 	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
 	{{- end}}
+	"github.com/markbates/refresh/refresh/web"
 	chimiddleware "github.com/pressly/chi/middleware"
 )
 
@@ -13,6 +14,12 @@ import (
 func (s *State) InitMiddleware() {
 	m := middleware.Middleware{
 		Log: s.Log,
+	}
+
+	
+	// Display "abcweb dev" build errors in the browser.
+	if !s.AppConfig.ProdLogger {
+		s.Router.Use(web.ErrorChecker)
 	}
 
 	// Strip and redirect slashes on routing paths
