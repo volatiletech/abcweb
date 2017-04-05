@@ -60,6 +60,14 @@ func main() {
 		state.InitSessions()
 		{{- end}}
 
+		// Cache the assets manifest.json file mappings (app/render.go)
+		if state.AppConfig.AssetsManifest {
+			state.AssetsManifest, err = app.GetManifest(state.AppConfig.AssetsPublic)
+			if err != nil {
+				return err
+			}
+		}
+
 		// Configure the renderer (app/render.go)
 		state.InitRenderer()
 

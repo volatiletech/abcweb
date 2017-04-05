@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
-	"errors"
 	"fmt"
 	"go/build"
 	"go/format"
@@ -15,6 +14,7 @@ import (
 	"text/template"
 
 	"github.com/nullbio/abcweb/cert"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -351,7 +351,7 @@ func newCmdWalk(cfg newConfig, basePath string, path string, info os.FileInfo, e
 		if strings.HasSuffix(fullPath, ".go") {
 			res, err := format.Source(fileContents.Bytes())
 			if err != nil {
-				return err
+				return errors.Wrap(err, fmt.Sprintf("failed to format %s", fullPath))
 			}
 			fileContents.Reset()
 			if _, err := fileContents.Write(res); err != nil {

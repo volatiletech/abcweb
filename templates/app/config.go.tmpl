@@ -22,6 +22,8 @@ type State struct {
 	Router	 *chi.Mux
 	Render	 rendering.Renderer
 	Root		 *cobra.Command
+	// Cache of the manifest.json file mappings
+	AssetsManifest map[string]string
 	{{if not .NoSessions -}}
 	Session sessions.Overseer
 	{{- end}}
@@ -38,18 +40,22 @@ func RegisterFlags(root *cobra.Command) {
 	root.Flags().DurationP("read-timeout", "", time.Second*30, "Maximum duration before timing out read of the request")
 	root.Flags().DurationP("write-timeout", "", time.Second*30, "Maximum duration before timing out write of the response")
 	root.Flags().StringP("templates", "", "./templates", "Templates folder path")
-	root.Flags().StringP("assets-in", "", "./assets", "Static assets input folder path")
-	root.Flags().StringP("assets-out", "", "./public", "Static assets output folder path")
-	root.Flags().BoolP("assets-no-compile", "", false, "Disable precompilation of assets")
-	root.Flags().BoolP("assets-no-minify", "", false, "Disable minification of assets")
-	root.Flags().BoolP("assets-no-hash", "", false, "Disable fingerprints in compiled asset filenames")
-	root.Flags().BoolP("assets-no-compress", "", false, "Disable gzip compression of asset files")
+	root.Flags().StringP("assets-public", "", "./public", "Public assets folder path")
+
+	// manifest.json is created as a part of the gulp production "build" task,
+	// it maps fingerprinted asset names to regular asset names, for example:
+	// {"js/main.css": "js/e2a3ff9-main.css"}.
+	// This should only be set to true if doing asset fingerprinting.
+	root.Flags().BoolP("assets-manifest", "", true, "Use manifest.json for mapping asset names to fingerprinted assets")
+
+	// This should be used in development mode to prevent browser caching of assets
 	root.Flags().BoolP("assets-no-cache", "", false, "Disable browsers caching asset files by setting response headers")
 	// This should be used in development mode to avoid having to reload the
 	// server on every template file modification.
 	root.Flags().BoolP("render-recompile", "", false, "Enable recompilation of the template on each render")
 	{{if not .NoSessions -}}
-	root.Flags().BoolP("sessions-dev-storer", "", false, "Use the development mode sessions storer")
+	// Defined in app/sessions.go -- Usually cookie storer for dev and disk storer for prod.
+	root.Flags().BoolP("sessions-dev-storer", "", false, "Use the development mode sessions storer (defined in app/sessions.go)")
 	{{- end}}
 }
 

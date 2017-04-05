@@ -6,14 +6,14 @@ env = "{{.DefaultEnv}}"
 	# Uncomment the below "tls-bind" line if you wish to use TLS in dev mode.
 	# You may need to add an exception in your browser for your SSL cert.
 	# tls-bind = ":4001"
-	# These keys will only be used if "tls_bind" is set.
+	# These cert files will only be used if "tls_bind" is set (uncomment above).
 	tls-cert-file = "cert.pem"
 	tls-key-file = "private.key"
 	live-reload = true
 	prod-logger = false
-	assets-no-minify = true
-	assets-no-hash = true
-	assets-no-compress = true
+	# do not use manifest.json file in development mode because dev mode
+	# does not do asset fingerprinting.
+	assets-manifest = false
 	assets-no-cache = true
 	render-recompile = true
 	sessions-dev-storer = true

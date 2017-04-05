@@ -1,13 +1,17 @@
 package app
 
 import (
-	"html/template"
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"html/template"
+	"io/ioutil"
+	"path/filepath"
 
 	"{{.ImportPath}}/rendering"
 	"{{.ImportPath}}/config"
 	"github.com/unrolled/render"
+	"github.com/pkg/errors"
 )
 
 // appHelpers is a map of the template helper functions.
@@ -58,6 +62,30 @@ func (s *State) InitRenderer() {
 			DisableHTTPErrorRendering: true,
 		}),
 	}
+}
+
+// GetManifest reads the manifest.json file in the public assets folder
+// and returns a map of its mappings. Returns error if manifest.json not found.
+func GetManifest(publicPath string) (map[string]string, error) {
+	manifestPath := filepath.Join(publicPath, "assets", "manifest.json")
+	contents, err := ioutil.ReadFile(manifestPath)
+	if err != nil {
+		return nil, err
+	}
+	if len(contents) == 0 {
+		return nil, errors.New("manifest.json is empty")
+	}
+
+	manifest := map[string]string{}
+	err = json.Unmarshal(contents, &manifest)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot unmarshal manifest.json")
+	}
+	if len(manifest) == 0 {
+		return nil, errors.New("manifest.json has no file mappings")
+	}
+
+	return manifest, nil
 }
 
 // cssTag wraps the asset path in a css link include tag

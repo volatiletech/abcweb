@@ -36,18 +36,10 @@ type AppConfig struct {
 	WriteTimeout time.Duration
 	// Templates folder path
 	Templates string
-	// Static assets input folder path
-	AssetsIn string
-	// Compiled assets output folder path
-	AssetsOut string 
-	// Disable precompilation of assets
-	AssetsNoCompile bool
-	// Disable minification of assets
-	AssetsNoMinify bool 
-	// Disable fingerprints in compiled asset filenames
-	AssetsNoHash bool 
-	// Disable Gzip compression of asset files
-	AssetsNoCompress bool 
+	// Public assets folder path
+	AssetsPublic string 
+	// Use manifest.json assets mapping
+	AssetsManifest bool
 	// Disable browsers caching asset files by setting response headers
 	AssetsNoCache bool 
 	// RenderRecompile enables recompilation of the template on every render call.
@@ -56,6 +48,8 @@ type AppConfig struct {
 	RenderRecompile bool 
 	{{if not .NoSessions -}}
 	// Use the development mode sessions storer opposed to production mode storer
+	// defined in app/sessions.go -- Usually a cookie storer for dev 
+	// and disk storer for prod.
 	SessionsDevStorer bool 
 	{{- end}}
 }
@@ -159,12 +153,8 @@ func LoadAppConfig(v *viper.Viper) *AppConfig {
 		ReadTimeout:		v.GetDuration("read-timeout"),
 		WriteTimeout:		v.GetDuration("write-timeout"),
 		Templates:			v.GetString("templates"),
-		AssetsIn:			v.GetString("assets-in"),
-		AssetsOut:			v.GetString("assets-out"),
-		AssetsNoCompile:	v.GetBool("assets-no-compile"),
-		AssetsNoMinify:	v.GetBool("assets-no-minify"),
-		AssetsNoHash:		v.GetBool("assets-no-hash"),
-		AssetsNoCompress:	v.GetBool("assets-no-compress"),
+		AssetsPublic:		v.GetString("assets-public"),
+		AssetsManifest:   v.GetBool("assets-manifest"),
 		AssetsNoCache:		v.GetBool("assets-no-cache"),
 		RenderRecompile:	v.GetBool("render-recompile"),
 		{{if not .NoSessions -}}

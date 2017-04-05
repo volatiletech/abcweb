@@ -22,7 +22,8 @@ func (s *State) InitMiddleware() {
 	}
 
 	// Strip and redirect slashes on routing paths
-	s.Router.Use(chimiddleware.StripSlashes)
+	// s.Router.Use(chimiddleware.StripSlashes)
+
 	{{if not .NoRequestID -}}
 	// Injects a request ID into the context of each request
 	s.Router.Use(chimiddleware.RequestID)

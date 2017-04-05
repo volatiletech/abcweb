@@ -13,10 +13,14 @@ var config = {
 	// The manifest file holds the mappings for the fingerprinted files,
 	// example: {"js/bootstrap.js": "js/bootstrap-82e1ab4c0.js"}
 	manifestBase: 'public/assets',
+	// app/routes.go NotFound handler loads this manifest file
+	// to serve compiled assets in production mode
 	manifestPath: 'public/assets/manifest.json',
 
-	// set undefined value to false. set production mode to true by
+	// if undefined, set to false. set production mode to true by
 	// passing in --production, i.e: gulp compile --production
+	// If production is set to true then livereload.js will be ignored.
+	// production is automatically set to true when running "build" task.
 	production: !!util.env.production
 }
 
