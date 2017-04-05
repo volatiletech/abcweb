@@ -13,6 +13,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// AssetsManifest is the global cache of the manifest.json assets mapping file.
+var AssetsManifest map[string]string
+
 // State is the configuration state for the entire app.
 // The controllers are passed variables from this object when initialized.
 type State struct {

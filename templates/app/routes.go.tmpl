@@ -69,7 +69,7 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(reqURI, "/assets/") {
 		fname := strings.TrimPrefix(reqURI, "/assets/")
 		var ok bool
-		fpath, ok = s.AssetsManifest[fname]
+		fpath, ok = AssetsManifest[fname]
 		if !ok {
 			fpath = fname
 		}
