@@ -74,8 +74,6 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		goGetArgs[i] = append(prependArgs, goGetArgs[i]...)
 	}
 
-	fmt.Printf("%t\n\n", viper.GetBool("no-gulp"))
-
 	if !viper.GetBool("no-gulp") {
 		prependArgs = []string{"install", "--global"}
 		if viper.GetBool("verbose") {

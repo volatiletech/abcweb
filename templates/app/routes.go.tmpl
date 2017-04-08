@@ -68,8 +68,24 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 	// Set path to asset in /assets, potentially contained in manifest
 	if strings.HasPrefix(reqURI, "/assets/") {
 		fname := strings.TrimPrefix(reqURI, "/assets/")
-		var ok bool
-		fpath, ok = AssetsManifest[fname]
+
+		ok := false
+		// Look up the gzip version of the asset in the manifest
+		// if the browser accepts gzip encoding
+		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			fpath, ok = AssetsManifest[fname+".gz"]
+			if ok {
+				w.Header().Set("Content-Encoding", "gzip")
+			}
+		}
+
+		// If cannot find gzip version, attempt to serve regular version
+		if !ok {
+			fpath, ok = AssetsManifest[fname]
+		}
+
+		// If cannot find regular version in manifest, attempt to serve
+		// using filename directly requested from browser
 		if !ok {
 			fpath = fname
 		}
