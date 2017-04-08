@@ -97,6 +97,18 @@ gulp.task('minify-js', function() {
 });
 
 /**
+	Gzip compress all assets into accompanying .gz files.
+*/
+
+gulp.task('gzip', function() {
+	var gzip = require('gulp-gzip');
+
+	return gulp.src(config.paths.build + '**/*')
+		.pipe(gzip())
+		.pipe(gulp.dest(config.paths.build));
+});
+
+/**
 	Fingerprint assets and generate manifest file.
 */
 
@@ -104,6 +116,8 @@ gulp.task('manifest', function() {
 	var rev    = require('gulp-rev');
 	var revdel = require('gulp-rev-delete-original');
 
+	// Fingerprint all assets, delete old assets and then
+	// create the manifest file out of the new asset filenames.
 	return gulp.src(config.paths.build + '**/*')
 		.pipe(rev())
 		.pipe(revdel())
@@ -142,7 +156,7 @@ gulp.task('build', gulp.series(function(cb) {
 	// build can only be used for production mode.
 	config.production = true
 	cb()
-}, 'clean', 'compile', 'minify', 'manifest'));
+}, 'clean', 'compile', 'minify', 'gzip', 'manifest'));
 
 // Default task executes all compile and move tasks.
 gulp.task('default', gulp.series('compile'));
