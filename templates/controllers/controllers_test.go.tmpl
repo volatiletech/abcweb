@@ -32,7 +32,7 @@ func testMainMigrations(m *testing.M) int {
 	dbCfg := config.LoadDBConfig(v)
 	
 	if len(dbCfg.User) == 0 {
-		fmt.Println("No user defined in database.toml, skipping migrations.")
+		fmt.Println("No user defined in database.toml, skipping database migrations.")
 	} else {
 		// Execute database migrations
 		count, err := db.Setup(dbCfg)
