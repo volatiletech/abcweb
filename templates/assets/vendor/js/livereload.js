@@ -489,7 +489,7 @@
   exports.Options = Options = (function() {
     function Options() {
       this.https = false;
-      this.host = "127.0.0.1";
+      this.host = null;
       this.port = 35729;
       this.snipver = null;
       this.ext = null;

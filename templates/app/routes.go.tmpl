@@ -67,7 +67,8 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 
 	// Set path to asset in /assets, potentially contained in manifest
 	if strings.HasPrefix(reqURI, "/assets/") {
-		fname := strings.TrimPrefix(reqURI, "/assets/")
+		// Split on ? to discard any query parameters
+		fname := strings.Split(strings.TrimPrefix(reqURI, "/assets/"), "?")[0]
 
 		ok := false
 		// Look up the gzip version of the asset in the manifest
@@ -91,7 +92,8 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 		}
 		fpath = filepath.Join(s.AppConfig.AssetsPublic, "assets", fpath)
 	} else { // Set path to regular non-manifest asset
-		fpath = filepath.Join(s.AppConfig.AssetsPublic, reqURI)
+		// Split on ? to discard any query parameters
+		fpath = filepath.Join(s.AppConfig.AssetsPublic, strings.Split(reqURI, "?")[0])
 	}
 
 	stat, err := os.Stat(fpath)

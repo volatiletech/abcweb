@@ -28,7 +28,7 @@
 		{{"{"}}{ cssPath "main.css" | cssTag }{{"}"}}
 
       {{"{"}}{if appConfig.LiveReload -}{{"}"}}
-         {{"{"}}{jsPath "livereload.js" | jsTag }{{"}"}}
+         {{"{"}}{liveReload "livereload.js" "localhost" | jsTag }{{"}"}}
       {{"{"}}{- end}{{"}"}}
 	</head>
 	<body>

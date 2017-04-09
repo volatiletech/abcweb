@@ -18,16 +18,17 @@ import (
 // Assign the template helper funcs in here, example:
 // "toUpper": strings.ToUpper
 var appHelpers = template.FuncMap{
-	"jsPath": func(s string) string { return manifestHelper("js", s) },
-	"cssPath": func(s string) string { return manifestHelper("css", s) },
-	"imgPath": func(s string) string { return manifestHelper("img", s) },
-	"videoPath": func(s string) string { return manifestHelper("video", s) },
-	"audioPath": func(s string) string { return manifestHelper("audio", s) },
-	"fontPath": func(s string) string { return manifestHelper("font", s) },
-	"assetPath": func(s string) string {
-		v, ok := AssetsManifest[s]
+	"liveReload": liveReloadHelper,
+	"jsPath": func(relpath string) string { return manifestHelper("js", relpath) },
+	"cssPath": func(relpath string) string { return manifestHelper("css", relpath) },
+	"imgPath": func(relpath string) string { return manifestHelper("img", relpath) },
+	"videoPath": func(relpath string) string { return manifestHelper("video", relpath) },
+	"audioPath": func(relpath string) string { return manifestHelper("audio", relpath) },
+	"fontPath": func(relpath string) string { return manifestHelper("font", relpath) },
+	"assetPath": func(relpath string) string {
+		v, ok := AssetsManifest[relpath]
 		if !ok {
-			return "/assets/" + s
+			return "/assets/" + relpath
 		}
 		return "/assets/" + v
 	},
@@ -42,10 +43,14 @@ var appHelpers = template.FuncMap{
 	{{- end}}
 }
 
-func manifestHelper(typ string, s string) string {
-		v, ok := AssetsManifest[filepath.Join(typ, s)]
+func liveReloadHelper(relpath string, host string) string {
+	return fmt.Sprintf("/assets/js/%s?host=%s", relpath, host) 
+}
+
+func manifestHelper(typ string, relpath string) string {
+		v, ok := AssetsManifest[filepath.Join(typ, relpath)]
 		if !ok {
-			return fmt.Sprintf("/assets/%s/%s", typ, s)
+			return fmt.Sprintf("/assets/%s/%s", typ, relpath)
 		}
 		return "/assets/" + v
 }
@@ -103,13 +108,13 @@ func GetManifest(publicPath string) (map[string]string, error) {
 }
 
 // cssTag wraps the asset path in a css link include tag
-func cssTag(s string) template.HTML {
-	return template.HTML(fmt.Sprintf("<link href=\"%s\" rel=\"stylesheet\">", s))
+func cssTag(relpath string) template.HTML {
+	return template.HTML(fmt.Sprintf("<link href=\"%s\" rel=\"stylesheet\">", relpath))
 }
 
 // jsTag wraps the asset path in a javascript script include tag
-func jsTag(s string) template.HTML {
-	return template.HTML(fmt.Sprintf("<script src=\"%s\"></script>", s))
+func jsTag(relpath string) template.HTML {
+	return template.HTML(fmt.Sprintf("<script src=\"%s\"></script>", relpath))
 }
 
 {{if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
