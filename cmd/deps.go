@@ -50,6 +50,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"github.com/kardianos/govendor"},
 		{"github.com/go-sql-driver/mysql"},
 		{"github.com/lib/pq"},
+		{"github.com/denisenkom/go-mssqldb"},
 		{"github.com/nullbio/mig"},
 		{"github.com/nullbio/mig/cmd/mig"},
 		{"github.com/spf13/cobra"},
