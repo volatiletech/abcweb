@@ -42,21 +42,34 @@ func Log(r *http.Request) *zap.Logger {
 // NewRootMock returns a Root struct with all members initialized to
 // test compatible mock values
 func NewRootMock() Root {
-	// Storage overseer cookie options
+	{{if not .NoSessions -}}
+	// Set up the sessions overseer
 	opts := sessions.NewCookieOptions()
 	opts.Secure = false
+	mem, err := sessions.NewDefaultMemoryStorer()
+	if err != nil {
+		panic(err)
+	}
+	{{- end}}
 
 	// Set up zap logger. Use zap.NewNop() if you wish to disable logging.
-	cfg := zap.NewDevelopmentConfig()
-	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	cfg.OutputPaths = []string{"stdout"}
-	log, err := cfg.Build()
+	zapCfg := zap.NewDevelopmentConfig()
+	zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	zapCfg.OutputPaths = []string{"stdout"}
+	log, err := zapCfg.Build()
 	if err != nil {
 		panic(err)
 	}
 
+	// Set up the template renderer
+	appCfg := &config.AppConfig{}
+	appCfg.RenderRecompile = true
+
 	return Root{
+		{{if not .NoSessions -}}
+		Session: sessions.NewStorageOverseer(opts, mem),
+		{{-end }}
 		Log:     log,
-		Session: sessions.NewStorageOverseer(opts, sessions.NewDefaultMemoryStorer()),
+		Render:  app.InitRenderer(appCfg),
 	}
 }
