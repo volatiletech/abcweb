@@ -67,7 +67,7 @@ func (s *State) InitRenderer() {
 
 	s.Render = &rendering.Render{
 		Render: render.New(render.Options{
-			Directory:     s.AppConfig.Templates,
+			Directory:     "./templates",
 			Layout:        "layouts/main",
 			Extensions:    []string{".tmpl", ".html"},
 			IsDevelopment: s.AppConfig.RenderRecompile,

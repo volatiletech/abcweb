@@ -1,8 +1,25 @@
 package controllers
 
-import "testing"
+import (
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
 
 func TestMainHome(t *testing.T) {
 	t.Parallel()
 
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+
+	// Initialize the Main controller struct with a Root struct mock
+	m := Main{Root: NewRootMock()}
+
+	// Call the controller with the httptest recorder and httptest request
+	m.Home(w, r)
+
+	// Ensure we get the contents of main/home.html back
+	if !strings.Contains(w.Body.String(), "<span>Hello World!</span>") {
+		t.Error("home template not expected value")
+	}
 }

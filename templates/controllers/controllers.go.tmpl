@@ -24,7 +24,7 @@ type Root struct {
 }
 
 // Main is the controller struct for the main routes (home, about, etc).
-// You can add variables to this controller struct to limit their exposure
+// You can add variables to this controller struct to expose them
 // to the controller route handlers attached to this controller. 
 type Main struct {
 	Root
@@ -38,3 +38,25 @@ func Log(r *http.Request) *zap.Logger {
 	return middleware.Log(r)
 }
 {{- end}}
+
+// NewRootMock returns a Root struct with all members initialized to
+// test compatible mock values
+func NewRootMock() Root {
+	// Storage overseer cookie options
+	opts := sessions.NewCookieOptions()
+	opts.Secure = false
+
+	// Set up zap logger. Use zap.NewNop() if you wish to disable logging.
+	cfg := zap.NewDevelopmentConfig()
+	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.OutputPaths = []string{"stdout"}
+	log, err := cfg.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	return Root{
+		Log:     log,
+		Session: sessions.NewStorageOverseer(opts, sessions.NewDefaultMemoryStorer()),
+	}
+}
