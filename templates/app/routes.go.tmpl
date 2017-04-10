@@ -55,7 +55,7 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 	log := s.Log
 	{{else}}
 	// Get the Request ID scoped logger
-	log := middleware.Log(r)
+	log := abcmiddleware.Log(r)
 	{{- end}}
 
 	reqURI := r.RequestURI
