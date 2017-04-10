@@ -5,11 +5,11 @@ import (
 
 	"{{.ImportPath}}/config"
 	"{{.ImportPath}}/rendering"
-	"{{.ImportPath}}/middleware"
 	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
 	{{- end}}
 	"github.com/volatiletech/abcrender"
+	"github.com/volatiletech/abcmiddleware"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -36,9 +36,9 @@ type Main struct {
 {{if not .NoRequestID -}}
 // Log returns the Request ID scoped logger from the request Context
 // and panics if it cannot be found.
-// This is a convenience wrapper -- Log() is nicer than middleware.Log()
+// This is a convenience wrapper -- Log() is nicer than abcmiddleware.Log()
 func Log(r *http.Request) *zap.Logger {
-	return middleware.Log(r)
+	return abcmiddleware.Log(r)
 }
 {{- end}}
 

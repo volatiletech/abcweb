@@ -1,18 +1,18 @@
 package app
 
 import (
-	"{{.ImportPath}}/middleware"
 	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
 	{{- end}}
 	"github.com/markbates/refresh/refresh/web"
+	"github.com/volatiletech/abcmiddleware"
 	chimiddleware "github.com/pressly/chi/middleware"
 )
 
 // InitMiddleware initializes the router middleware
 // See https://github.com/pressly/chi#middlewares and abcweb readme for extra middleware
 func (s *State) InitMiddleware() {
-	m := middleware.Middleware{
+	m := abcmiddleware.Middleware{
 		Log: s.Log,
 	}
 	
