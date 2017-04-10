@@ -2,7 +2,7 @@
 
 ## Example locale
 
-`en.toml` =
+`locale/en.toml` =
 
 ```
 [datetime]
@@ -139,7 +139,7 @@
 	template_header = "%s errors prohibited changes being made"
 ```
 
-### Implementation spec
+### Implementation spec (TODO)
 
 ```
 type LocaleFinder interface {
@@ -149,7 +149,7 @@ type LocaleFinder interface {
 type LocalizedRenderData string
 
 func (l LocalizedRenderData) Localize(s string) {
-  // look up crap in thing.
+  // look up stuff in thing.
 }
 
 func MkLocale(l LocaleFinder, r *http.Request) LocalizedRenderData {
@@ -167,9 +167,9 @@ is a map of string string and you look up the locale and you get a table of stri
 
 panic if can't find key.
 
-en.toml
-en-US.toml
-en-CA.toml
+locale/en.toml
+locale/en-US.toml
+locale/en-CA.toml
 
 If can't find translation in en-US.toml for example, fall back to parent which is en.toml
 ```
