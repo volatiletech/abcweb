@@ -1,0 +1,116 @@
+package app
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
+	"{{.ImportPath}}/config"
+	"{{.ImportPath}}/middleware"
+	"{{.ImportPath}}/rendering"
+	"github.com/pressly/chi"
+)
+
+func TestInitRoutes(t *testing.T) {
+	t.Parallel()
+
+	state := &State{
+		Router: chi.NewRouter(),
+	}
+	state.InitRoutes()
+
+	routes := state.Router.Routes()
+	if len(routes) == 0 {
+		t.Error("expected at least 1 route to be initialized")
+	}
+}
+
+func TestNotFound(t *testing.T) {
+	t.Parallel()
+
+	// Only run the non-compiled assets hotpath test if it can
+	// find the robots.txt asset file to run against
+	_, err := os.Stat("../public/robots.txt")
+	if err != nil {
+		t.Skip("cannot find robots.txt asset to run against, so skipping NotFound test")
+	}
+
+	state := &State{}
+	state.AppConfig = &config.AppConfig{
+		AssetsPublic:    "../public",
+		RenderRecompile: true,
+	}
+	state.InitLogger()
+	state.Render = rendering.InitRenderer(state.AppConfig, "../templates")
+
+	// test the non-compiled assets hotpath first
+	r := httptest.NewRequest("GET", "/robots.txt", nil)
+	w := httptest.NewRecorder()
+	
+	{{if not .NoSessions -}}
+	r = r.WithContext(context.WithValue(r.Context(), middleware.CtxLoggerKey, state.Log))
+	{{- end}}
+
+	// Call the handler
+	state.NotFound(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected http 200, but got http %d", w.Code)
+	}
+	loc, err := w.Result().Location()
+	if err == nil {
+		t.Error("did not expect a redirect, but got one to:", loc.String())
+	}
+
+	// Only run the compiled assets hotpath test if it can
+	// find the assets/main.css asset file to run against
+	_, err = os.Stat("../public/assets/css/main.css")
+	if err != nil {
+		t.Skip("cannot find main.css asset to run against, so skipping NotFound test")
+	}
+
+	// test the compiled assets hotpath with non-manifest
+	r = httptest.NewRequest("GET", "/assets/css/main.css", nil)
+	w = httptest.NewRecorder()
+
+	{{if not .NoSessions -}}
+	r = r.WithContext(context.WithValue(r.Context(), middleware.CtxLoggerKey, state.Log))
+	{{- end}}
+
+	// Call the handler
+	state.NotFound(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected http 200, but got http %d", w.Code)
+	}
+	loc, err = w.Result().Location()
+	if err == nil {
+		t.Error("did not expect a redirect, but got one to:", loc.String())
+	}
+
+	// test the compiled assets hotpath with manifest
+	r = httptest.NewRequest("GET", "/assets/css/main-manifestmagic.css", nil)
+	w = httptest.NewRecorder()
+
+	{{if not .NoSessions -}}
+	r = r.WithContext(context.WithValue(r.Context(), middleware.CtxLoggerKey, state.Log))
+	{{- end}}
+
+	// Set asset manifest to test manifest hotpath
+	rendering.AssetsManifest = map[string]string{
+		"css/main-manifestmagic.css": "css/main.css",
+	}
+
+	// Call the handler
+	state.NotFound(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected http 200, but got http %d", w.Code)
+	}
+	loc, err = w.Result().Location()
+	if err == nil {
+		t.Error("did not expect a redirect, but got one to:", loc.String())
+	}
+}

@@ -51,8 +51,12 @@ func (s *State) InitRoutes() {
 //
 // Assets that cannot be found will return 404.
 func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
+	{{if .NoRequestID -}}
+	log := s.Log
+	{{else}}
 	// Get the Request ID scoped logger
 	log := middleware.Log(r)
+	{{- end}}
 
 	reqURI := r.RequestURI
 	// Ensure path is rooted at / to prevent path traversal

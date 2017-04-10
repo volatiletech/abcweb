@@ -1,0 +1,30 @@
+package app
+
+import (
+	"testing"
+
+	"{{.ImportPath}}/config"
+)
+
+func TestInitLogger(t *testing.T) {
+	t.Parallel()
+
+	state := &State{}
+	state.AppConfig = &config.AppConfig{}
+
+	state.AppConfig.ProdLogger = true
+
+	state.InitLogger()
+	if state.Log == nil {
+		t.Fatal("expected logger to be initialized")
+	}
+
+	state.AppConfig.ProdLogger = false
+	// reset logger so we can recheck for nil
+	state.Log = nil
+
+	state.InitLogger()
+	if state.Log == nil {
+		t.Fatal("expected logger to be initialized")
+	}
+}
