@@ -17,7 +17,7 @@ func TestLog(t *testing.T) {
 		t.Error(err)
 	}
 
-	ctx = context.WithValue(ctx, CtxLogLookup, z)
+	ctx = context.WithValue(ctx, CtxLoggerKey, z)
 	r := &http.Request{}
 	r = r.WithContext(ctx)
 

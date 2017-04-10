@@ -3,12 +3,15 @@ package controllers
 import (
 	"net/http"
 
+	"{{.ImportPath}}/config"
 	"{{.ImportPath}}/rendering"
+	"{{.ImportPath}}/middleware"
 	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
 	{{- end}}
-	"{{.ImportPath}}/middleware"
+	"github.com/volatiletech/abcrender"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Root struct exposes useful variables to every controller route handler.
@@ -17,7 +20,7 @@ import (
 // instance of controller is created.
 type Root struct {
 	Log     *zap.Logger
-	Render  rendering.Renderer
+	Render  abcrender.Renderer
 	{{if not .NoSessions -}}
 	Session sessions.Overseer
 	{{- end}}
@@ -41,7 +44,7 @@ func Log(r *http.Request) *zap.Logger {
 
 // NewRootMock returns a Root struct with all members initialized to
 // test compatible mock values
-func NewRootMock() Root {
+func NewRootMock(templatesDir string) Root {
 	{{if not .NoSessions -}}
 	// Set up the sessions overseer
 	opts := sessions.NewCookieOptions()
@@ -68,8 +71,8 @@ func NewRootMock() Root {
 	return Root{
 		{{if not .NoSessions -}}
 		Session: sessions.NewStorageOverseer(opts, mem),
-		{{-end }}
+		{{- end}}
 		Log:     log,
-		Render:  app.InitRenderer(appCfg),
+		Render:  rendering.InitRenderer(appCfg, templatesDir),
 	}
 }

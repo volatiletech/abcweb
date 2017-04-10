@@ -4,6 +4,7 @@ import (
 	"{{.ImportPath}}/app"
 	"{{.ImportPath}}/config"
 	"{{.ImportPath}}/db"
+	"{{.ImportPath}}/rendering"
 	"github.com/pkg/errors"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
@@ -62,14 +63,14 @@ func main() {
 
 		// Cache the assets manifest.json file mappings (app/render.go)
 		if state.AppConfig.AssetsManifest {
-			app.AssetsManifest, err = app.GetManifest(state.AppConfig.AssetsPublic)
+			rendering.AssetsManifest, err = rendering.GetManifest(state.AppConfig.AssetsPublic)
 			if err != nil {
 				return err
 			}
 		}
 
-		// Configure the renderer (app/render.go)
-		state.InitRenderer()
+		// Configure the renderer (rendering/rendering.go)
+		state.Render = rendering.InitRenderer(state.AppConfig, "./templates")
 
 		// Enable middleware for the router (app/middleware.go)
 		state.InitMiddleware()

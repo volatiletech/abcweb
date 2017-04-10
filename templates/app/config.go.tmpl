@@ -3,18 +3,15 @@ package app
 import (
 	"time"
 
-	"{{.ImportPath}}/rendering"
 	"{{.ImportPath}}/config"
 	{{if not .NoSessions -}}
 	"{{.ImportPath}}/sessions"
 	{{- end}}
+	"github.com/volatiletech/abcrender"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
-
-// AssetsManifest is the global cache of the manifest.json assets mapping file.
-var AssetsManifest map[string]string
 
 // State is the configuration state for the entire app.
 // The controllers are passed variables from this object when initialized.
@@ -23,7 +20,7 @@ type State struct {
 	DBConfig	 *config.DBConfig
 	Log		 *zap.Logger
 	Router	 *chi.Mux
-	Render	 rendering.Renderer
+	Render	 abcrender.Renderer
 	Root		 *cobra.Command
 	{{if not .NoSessions -}}
 	Session sessions.Overseer

@@ -9,6 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"{{.ImportPath}}/rendering"
 	"{{.ImportPath}}/controllers"
 	"{{.ImportPath}}/middleware"
 )
@@ -74,7 +75,7 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 		// Look up the gzip version of the asset in the manifest
 		// if the browser accepts gzip encoding
 		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			fpath, ok = AssetsManifest[fname+".gz"]
+			fpath, ok = rendering.AssetsManifest[fname+".gz"]
 			if ok {
 				w.Header().Set("Content-Encoding", "gzip")
 			}
@@ -82,7 +83,7 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 
 		// If cannot find gzip version, attempt to serve regular version
 		if !ok {
-			fpath, ok = AssetsManifest[fname]
+			fpath, ok = rendering.AssetsManifest[fname]
 		}
 
 		// If cannot find regular version in manifest, attempt to serve

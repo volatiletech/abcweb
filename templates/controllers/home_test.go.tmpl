@@ -4,16 +4,24 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"context"
+
+	"{{.ImportPath}}/middleware"
 )
 
 func TestMainHome(t *testing.T) {
 	t.Parallel()
 
+	// Initialize the Main controller struct with a Root struct mock
+	m := Main{
+		Root: NewRootMock("../templates"),
+	}
+
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", nil)
 
-	// Initialize the Main controller struct with a Root struct mock
-	m := Main{Root: NewRootMock()}
+	// Set the logger on the request context so calls to Log() don't panic
+	r = r.WithContext(context.WithValue(r.Context(), middleware.CtxLoggerKey, m.Log))
 
 	// Call the controller with the httptest recorder and httptest request
 	m.Home(w, r)

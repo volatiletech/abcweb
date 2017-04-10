@@ -21,7 +21,7 @@ func (m Middleware) Recover(next http.Handler) http.Handler {
 				
 				{{if not .NoRequestID -}}
 				var log *zap.Logger
-				v := r.Context().Value(CtxLogLookup)
+				v := r.Context().Value(CtxLoggerKey)
 				log, ok := v.(*zap.Logger)
 				if !ok {
 					panic("cannot get derived request id logger from context object")
