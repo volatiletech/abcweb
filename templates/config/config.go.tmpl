@@ -66,7 +66,7 @@ type DBConfig struct {
 }
 
 // NewAppViper returns a viper instance activated against the active environment
-// configuration subsection and initialized with the database.toml
+// configuration subsection and initialized with the config.toml
 // configuration file and the environment variable prefix.
 func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
 	{{$envAppNm := envAppName .AppName -}}
@@ -84,6 +84,8 @@ func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	v.ReadInConfig()
 
+	// If we cannot get the active environment from {{$envAppNm}}_ENV,
+	// try to get it from the config file's env variable.
 	if env == "" {
 	  env = v.GetString("env")
 	}
