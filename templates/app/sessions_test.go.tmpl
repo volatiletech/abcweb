@@ -1,0 +1,27 @@
+package app
+
+import (
+	"testing"
+
+	"{{.ImportPath}}/config"
+)
+
+func TestInitSessions(t *testing.T) {
+	t.Parallel()
+
+	s := &State{}
+	s.AppConfig = &config.AppConfig{}
+
+	s.AppConfig.SessionsDevStorer = true
+
+	s.InitSessions()
+	if s.Session == nil {
+		t.Error("expected session overseer to be set")
+	}
+
+	s.AppConfig.SessionsDevStorer = false
+	s.InitSessions()
+	if s.Session == nil {
+		t.Error("expected session overseer to be set")
+	}
+}
