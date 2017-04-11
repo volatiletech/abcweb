@@ -45,7 +45,6 @@ func init() {
 	newCmd.Flags().StringP("tls-common-name", "", "localhost", "Common Name for generated TLS certificate")
 	newCmd.Flags().StringP("default-env", "", "prod", "Default $APP_ENV to use when starting server")
 	newCmd.Flags().StringP("bootstrap", "b", "regular", "Include Twitter Bootstrap 4 (none|gridonly|rebootonly|gridandrebootonly)")
-	newCmd.Flags().BoolP("no-gitignore", "", false, "Skip .gitignore file")
 	newCmd.Flags().BoolP("no-gulp", "", false, "Skip generation of gulpfile.js, package.json and installation of gulp dependencies")
 	newCmd.Flags().BoolP("no-bootstrap-js", "j", false, "Skip Twitter Bootstrap 4 javascript inclusion")
 	newCmd.Flags().BoolP("no-font-awesome", "f", false, "Skip Font Awesome inclusion")
@@ -72,7 +71,6 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 	viper.BindPFlags(cmd.Flags())
 
 	newCmdConfig = newConfig{
-		NoGitIgnore:      viper.GetBool("no-gitignore"),
 		NoGulp:           viper.GetBool("no-gulp"),
 		NoBootstrapJS:    viper.GetBool("no-bootstrap-js"),
 		NoFontAwesome:    viper.GetBool("no-font-awesome"),
@@ -405,13 +403,6 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 	// Skip readme files if requested
 	if cfg.NoReadme {
 		if info.Name() == "README.md" || info.Name() == "README.md.tmpl" {
-			return true, nil
-		}
-	}
-
-	// Skip gitignore if requested
-	if cfg.NoGitIgnore {
-		if info.Name() == ".gitignore" || info.Name() == ".gitignore.tmpl" {
 			return true, nil
 		}
 	}

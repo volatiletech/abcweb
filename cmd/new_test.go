@@ -91,12 +91,13 @@ func TestGetProcessedPaths(t *testing.T) {
 func TestProcessSkips(t *testing.T) {
 	cfg := newConfig{
 		NoReadme:      true,
-		NoGitIgnore:   true,
 		NoConfig:      true,
 		NoFontAwesome: true,
 		Bootstrap:     "none",
 		NoBootstrapJS: true,
 		NoSessions:    true,
+		NoGulp:        true,
+		NoLiveReload:  true,
 	}
 
 	// check skip basedir
@@ -141,6 +142,46 @@ func TestProcessSkips(t *testing.T) {
 		t.Error("expected to skip skip readme")
 	}
 
+	// check skip livereload.js
+	f, err = appFS.Create("/templates/assets/vendor/js/livereload.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err = f.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	skip, _ = processSkips(cfg, "/templates", "/templates/assets/vendor/js/livereload.js", info)
+	if skip != true {
+		t.Error("expected to skip livereload.js")
+	}
+
+	// check skip gulp
+	f, err = appFS.Create("/templates/gulpfile.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err = f.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	skip, _ = processSkips(cfg, "/templates", "/templates/gulpfile.js", info)
+	if skip != true {
+		t.Error("expected to skip gulpfile.js")
+	}
+	f, err = appFS.Create("/templates/package.json.tmpl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err = f.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	skip, _ = processSkips(cfg, "/templates", "/templates/pacakage.json.tmpl", info)
+	if skip != true {
+		t.Error("expected to skip package.json.tmpl")
+	}
+
 	// check skip app/sessions.go.tmpl
 	f, err = appFS.Create("/templates/app/sessions.go.tmpl")
 	if err != nil {
@@ -155,20 +196,6 @@ func TestProcessSkips(t *testing.T) {
 		t.Error("expected to skip skip sessions.go.tmpl")
 	}
 
-	// check skip gitignore
-	f, err = appFS.Create("/templates/.gitignore")
-	if err != nil {
-		t.Fatal(err)
-	}
-	info, err = f.Stat()
-	if err != nil {
-		t.Fatal(err)
-	}
-	skip, _ = processSkips(cfg, "/templates", "/templates/.gitignore", info)
-	if skip != true {
-		t.Error("expected to skip skip readme")
-	}
-
 	// check skip config.toml
 	f, err = appFS.Create("/templates/config.toml")
 	if err != nil {
@@ -181,49 +208,6 @@ func TestProcessSkips(t *testing.T) {
 	skip, _ = processSkips(cfg, "/templates", "/templates/config.toml", info)
 	if skip != true {
 		t.Error("expected to skip skip config.toml")
-	}
-
-	// check skip fontawesome files
-	f, err = appFS.Create("/templates/font-awesome.css")
-	if err != nil {
-		t.Fatal(err)
-	}
-	info, err = f.Stat()
-	if err != nil {
-		t.Fatal(err)
-	}
-	skip, _ = processSkips(cfg, "/templates", "/templates/font-awesome.css", info)
-	if skip != true {
-		t.Error("expected to skip skip font-awesome.css")
-	}
-
-	// check skip fontawesome files
-	f, err = appFS.Create("/templates/bootstrap.css")
-	if err != nil {
-		t.Fatal(err)
-	}
-	info, err = f.Stat()
-	if err != nil {
-		t.Fatal(err)
-	}
-	skip, _ = processSkips(cfg, "/templates", "/templates/bootstrap.css", info)
-	if skip != true {
-		t.Error("expected to skip skip bootstrap.css")
-	}
-
-	cfg.Bootstrap = "flex"
-	// check skip fontawesome files
-	f, err = appFS.Create("/templates/bootstrap.js")
-	if err != nil {
-		t.Fatal(err)
-	}
-	info, err = f.Stat()
-	if err != nil {
-		t.Fatal(err)
-	}
-	skip, _ = processSkips(cfg, "/templates", "/templates/bootstrap.js", info)
-	if skip != true {
-		t.Error("expected to skip skip bootstrap.js")
 	}
 
 	// check no-skip regular go file

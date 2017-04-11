@@ -29,7 +29,6 @@ type newConfig struct {
 	DefaultEnv       string
 	Bootstrap        string
 	NoBootstrapJS    bool
-	NoGitIgnore      bool
 	NoGulp           bool
 	NoFontAwesome    bool
 	NoLiveReload     bool
