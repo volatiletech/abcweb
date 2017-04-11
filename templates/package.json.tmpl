@@ -24,7 +24,9 @@
 		"gulp-clean-css": "^3.0.4",
 		"gulp-gzip": "^1.4.0",
 		"gulp-less": "^3.3.0",
+		{{if not .NoLiveReload -}}
 		"gulp-livereload": "^3.8.1",
+		{{- end}}
 		"gulp-minify": "0.0.15",
 		"gulp-plumber": "^1.1.0",
 		"gulp-postcss": "^6.4.0",

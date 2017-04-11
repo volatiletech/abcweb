@@ -21,7 +21,9 @@ var AssetsManifest map[string]string
 // Assign the template helper funcs in here, example:
 // "toUpper": strings.ToUpper
 var appHelpers = template.FuncMap{
+	{{if not .NoLiveReload -}}
 	"liveReload": liveReloadHelper,
+	{{- end}}
 	"jsPath": func(relpath string) string { return manifestHelper("js", relpath) },
 	"cssPath": func(relpath string) string { return manifestHelper("css", relpath) },
 	"imgPath": func(relpath string) string { return manifestHelper("img", relpath) },
@@ -46,9 +48,11 @@ var appHelpers = template.FuncMap{
 	{{- end}}
 }
 
+{{if not .NoLiveReload -}}
 func liveReloadHelper(relpath string, host string) string {
 	return fmt.Sprintf("/assets/js/%s?host=%s", relpath, host) 
 }
+{{- end}}
 
 func manifestHelper(typ string, relpath string) string {
 		v, ok := AssetsManifest[filepath.Join(typ, relpath)]

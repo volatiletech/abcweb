@@ -49,7 +49,7 @@ func init() {
 	newCmd.Flags().BoolP("no-gulp", "", false, "Skip generation of gulpfile.js, package.json and installation of gulp dependencies")
 	newCmd.Flags().BoolP("no-bootstrap-js", "j", false, "Skip Twitter Bootstrap 4 javascript inclusion")
 	newCmd.Flags().BoolP("no-font-awesome", "f", false, "Skip Font Awesome inclusion")
-	newCmd.Flags().BoolP("no-livereload", "l", false, "Don't support LiveReload")
+	newCmd.Flags().BoolP("no-livereload", "l", false, "Don't include LiveReload support")
 	newCmd.Flags().BoolP("no-tls-certs", "t", false, "Skip generation of self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-readme", "r", false, "Skip README.md files")
 	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml and database.toml file")
@@ -421,6 +421,13 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 		if info.Name() == "gulpfile.js" || info.Name() == "gulpfile.js.tmpl" ||
 			info.Name() == "package.json" || info.Name() == "package.json.tmpl" ||
 			info.Name() == "manifest.json" {
+			return true, nil
+		}
+	}
+
+	// Skip livereload if requested
+	if cfg.NoLiveReload {
+		if info.Name() == "livereload.js" || info.Name() == "livereload.js.tmpl" {
 			return true, nil
 		}
 	}

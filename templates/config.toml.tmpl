@@ -9,7 +9,9 @@ env = "{{.DefaultEnv}}"
 	# These cert files will only be used if "tls_bind" is set (uncomment above).
 	tls-cert-file = "cert.pem"
 	tls-key-file = "private.key"
+	{{if not .NoLiveReload -}}
 	live-reload = true
+	{{- end}}
 	prod-logger = false
 	# do not use manifest.json file in development mode because dev mode
 	# does not do asset fingerprinting.

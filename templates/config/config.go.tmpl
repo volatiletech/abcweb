@@ -144,7 +144,9 @@ func NewDBViper(env string) (*viper.Viper, error) {
 func LoadAppConfig(v *viper.Viper) *AppConfig {
 	return &AppConfig{
 		ActiveEnv:			v.GetString("env"),
+		{{if not .NoLiveReload -}}
 		LiveReload:			v.GetBool("live-reload"),
+		{{- end}}
 		ProdLogger:			v.GetBool("prod-logger"),
 		Bind:					v.GetString("bind"),
 		TLSBind:				v.GetString("tls-bind"),

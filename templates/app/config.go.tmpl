@@ -29,7 +29,9 @@ type State struct {
 
 // RegisterFlags registers the configuration flag defaults and help strings
 func RegisterFlags(root *cobra.Command) {
+	{{if not .NoLiveReload -}}
 	root.Flags().BoolP("live-reload", "", false, "Enable or disable LiveReload")
+	{{- end}}
 	root.Flags().BoolP("prod-logger", "", true, "Use the production logger, JSON and log level warn")
 	root.Flags().StringP("bind", "", ":80", `HTTP bind address, eg: ":80"`)
 	root.Flags().StringP("tls-bind", "", "", `HTTPS bind address, eg: ":443"`)

@@ -19,7 +19,9 @@ var config = {
 
 	// if undefined, set to false. set production mode to true by
 	// passing in --production, i.e: gulp compile --production
+	{{if not .NoLiveReload -}}
 	// If production is set to true then livereload.js will be ignored.
+	{{- end}}
 	// production is automatically set to true when running "build" task.
 	production: !!util.env.production
 }
@@ -48,9 +50,15 @@ gulp.task('compile-js', function() {
 	]
 
 	// ignore specific files when in production mode
+	{{if not .NoLiveReload -}}
 	if (config.production) {
 		glob.push('!' + config.paths.src + 'vendor/js/livereload.js')
 	}
+	{{- else -}}
+	// if (config.production) {
+	//		glob.push('!' + config.paths.src + 'vendor/js/livereload.js')
+	// }
+	{{- end}}
 
 	return gulp.src(glob)
 		.pipe(gulp.dest(config.paths.build + 'js'))
@@ -162,16 +170,22 @@ gulp.task('build', gulp.series(function(cb) {
 gulp.task('default', gulp.series('compile'));
 
 // Watch task compiles all assets on start, then watches assets and html templates
+{{if not .NoLiveReload -}}
 // for change, recompiles them and signals livereload to reload the browser.
+{{- else -}}
+// for change and recompiles them.
+{{- end}}
 gulp.task('watch', gulp.series('compile', function() {
 	var watch      = require('gulp-watch');
 	var less       = require('gulp-less');
 	var sass       = require('gulp-sass');
 	var postcss    = require('gulp-postcss');
 	var plumber    = require('gulp-plumber');
+	{{if not .NoLiveReload -}}
 	var livereload = require('gulp-livereload');
 
 	livereload.listen();
+	{{- end}}
 	
 	es.merge(
 		watch([config.paths.src + 'css/**/*.scss', config.paths.src + 'css/**/*.sass'])
@@ -183,34 +197,48 @@ gulp.task('watch', gulp.series('compile', function() {
 		watch([config.paths.src + 'css/**/*.css', config.paths.src + 'vendor/css/**/*.css'])
 	).pipe(postcss([require('autoprefixer', 'postcss-flexbug-fixes')]))
 		.pipe(gulp.dest(config.paths.build + 'css'))
+		{{if not .NoLiveReload -}}
 		.pipe(livereload())
+		{{- end}}
 
 	watch([config.paths.src + 'js/**/*.js', config.paths.src + 'vendor/js/**/*.js'])
 		.pipe(plumber())
 		.pipe(gulp.dest(config.paths.build + 'js'))
+		{{if not .NoLiveReload -}}
 		.pipe(livereload())
+		{{- end}}
 
 	watch([config.paths.src + 'img/**/*', config.paths.src + 'vendor/img/**/*'])
 		.pipe(plumber())
 		.pipe(gulp.dest(config.paths.build + 'img'))
+		{{if not .NoLiveReload -}}
 		.pipe(livereload())
+		{{- end}}
 
 	watch([config.paths.src + 'fonts/**/*', config.paths.src + 'vendor/fonts/**/*'])
 		.pipe(plumber())
 		.pipe(gulp.dest(config.paths.build + 'fonts'))
+		{{if not .NoLiveReload -}}
 		.pipe(livereload())
+		{{- end}}
 
 	watch([config.paths.src + 'video/**/*', config.paths.src + 'vendor/video/**/*'])
 		.pipe(plumber())
 		.pipe(gulp.dest(config.paths.build + 'video'))
+		{{if not .NoLiveReload -}}
 		.pipe(livereload())
+		{{- end}}
 
 	watch([config.paths.src + 'audio/**/*', config.paths.src + 'vendor/audio/**/*'])
 		.pipe(plumber())
 		.pipe(gulp.dest(config.paths.build + 'audio'))
+		{{if not .NoLiveReload -}}
 		.pipe(livereload())
+		{{- end}}
 
 	// Watch html templates
 	return watch(config.paths.templates)
+		{{if not .NoLiveReload -}}
 		.pipe(livereload())
+		{{- end}}
 }));

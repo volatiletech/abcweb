@@ -26,10 +26,11 @@
 		{{"{"}}{ cssPath "font-awesome/font-awesome.css" | cssTag }{{"}"}}
 		{{- end}}
 		{{"{"}}{ cssPath "main.css" | cssTag }{{"}"}}
-
+		{{if not .NoLiveReload -}}
       {{"{"}}{if appConfig.LiveReload -}{{"}"}}
          {{"{"}}{liveReload "livereload.js" "localhost" | jsTag }{{"}"}}
       {{"{"}}{- end}{{"}"}}
+		{{- end}}
 	</head>
 	<body>
 		{{"{"}}{ yield }{{"}"}}
