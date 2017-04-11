@@ -5,7 +5,7 @@ import (
 
 	"{{.ImportPath}}/config"
 	{{if not .NoSessions -}}
-	"{{.ImportPath}}/sessions"
+	"github.com/volatiletech/abcsessions"
 	{{- end}}
 	"github.com/volatiletech/abcrender"
 	"github.com/pressly/chi"
@@ -23,7 +23,7 @@ type State struct {
 	Render	 abcrender.Renderer
 	Root		 *cobra.Command
 	{{if not .NoSessions -}}
-	Session sessions.Overseer
+	Session abcsessions.Overseer
 	{{- end}}
 }
 

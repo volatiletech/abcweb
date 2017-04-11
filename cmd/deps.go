@@ -40,6 +40,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 	goGetArgs := [][]string{
 		{"go.uber.org/zap"},
 		{"github.com/volatiletech/abcrender"},
+		{"github.com/volatiletech/abcsessions"},
 		{"github.com/volatiletech/abcmiddleware"},
 		{"github.com/satori/go.uuid"},
 		{"github.com/pkg/errors"},

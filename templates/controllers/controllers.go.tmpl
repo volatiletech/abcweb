@@ -6,7 +6,7 @@ import (
 	"{{.ImportPath}}/config"
 	"{{.ImportPath}}/rendering"
 	{{if not .NoSessions -}}
-	"{{.ImportPath}}/sessions"
+	"github.com/volatiletech/abcsessions"
 	{{- end}}
 	"github.com/volatiletech/abcrender"
 	"github.com/volatiletech/abcmiddleware"
@@ -22,7 +22,7 @@ type Root struct {
 	Log     *zap.Logger
 	Render  abcrender.Renderer
 	{{if not .NoSessions -}}
-	Session sessions.Overseer
+	Session abcsessions.Overseer
 	{{- end}}
 }
 
@@ -47,9 +47,9 @@ func Log(r *http.Request) *zap.Logger {
 func NewRootMock(templatesDir string) Root {
 	{{if not .NoSessions -}}
 	// Set up the sessions overseer
-	opts := sessions.NewCookieOptions()
+	opts := abcsessions.NewCookieOptions()
 	opts.Secure = false
-	mem, err := sessions.NewDefaultMemoryStorer()
+	mem, err := abcsessions.NewDefaultMemoryStorer()
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +70,7 @@ func NewRootMock(templatesDir string) Root {
 
 	return Root{
 		{{if not .NoSessions -}}
-		Session: sessions.NewStorageOverseer(opts, mem),
+		Session: abcsessions.NewStorageOverseer(opts, mem),
 		{{- end}}
 		Log:     log,
 		Render:  rendering.InitRenderer(appCfg, templatesDir),

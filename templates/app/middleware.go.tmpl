@@ -2,10 +2,10 @@ package app
 
 import (
 	{{if not .NoSessions -}}
-	"{{.ImportPath}}/sessions"
+	"github.com/volatiletech/abcsessions"
 	{{- end}}
-	"github.com/markbates/refresh/refresh/web"
 	"github.com/volatiletech/abcmiddleware"
+	"github.com/markbates/refresh/refresh/web"
 	chimiddleware "github.com/pressly/chi/middleware"
 )
 
@@ -80,7 +80,7 @@ func (s *State) InitMiddleware() {
 
 	// Convert the ResponseWriter object to a SessionsResponse for buffering
 	// session cookies across session API requests.
-	// Note: This is a mandatory middleware when using the sessions library.
-	s.Router.Use(sessions.Middleware)
+	// Note: This is a mandatory middleware when using the abcsessions library.
+	s.Router.Use(abcsessions.Middleware)
 	{{- end}}
 }
