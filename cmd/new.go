@@ -40,11 +40,11 @@ The app will generate in $GOPATH/src/<import_path>.
 }
 
 func init() {
-	newCmd.Flags().StringP("sessions-prod-storer", "p", "disk", "Session storer to use in production mode")
-	newCmd.Flags().StringP("sessions-dev-storer", "d", "cookie", "Session storer to use in development mode")
+	newCmd.Flags().StringP("sessions-prod-storer", "p", "disk", "Session storer to use in production mode (cookie|memory|disk|redis)")
+	newCmd.Flags().StringP("sessions-dev-storer", "d", "cookie", "Session storer to use in development mode (cookie|memory|disk|redis)")
 	newCmd.Flags().StringP("tls-common-name", "", "localhost", "Common Name for generated TLS certificate")
 	newCmd.Flags().StringP("default-env", "", "prod", "Default $APP_ENV to use when starting server")
-	newCmd.Flags().StringP("bootstrap", "b", "regular", "Include Twitter Bootstrap 4 (none|gridonly|rebootonly|gridandrebootonly)")
+	newCmd.Flags().StringP("bootstrap", "b", "regular", "Include Twitter Bootstrap 4 (none|regular|gridonly|rebootonly|gridandrebootonly)")
 	newCmd.Flags().BoolP("no-gulp", "", false, "Skip generation of gulpfile.js, package.json and installation of gulp dependencies")
 	newCmd.Flags().BoolP("no-bootstrap-js", "j", false, "Skip Twitter Bootstrap 4 javascript inclusion")
 	newCmd.Flags().BoolP("no-font-awesome", "f", false, "Skip Font Awesome inclusion")

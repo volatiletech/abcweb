@@ -12,13 +12,52 @@ func (s *State) InitSessions() {
 	}
 
 	if s.AppConfig.SessionsDevStorer {
+		{{if eq .DevStorer "cookie" -}}
 		s.Session = abcsessions.NewCookieOverseer(opts, []byte("{{randString 32}}"))
-	} else {
+		{{- else if eq .DevStorer "memory" -}}
+		storer, err := abcsessions.NewDefaultMemoryStorer()
+		if err != nil {
+			panic(err)
+		}
+		s.Session = abcsessions.NewStorageOverseer(opts, storer)
+		{{- else if eq .DevStorer "disk" -}}
 		storer, err := abcsessions.NewDefaultDiskStorer("{{randString 8}}")
 		if err != nil {
 			panic(err)
 		}
 		storer.StartCleaner()
 		s.Session = abcsessions.NewStorageOverseer(opts, storer)
+		{{- else if eq .DevStorer "redis" -}}
+		// localhost:6379, no password, 0th indexed database.
+		storer, err := abcsessions.NewDefaultRedisStorer("", "", 0)
+		if err != nil {
+			panic(err)
+		}
+		s.Session = abcsessions.NewStorageOverseer(opts, storer)
+		{{- end}}
+	} else {
+		{{if eq .ProdStorer "cookie" -}}
+		s.Session = abcsessions.NewCookieOverseer(opts, []byte("{{randString 32}}"))
+		{{- else if eq .ProdStorer "memory" -}}
+		storer, err := abcsessions.NewDefaultMemoryStorer()
+		if err != nil {
+			panic(err)
+		}
+		s.Session = abcsessions.NewStorageOverseer(opts, storer)
+		{{- else if eq .ProdStorer "disk" -}}
+		storer, err := abcsessions.NewDefaultDiskStorer("{{randString 8}}")
+		if err != nil {
+			panic(err)
+		}
+		storer.StartCleaner()
+		s.Session = abcsessions.NewStorageOverseer(opts, storer)
+		{{- else if eq .ProdStorer "redis" -}}
+		// localhost:6379, no password, 0th indexed database.
+		storer, err := abcsessions.NewDefaultRedisStorer("", "", 0)
+		if err != nil {
+			panic(err)
+		}
+		s.Session = abcsessions.NewStorageOverseer(opts, storer)
+		{{- end}}
 	}
 }
