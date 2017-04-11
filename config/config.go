@@ -25,10 +25,8 @@ const (
 	basePackage = "github.com/nullbio/abcweb"
 )
 
-var (
-	// AppFS is a handle to the filesystem in use
-	appFS = afero.NewOsFs()
-)
+// AppFS is a handle to the filesystem in use
+var AppFS = afero.NewOsFs()
 
 // Configuration holds app state variables
 type Configuration struct {
@@ -156,7 +154,7 @@ func getActiveEnv(appPath, appName string) string {
 		return val
 	}
 
-	contents, err := afero.ReadFile(appFS, filepath.Join(appPath, AppConfigFilename))
+	contents, err := afero.ReadFile(AppFS, filepath.Join(appPath, AppConfigFilename))
 	if err != nil {
 		return ""
 	}

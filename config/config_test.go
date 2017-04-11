@@ -70,9 +70,13 @@ const fileOut = `[dev]
 func TestNewModeViper(t *testing.T) {
 	t.Parallel()
 
-	appPath := getAppPath()
+	appPath, err := getAppPath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	appName := getAppName(appPath)
 
-	modeViper := NewModeViper(appPath, "prod")
+	modeViper := NewModeViper(appPath, appName, "prod")
 	modeViper.RegisterAlias("sql", "migrations.sql")
 
 	val := modeViper.GetString("basedir")
@@ -95,7 +99,12 @@ func TestNewModeViper(t *testing.T) {
 }
 
 func TestGetActiveEnv(t *testing.T) {
-	appPath := getAppPath()
+	appPath, err := getAppPath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	appName := getAppName(appPath)
+
 	configPath := filepath.Join(appPath, "config.toml")
 
 	// File has to be present to prevent fatal error
@@ -103,21 +112,21 @@ func TestGetActiveEnv(t *testing.T) {
 	envVal := os.Getenv("ABCWEB_ENV")
 	os.Setenv("ABCWEB_ENV", "")
 
-	env := getActiveEnv(appPath)
+	env := getActiveEnv(appPath, appName)
 	if env != "" {
 		t.Errorf("Expected %q, got %q", "", env)
 	}
 
 	afero.WriteFile(AppFS, configPath, []byte("env=\"dog\"\n"), 0644)
 
-	env = getActiveEnv(appPath)
+	env = getActiveEnv(appPath, appName)
 	if env != "dog" {
 		t.Errorf("Expected %q, got %q", "dog", env)
 	}
 
 	os.Setenv("ABCWEB_ENV", "cat")
 
-	env = getActiveEnv(appPath)
+	env = getActiveEnv(appPath, appName)
 	if env != "cat" {
 		t.Errorf("Expected %q, got %q", "cat", env)
 	}
@@ -130,7 +139,10 @@ func TestGetActiveEnv(t *testing.T) {
 func TestGetAppPath(t *testing.T) {
 	t.Parallel()
 
-	path := getAppPath()
+	path, err := getAppPath()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !strings.HasSuffix(path, "abcweb") {
 		t.Error("Expected path to end with abcweb, but didnt. Got:", path)
 	}
@@ -139,9 +151,12 @@ func TestGetAppPath(t *testing.T) {
 func TestGetAppName(t *testing.T) {
 	t.Parallel()
 
-	path := getAppPath()
+	path, err := getAppPath()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	appName := GetAppName(path)
+	appName := getAppName(path)
 	if appName != "abcweb" {
 		t.Errorf("Expected appName %q, got %q", "abcweb", appName)
 	}
