@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"path"
@@ -11,11 +12,30 @@ import (
 
 	"{{.ImportPath}}/rendering"
 	"{{.ImportPath}}/controllers"
+	"{{.ImportPath}}/middleware"
 	"github.com/volatiletech/abcmiddleware"
 )
 
+// Errors is the list of errors that can be used in all controllers,
+// for example: return app.Errors["auth"]
+// The Errors middleware is initialized with this list, so if you
+// need to perform a special action on a specific error, such as
+// emailing or slack integration, you can do so by editing the middleware. 
+var Errors = map[string]error {
+	"auth": errors.New("not authorized"),
+}
+
 // InitRoutes initializes the webserver routing and controllers
 func (s *State) InitRoutes() {
+	m := middleware.Middleware{
+		{{if .NoRequestID -}}
+		Log:       s.Log,
+		{{- end}}
+		Render:    s.Render,
+		// Initialize the Errors middleware with all of the controller errors
+		ErrorsMap: Errors,
+	}
+
 	// The common state for each route handler
 	root := controllers.Root{
 		{{if .NoRequestID -}}
@@ -32,7 +52,7 @@ func (s *State) InitRoutes() {
 
 
 	main := controllers.Main{Root: root}
-	s.Router.Get("/", main.Home)
+	s.Router.Get("/", m.Errors(main.Home))
 }
 
 // NotFound handler is called if the requested route or asset cannot be found.
@@ -53,7 +73,7 @@ func (s *State) InitRoutes() {
 func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 	{{if .NoRequestID -}}
 	log := s.Log
-	{{else}}
+	{{- else -}}
 	// Get the Request ID scoped logger
 	log := abcmiddleware.Log(r)
 	{{- end}}

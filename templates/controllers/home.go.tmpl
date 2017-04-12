@@ -2,23 +2,10 @@ package controllers
 
 import (
 	"net/http"
-	
-	"go.uber.org/zap"
-	chimiddleware "github.com/pressly/chi/middleware"
 )
 
 
 // Home page
-func (m Main) Home(w http.ResponseWriter, r *http.Request) {
-	err := m.Render.HTML(w, http.StatusOK, "main/home", nil)
-	if err != nil {
-		{{if not .NoRequestID -}}
-		Log(r).Error("cannot render home", zap.Error(err))
-		requestID := chimiddleware.GetReqID(r.Context())
-		m.Render.HTML(w, http.StatusInternalServerError, "errors/500", requestID)
-		{{- else -}}
-		m.Log.Error("cannot render home", zap.Error(err))
-		m.Render.HTML(w, http.StatusInternalServerError, "errors/500")
-		{{- end}}
-	}
+func (m Main) Home(w http.ResponseWriter, r *http.Request) error {
+	return m.Render.HTML(w, http.StatusOK, "main/home", nil)
 }

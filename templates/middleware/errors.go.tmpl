@@ -1,0 +1,71 @@
+package middleware
+
+import (
+	"net/http"
+
+	"github.com/volatiletech/abcmiddleware"
+	chimiddleware "github.com/pressly/chi/middleware"
+	"go.uber.org/zap"
+)
+
+type AppHandler func(w http.ResponseWriter, r *http.Request) error
+
+func (m Middleware) Errors(ctrl AppHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := ctrl(w, r)
+		if err == nil {
+			return
+		}
+
+		var errorKey, errorTemplate string
+		var code int
+
+		for key, e := range m.ErrorsMap {
+			if e == err {
+				errorKey = key
+			}
+		}
+
+		switch errorKey {
+		case "unauthorized":
+			code = http.StatusUnauthorized
+			errorTemplate = "401"
+		case "forbidden":
+			code = http.StatusForbidden
+			errorTemplate = "403"
+		default:
+			code = http.StatusInternalServerError
+			errorTemplate = "500"
+		}
+
+		w.WriteHeader(code)
+
+		{{if .NoRequestID -}}
+		log := s.Log
+		{{- else -}}
+		// Get the Request ID scoped logger
+		log := abcmiddleware.Log(r)
+		{{- end}}
+
+		{{if not .NoRequestID -}}
+		// log with the request_id scoped logger
+		{{- end}}
+		log.Error(
+			"request error",
+			zap.String("method", r.Method),
+			zap.String("uri", r.RequestURI),
+			zap.Bool("tls", r.TLS != nil),
+			zap.String("protocol", r.Proto),
+			zap.String("host", r.Host),
+			zap.String("remote_addr", r.RemoteAddr),
+			zap.Error(err),
+		)
+
+		{{if not .NoRequestID -}}
+		requestID := chimiddleware.GetReqID(r.Context())
+		m.Render.HTML(w, code, "errors/" + errorTemplate, requestID)
+		{{- else -}}
+		m.Render.HTML(w, code, "errors/" + errorTemplate)
+		{{- end}}
+	}
+}

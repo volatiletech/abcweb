@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"{{.ImportPath}}/config"
-	"{{.ImportPath}}/middleware"
 	"{{.ImportPath}}/rendering"
 	"github.com/pressly/chi"
+	"github.com/volatiletech/abcmiddleware"
 )
 
 func TestInitRoutes(t *testing.T) {
@@ -50,7 +50,7 @@ func TestNotFound(t *testing.T) {
 	w := httptest.NewRecorder()
 	
 	{{if not .NoSessions -}}
-	r = r.WithContext(context.WithValue(r.Context(), middleware.CtxLoggerKey, state.Log))
+	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, state.Log))
 	{{- end}}
 
 	// Call the handler
@@ -76,7 +76,7 @@ func TestNotFound(t *testing.T) {
 	w = httptest.NewRecorder()
 
 	{{if not .NoSessions -}}
-	r = r.WithContext(context.WithValue(r.Context(), middleware.CtxLoggerKey, state.Log))
+	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, state.Log))
 	{{- end}}
 
 	// Call the handler
@@ -95,7 +95,7 @@ func TestNotFound(t *testing.T) {
 	w = httptest.NewRecorder()
 
 	{{if not .NoSessions -}}
-	r = r.WithContext(context.WithValue(r.Context(), middleware.CtxLoggerKey, state.Log))
+	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, state.Log))
 	{{- end}}
 
 	// Set asset manifest to test manifest hotpath
