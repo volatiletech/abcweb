@@ -6,6 +6,7 @@ import (
 	"github.com/volatiletech/abcmiddleware"
 	chimiddleware "github.com/pressly/chi/middleware"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type AppHandler func(w http.ResponseWriter, r *http.Request) error
@@ -38,8 +39,6 @@ func (m Middleware) Errors(ctrl AppHandler) http.HandlerFunc {
 			errorTemplate = "500"
 		}
 
-		w.WriteHeader(code)
-
 		{{if .NoRequestID -}}
 		log := s.Log
 		{{- else -}}
@@ -47,11 +46,7 @@ func (m Middleware) Errors(ctrl AppHandler) http.HandlerFunc {
 		log := abcmiddleware.Log(r)
 		{{- end}}
 
-		{{if not .NoRequestID -}}
-		// log with the request_id scoped logger
-		{{- end}}
-		log.Error(
-			"request error",
+		fields := []zapcore.Field{
 			zap.String("method", r.Method),
 			zap.String("uri", r.RequestURI),
 			zap.Bool("tls", r.TLS != nil),
@@ -59,13 +54,28 @@ func (m Middleware) Errors(ctrl AppHandler) http.HandlerFunc {
 			zap.String("host", r.Host),
 			zap.String("remote_addr", r.RemoteAddr),
 			zap.Error(err),
-		)
+		}
 
 		{{if not .NoRequestID -}}
-		requestID := chimiddleware.GetReqID(r.Context())
-		m.Render.HTML(w, code, "errors/" + errorTemplate, requestID)
+		// log with the request_id scoped logger
+		switch code {
+		case http.StatusInternalServerError:
+			log.Error("request error", fields...)
+			requestID := chimiddleware.GetReqID(r.Context())
+			m.Render.HTML(w, code, "errors/" + errorTemplate, requestID)
+		default:
+			log.Warn("request failed", fields...)
+			m.Render.HTML(w, code, "errors/" + errorTemplate, nil)
+		}
 		{{- else -}}
-		m.Render.HTML(w, code, "errors/" + errorTemplate)
+		switch code {
+		case http.StatusInternalServerError:
+			log.Error("request error", fields...)
+		default:
+			log.Warn("request failed", fields...)
+		}
+
+		m.Render.HTML(w, code, "errors/" + errorTemplate, nil)
 		{{- end}}
 	}
 }
