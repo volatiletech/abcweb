@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/kat-co/vala"
-	"github.com/nullbio/abcweb/config"
 	"github.com/spf13/cobra"
 	"github.com/vattle/sqlboiler/bdb/drivers"
 	"github.com/vattle/sqlboiler/boilingcore"
+	"github.com/volatiletech/abcweb/config"
 )
 
 var (
@@ -44,7 +44,7 @@ var migrationCmd = &cobra.Command{
 	Use:   "migration <name> [flags]",
 	Short: "Generate a migration file",
 	Long: `Generate migration will generate a .sql migration file in your db/migrations directory.
-This tool pipes out to mig: https://github.com/nullbio/mig`,
+This tool pipes out to mig: https://github.com/volatiletech/mig`,
 	Example: "abcweb gen migration add_users",
 	RunE:    migrationCmdRun,
 }
@@ -241,9 +241,9 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// fix imports
-	modelsCmdState.Importer.TestSingleton.Add("boil_main_test", `"github.com/nullbio/abcweb/config"`, true)
-	modelsCmdState.Importer.TestMain.Add("postgres", `"github.com/nullbio/abcweb/config"`, true)
-	modelsCmdState.Importer.TestMain.Add("mysql", `"github.com/nullbio/abcweb/config"`, true)
+	modelsCmdState.Importer.TestSingleton.Add("boil_main_test", `"github.com/volatiletech/abcweb/config"`, true)
+	modelsCmdState.Importer.TestMain.Add("postgres", `"github.com/volatiletech/abcweb/config"`, true)
+	modelsCmdState.Importer.TestMain.Add("mysql", `"github.com/volatiletech/abcweb/config"`, true)
 	modelsCmdState.Importer.TestSingleton.Remove("boil_main_test", `"path/filepath"`)
 	modelsCmdState.Importer.TestSingleton.Remove("boil_main_test", `"github.com/pkg/errors"`)
 	modelsCmdState.Importer.TestSingleton.Remove("boil_main_test", `"github.com/spf13/viper"`)

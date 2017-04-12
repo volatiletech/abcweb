@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/nullbio/abcweb/strmangle"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/viper"
+	"github.com/volatiletech/abcweb/strmangle"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 	// AppConfigFilename is the filename for the app config file
 	AppConfigFilename = "config.toml"
 	// basePackage is used to find templates
-	basePackage = "github.com/nullbio/abcweb"
+	basePackage = "github.com/volatiletech/abcweb"
 )
 
 // AppFS is a handle to the filesystem in use

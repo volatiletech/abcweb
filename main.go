@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nullbio/abcweb/cmd"
+	"github.com/volatiletech/abcweb/cmd"
 )
 
 const abcwebVersion = "1.0.0"

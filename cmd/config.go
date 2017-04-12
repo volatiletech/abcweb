@@ -1,9 +1,9 @@
 package cmd
 
-import "github.com/nullbio/abcweb/config"
+import "github.com/volatiletech/abcweb/config"
 
 const (
-	basePackage         = "github.com/nullbio/abcweb"
+	basePackage         = "github.com/volatiletech/abcweb"
 	templatesDirectory  = "templates"
 	migrationsDirectory = "db/migrations"
 )

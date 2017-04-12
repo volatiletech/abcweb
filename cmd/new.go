@@ -13,11 +13,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/nullbio/abcweb/cert"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/volatiletech/abcweb/cert"
 )
 
 var newCmdConfig newConfig

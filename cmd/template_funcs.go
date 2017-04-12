@@ -3,7 +3,7 @@ package cmd
 import (
 	"text/template"
 
-	"github.com/nullbio/abcweb/strmangle"
+	"github.com/volatiletech/abcweb/strmangle"
 )
 
 var templateFuncs = template.FuncMap{

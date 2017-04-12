@@ -5,8 +5,8 @@ import (
 	"crypto/rsa"
 	"testing"
 
-	"github.com/nullbio/abcweb/config"
 	"github.com/spf13/afero"
+	"github.com/volatiletech/abcweb/config"
 )
 
 func init() {
