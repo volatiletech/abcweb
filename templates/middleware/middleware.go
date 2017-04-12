@@ -9,7 +9,4 @@ import (
 type Middleware struct {
 	Log    *zap.Logger
 	Render abcrender.Renderer
-	// ErrorsMap is a map of errors used in your controllers and
-	// validated in the Errors middleware.
-	ErrorsMap map[string]error
 }

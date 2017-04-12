@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/volatiletech/abcmiddleware"
@@ -9,7 +10,15 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// AppHandler is the function signature for controllers that return errors
+
+// These are the errors that can be used in your controllers and matched
+// against in the Errors middleware to perform special actions.
+var (
+	ErrUnauthorized = errors.New("not authorized")
+	ErrForbidden = errors.New("access is forbidden")
+)
+
+// AppHandler is the function signature for controllers that return errors.
 type AppHandler func(w http.ResponseWriter, r *http.Request) error
 
 // Errors is a middleware to handle controller errors and error page rendering.
@@ -24,20 +33,14 @@ func (m Middleware) Errors(ctrl AppHandler) http.HandlerFunc {
 			return
 		}
 
-		var errorKey, errorTemplate string
+		var errorTemplate string
 		var code int
 
-		for key, e := range m.ErrorsMap {
-			if e == err {
-				errorKey = key
-			}
-		}
-
-		switch errorKey {
-		case "unauthorized":
+		switch err {
+		case ErrUnauthorized:
 			code = http.StatusUnauthorized
 			errorTemplate = "401"
-		case "forbidden":
+		case ErrForbidden:
 			code = http.StatusForbidden
 			errorTemplate = "403"
 		default:

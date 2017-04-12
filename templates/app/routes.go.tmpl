@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"net/http"
 	"os"
 	"path"
@@ -16,16 +15,6 @@ import (
 	"github.com/volatiletech/abcmiddleware"
 )
 
-// errs is the list of errors that can be used in all controllers,
-// for example, in your controller: return m.Errors["auth"]
-// The Errors middleware and Root controller is initialized with this list, 
-// so if you need to perform a special action on a specific error, such as
-// emailing or slack integration, you can do so by editing the middleware. 
-var errs = map[string]error {
-	"unauthorized": errors.New("not authorized"),
-	"forbidden":    errors.New("access is forbidden"),
-}
-
 // InitRoutes initializes the webserver routing and controllers
 func (s *State) InitRoutes() {
 	m := middleware.Middleware{
@@ -33,8 +22,6 @@ func (s *State) InitRoutes() {
 		Log:       s.Log,
 		{{- end}}
 		Render:    s.Render,
-		// Initialize the Errors middleware with all of the controller errors
-		ErrorsMap: errs,
 	}
 
 	// The common state for each route handler
@@ -46,7 +33,6 @@ func (s *State) InitRoutes() {
 		{{if not .NoSessions -}}
 		Session: s.Session,
 		{{- end}}
-		Errors: errs,
 	}
 	
 	// 404 route handler

@@ -24,10 +24,6 @@ type Root struct {
 	{{if not .NoSessions -}}
 	Session abcsessions.Overseer
 	{{- end}}
-	// The list of errors that can be used in all controllers.
-	// Both the Errors middleware and Root controller is initialized
-	// with this list in app/routes.go
-	Errors map[string]error
 }
 
 // Main is the controller struct for the main routes (home, about, etc).
