@@ -25,7 +25,10 @@ func TestMainHome(t *testing.T) {
 	{{- end}}
 
 	// Call the controller with the httptest recorder and httptest request
-	m.Home(w, r)
+	err := m.Home(w, r)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Ensure we get the contents of main/home.html back
 	if !strings.Contains(w.Body.String(), "<span>Hello World!</span>") {
