@@ -1,6 +1,17 @@
-<b>500.</b> Internal Server Error<br>
-I'm sorry, something has gone awry.<br><br>
-{{"{"}}{if .}{{"}"}}
-<b>Request ID:</b> {{"{"}}{.}{{"}"}}
-{{"{"}}{end}{{"}"}}
+<div class="container" style="height: 100%;">
+   <div class="row h-100">
+      <div class="col-sm-12 my-auto">
+         <div class="w-50 mx-auto text-center">
+            <h1 class="display-4"><b>500.</b></h1><h3>Internal Server Error</h3>
+            <br>
+            <span>
+					I'm sorry, something has gone awry.<br><br>
+					{{"{"}}{if ne . ""}{{"}"}}
+					<b>Request ID:</b> {{"{"}}{.}{{"}"}}
+					{{"{"}}{end}{{"}"}}
+            </span>
+         </div>
+      </div>
+   </div>
+</div>
 
