@@ -34,6 +34,8 @@ type AppConfig struct {
 	ReadTimeout time.Duration
 	// Maximum duration before timing out write of the response
 	WriteTimeout time.Duration
+	// Maximum duration before timing out idle keep-alive connection
+	IdleTimeout time.Duration
 	// Public assets folder path
 	AssetsPublic string 
 	// Use manifest.json assets mapping
@@ -154,6 +156,7 @@ func LoadAppConfig(v *viper.Viper) *AppConfig {
 		TLSKeyFile:			v.GetString("tls-key-file"),
 		ReadTimeout:		v.GetDuration("read-timeout"),
 		WriteTimeout:		v.GetDuration("write-timeout"),
+		IdleTimeout:      v.GetDuration("idle-timeout"),
 		AssetsPublic:		v.GetString("assets-public"),
 		AssetsManifest:   v.GetBool("assets-manifest"),
 		AssetsNoCache:		v.GetBool("assets-no-cache"),

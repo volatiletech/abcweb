@@ -30,8 +30,19 @@ func (s *State) StartServer() error {
 	server := http.Server{
 		ReadTimeout:  s.AppConfig.ReadTimeout,
 		WriteTimeout: s.AppConfig.WriteTimeout,
+		IdleTimeout:  s.AppConfig.IdleTimeout,
 		ErrorLog:     log.New(serverErrLogger{s.Log}, "", 0),
 		Handler:      s.Router,
+	}
+
+	// Causes servers to use Go's default ciphersuite preferences,
+	// which are tuned to avoid attacks. Does nothing on clients.
+	server.TLSConfig.PreferServerCipherSuites = true
+
+	// Only use curves which have assembly implementations
+	server.TLSConfig.CurvePreferences = []tls.CurveID{
+		tls.CurveP256,
+		tls.X25519, // Go 1.8 only
 	}
 
 	// subscribe to SIGINT signals
@@ -85,6 +96,8 @@ func (s *State) Redirect() {
 
 	server := http.Server{
 		Addr:         s.AppConfig.Bind,
+		// Do not set IdleTimeout, so Go uses ReadTimeout value.
+		// IdleTimeout config value too high for redirect listener.
 		ReadTimeout:  s.AppConfig.ReadTimeout,
 		WriteTimeout: s.AppConfig.WriteTimeout,
 		ErrorLog:     log.New(serverErrLogger{s.Log}, "", 0),

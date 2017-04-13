@@ -37,8 +37,9 @@ func RegisterFlags(root *cobra.Command) {
 	root.Flags().StringP("tls-bind", "", "", `HTTPS bind address, eg: ":443"`)
 	root.Flags().StringP("tls-cert-file", "", "", "TLS certificate file path")
 	root.Flags().StringP("tls-key-file", "", "", "TLS key file path")
-	root.Flags().DurationP("read-timeout", "", time.Second*30, "Maximum duration before timing out read of the request")
-	root.Flags().DurationP("write-timeout", "", time.Second*30, "Maximum duration before timing out write of the response")
+	root.Flags().DurationP("read-timeout", "", time.Second*10, "Maximum duration before timing out read of the request")
+	root.Flags().DurationP("write-timeout", "", time.Second*15, "Maximum duration before timing out write of the response")
+	root.Flags().DurationP("idle-timeout", "", time.Second*120, "Maximum duration before timing out idle keep-alive connection")
 	root.Flags().StringP("assets-public", "", "./public", "Public assets folder path")
 
 	// manifest.json is created as a part of the gulp production "build" task,
