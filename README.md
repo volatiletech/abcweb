@@ -1,15 +1,16 @@
 # abcweb
 
-ABCWeb is the only Go web framework you'll need, and was heavily inspired by Rails.
+ABCWeb was heavily inspired by Rails and was designed to be the only Go web framework you'll need.
 
-The 'abcweb new' command creates a new Go web app with a default directory
+The `abcweb new` command creates a new Go web app with a default directory
 structure and configuration at the path you specify.
 
-You can specify extra command-line arguments to be used every time 'abcweb new'
-runs to tell the generator what features and packages you would like enabled.
+You can specify extra `abcweb new` command-line arguments to tell the generator 
+what features and packages you would like enabled.
 
-The abcweb generated web app can function as a server-side rendered web app, 
-a client-side rendered web app or a stand-alone web API server.
+This customizability allows abcweb to suit your needs, whether that be a 
+server-side rendered web app (html templates), a client-side rendered 
+web app (reactjs, angularjs) or a stand-alone web API server.
 
 ### Features
 
@@ -19,9 +20,9 @@ flags to the `abcweb new` command.
 * HTTP2 support
 * Database ORM
 * Database migrations
-* Build system and task runner (Gulp)
-* Automatic rebuild Go app on code change
-* Automatic asset compile on asset change
+* Build system and task runner (Gulp 4)
+* Automaticly rebuild Go app on code change
+* Automatic asset compilation on asset change
 * Automatic browser refreshing with LiveReload
 * [Font-Awesome](http://fontawesome.io/) and [Twitter Bootstrap 4](https://v4-alpha.getbootstrap.com/)
 * SCSS and LESS support
@@ -40,16 +41,20 @@ flags to the `abcweb new` command.
 
 ### Packages
 
+Some of the most notable packages:
+
 * [sqlboiler](https://github.com/vattle/sqlboiler) *-- Database ORM generator*
 * [mig](https://github.com/volatiletech/mig) *-- Database migrations*
 * [abcsessions](https://github.com/volatiletech/abcsessions) *-- HTTP sessions*
 * [abcmiddleware](https://github.com/volatiletech/abcmiddleware) *-- Zap logging and panic recovery middleware*
 * [abcrender](https://github.com/volatiletech/abcrender) *-- Rendering interface to support other templating engines*
 * [render](https://github.com/unrolled/render) *-- Template rendering*
+* [refresh](https://github.com/markbates/refresh) *-- Automatic Go rebuild*
 * [cobra](https://github.com/spf13/cobra) *-- Command line arguments*
 * [viper](https://github.com/spf13/viper) *-- Configuration loading*
 * [zap](https://github.com/uber-go/zap) *-- Logging* 
 * [chi](https://github.com/pressly/chi) *-- Routing*
+* [govendor](github.com/kardianos/govendor) *-- Vendoring*
 
 ### Configuration
 
@@ -62,6 +67,8 @@ This project loads configuration in the order of:
 
 This means that values passed into the command line will
 override values passed in through the config.toml and env vars.
+
+### Usage
 
 ```
 ABCWeb is a tool to help you scaffold and develop Go web applications.
@@ -84,6 +91,8 @@ Flags:
 
 Use "abcweb [command] --help" for more information about a command.
 ```
+
+### Getting Started
 
 ### FAQ
 
