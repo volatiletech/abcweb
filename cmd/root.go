@@ -48,6 +48,6 @@ func checkDep(name string) {
 }
 
 func init() {
-	RootCmd.Flags().BoolP("version", "", false, "Print the ABCWeb version")
+	RootCmd.Flags().BoolP("version", "", false, "Print the abcweb version")
 	viper.BindPFlags(RootCmd.Flags())
 }

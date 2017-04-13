@@ -16,8 +16,8 @@ import (
 // devCmd represents the "dev" command
 var devCmd = &cobra.Command{
 	Use:   "dev",
-	Short: "Runs your ABCWeb app for development",
-	Long: `Runs your ABCWeb app for development. The dev command has a watch component
+	Short: "Runs your abcweb app for development",
+	Long: `Runs your abcweb app for development. The dev command has a watch component
 that watches for any changes to Go files and re-builds/re-runs your app on change. 
 It will also watch for any change to assets and execute the corresponding gulp tasks 
 for the changed asset file(s). The dev command also hosts a live-reload server

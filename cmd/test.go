@@ -10,8 +10,8 @@ import (
 
 var testCmd = &cobra.Command{
 	Use:   "test",
-	Short: "Runs the tests for your ABCWeb app",
-	Long: `Runs all Go tests for your ABCWeb app by executing "go test ./..."
+	Short: "Runs the tests for your abcweb app",
+	Long: `Runs all Go tests for your abcweb app by executing "go test ./..."
 from the root directory of your app.`,
 	Example: "abcweb test -v",
 	Run:     testCmdRun,

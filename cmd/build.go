@@ -14,8 +14,8 @@ var buildCmdConfig buildConfig
 // buildCmd represents the new command
 var buildCmd = &cobra.Command{
 	Use:     "build",
-	Short:   "Builds your ABCWeb binary and executes the gulp build task",
-	Long:    "Builds your ABCWeb binary and executes the gulp build task",
+	Short:   "Builds your abcweb binary and executes the gulp build task",
+	Long:    "Builds your abcweb binary and executes the gulp build task",
 	Example: "abcweb build",
 	RunE:    buildCmdRun,
 }

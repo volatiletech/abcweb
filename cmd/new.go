@@ -25,8 +25,8 @@ var newCmdConfig newConfig
 // newCmd represents the new command
 var newCmd = &cobra.Command{
 	Use:   "new <import_path> [flags]",
-	Short: "Generate a new ABCWeb app",
-	Long: `The 'abcweb new' command generates a new ABCWeb application with a 
+	Short: "Generate a new abcweb app",
+	Long: `The 'abcweb new' command generates a new abcweb application with a 
 default directory structure and configuration at the Go src import path you specify.
 
 The app will generate in $GOPATH/src/<import_path>.
