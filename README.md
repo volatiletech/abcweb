@@ -107,7 +107,7 @@ When ABCWeb generates your app it also includes a `vendor.json` file with all of
 in it. The `abcweb new` command will automatically sync your `vendor` folder on generation.
 [Govendor](github.com/kardianos/govendor) was the tool of choice here. It's functional and easy to use.
 
-### Build System, Asset Pipeline & Task Running
+#### Build System, Asset Pipeline & Task Running
 
 ABCWeb uses [Gulp](https://github.com/gulpjs/gulp/tree/4.0) to handle asset compilation,
 minification, task running and live reloading of the browser on changes to the asset files or
