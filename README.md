@@ -103,13 +103,13 @@ in it. The `abcweb new` command will automatically sync your `vendor` folder on 
 
 #### Build System, Asset Pipeline & Task Running
 
-ABCWeb uses [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) to handle asset compilation,
+ABCWeb uses [Gulp](https://github.com/gulpjs/gulp/tree/4.0) to handle asset compilation,
 minification, task running and live reloading of the browser on changes to the asset files or
 html templates. Read the [Gulp](#gulp) section of this readme if you'd like further information.
 ABCWeb also uses [refresh](https://github.com/markbates/refresh) to rebuild your go web app on changes 
 to your configuration or .go files. Refresh can be highly customized using the `watch.toml` config file.
 
-[Read here](#why-did-you-choose-to-use-gulp-4) if you're wondering why we chose a Nodejs dependency. 
+[Read here](#why-did-you-choose-to-use-gulp) if you're wondering why we chose a Nodejs dependency. 
 Also note that it's optional, but highly recommended due to the conveniences it provides.
 
 ### Getting Started
@@ -126,7 +126,7 @@ we highly recommend it because it makes the development process SO much easier.
 # download and install abcweb
 go get -u -t github.com/volatiletech/abcweb
 
-# install and upgrade all dependencies (including Gulp 4)
+# install and upgrade all dependencies (including Gulp)
 abcweb deps -u 
 
 # generate your app (abcweb automatically uses the GOPATH to find your src folder)
@@ -222,9 +222,9 @@ your configuration files and your `public/assets` folder to your production serv
 
 ### FAQ
 
-### Why did you choose to use Gulp 4?
+### Why did you choose to use Gulp?
 
-We decided to use [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) for our build system and
+We decided to use [Gulp](https://github.com/gulpjs/gulp/tree/4.0) for our build system and
 task running. We realize that some people may not enjoy having a Nodejs dependency so we've
 made this entirely optional (`abcweb new --no-gulp`), however we highly recommend using it
 due to the conveniences it provides. Unfortunately there are no robust solutions in the Go
@@ -246,7 +246,7 @@ NPM comes bundled with NodeJS.
 
 
 ABCWeb uses [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) as its task runner and asset build system. Once nodejs and 
-npm is installed you can install [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) using:
+npm is installed you can install [Gulp](https://github.com/gulpjs/gulp/tree/4.0) using:
 
 `abcweb deps -u`
 
