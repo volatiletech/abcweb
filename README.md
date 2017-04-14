@@ -131,7 +131,7 @@ This is required for the asset pipeline (Gulp). Using Gulp is optional (`--no-gu
 but we highly recommend it because it makes the development process SO much easier.
 
 ### Step 2:
-```
+```shell
 # download and install abcweb
 go get -u -t github.com/volatiletech/abcweb
 
@@ -146,7 +146,7 @@ Your app has now been generated!
 
 #### Where to from here?
 
-```
+```shell
 # cd into your new project folder
 cd $GOPATH/src/github.com/username/appname 
 
