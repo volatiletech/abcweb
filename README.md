@@ -29,11 +29,6 @@ web app (reactjs, angularjs) or a stand-alone web API server.
     - [Configuration](#configuration)
     - [Gulp](#gulp)
     - [FAQ](#faq)
-        - [Why did you choose to use Gulp?](#why-did-you-choose-to-use-gulp)
-        - [How do I install NodeJS, NPM and Gulp?](#how-do-i-install-nodejs-npm-and-gulp)
-        - [Why didn't you include something to combine asset files?](#why-didnt-you-include-something-to-combine-asset-files)
-        - [I'm getting nodejs npm permission errors](#im-getting-nodejs-npm-permission-errors)
-        - [Dependencies](#dependencies)
 
 ## Features
 
