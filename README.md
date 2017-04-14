@@ -19,7 +19,7 @@ This customizability allows abcweb to suit your requirements, whether that be a
 server-side rendered web app (html templates), a client-side rendered 
 web app (reactjs, angularjs) or a stand-alone web API server.
 
-### Features
+## Features
 
 Most features can be removed on a per-app basis by specifying
 flags to the `abcweb new` command.
@@ -47,21 +47,21 @@ flags to the `abcweb new` command.
 * Vendored dependencies to ensure consistent compatibility 
 * Many more features!
 
-### Packages
+## Packages
 
 ABCWeb uses a collection of the very best open-source projects and packages the
 Go community has to offer. These packages were chosen specifically because 
 they are fast, intelligently designed, easy to use and modern. For a full list
 see [PACKAGES.md](https://github.com/volatiletech/abcweb/blob/master/PACKAGES.md):
 
-#### Database ORM
+### Database ORM
 
 [SQLBoiler](https://github.com/vattle/sqlboiler) is one of our other core projects and was a natural 
 fit for ABCWeb. It is the fastest ORM by far (on par with stdlib), it is featureful 
 and has excellent relationship support, and its generation approach allows for type-safety and
 editor auto-completion. We've made using SQLBoiler easy by bundling it into the `abcweb gen` command.
 
-#### Database Migrations
+### Database Migrations
 
 [mig](https://github.com/volatiletech/mig) is our fork of [Goose](https://github.com/pressly/goose)
 that patches some big issues and was tweaked to make it work better with ABCWeb. It does
@@ -69,45 +69,45 @@ everything you'd expect a migration tool to do, and has both a library and comma
 Mig supports MySQL and Postgres at present. It has been bundled into the `abcweb gen` 
 and `abcweb migrate` commands.
 
-#### Sessions, Cookies & Flash Messages
+### Sessions, Cookies & Flash Messages
 
 [ABCSessions](https://github.com/volatiletech/abcsessions) was designed to make working with 
 HTTP sessions and cookies a breeze, and it also comes with a flash messages API. ABCSessions 
 ships with disk, memory, redis and cookie storers, and the ability to easily add new storers using
 our provided interfaces.
 
-#### Rendering API
+### Rendering API
 
 [Render](https://github.com/unrolled/render) is a package that provides functionality for 
 easily rendering JSON, XML, text, binary data, and HTML templates. We have also written an interface
 wrapper for Render ([ABCRender](https://github.com/volatiletech/abcrender)) that allows you to
 easily add support for any templating engine you choose if Go's `html/template` is not enough for you.
 
-#### Routing
+### Routing
 
 [Chi](https://github.com/pressly/chi) is one of the fastest and most modern routers in the eco-system
 and is starting to gain a cult following. Chi was built on the `context` package that was introduced
 in Go 1.7. It's elegant API design and stdlib-only philosophy is what has Chi standing out from the rest.
 
-#### Logging
+### Logging
 
 [Zap](https://github.com/uber-go/zap) was written by Uber, and is widely regarded as the fastest and
 most performant logging package, even rivaling the standard library. It is a structured, leveled &
 colored logger.
 
-#### Command Line and Configuration
+### Command Line and Configuration
 
 ABCWeb comes with [Cobra](https://github.com/spf13/cobra) for handling command-line arguments and
 [Viper](https://github.com/spf13/viper) for handling configuration loading. These packages are widely
 known, widely used and widely enjoyed.
 
-#### Vendoring
+### Vendoring
 
 When ABCWeb generates your app it also includes a `vendor.json` file with all of its dependencies
 in it. The `abcweb new` command will automatically sync your `vendor` folder on generation.
 [Govendor](github.com/kardianos/govendor) was the tool of choice here. It's functional and easy to use.
 
-#### Build System, Asset Pipeline & Task Running
+### Build System, Asset Pipeline & Task Running
 
 ABCWeb uses [Gulp](https://github.com/gulpjs/gulp/tree/4.0) to handle asset compilation,
 minification, task running and live reloading of the browser on changes to the asset files or
@@ -118,19 +118,19 @@ to your configuration or .go files. Refresh can be highly customized using the `
 [Read here](#why-did-you-choose-to-use-gulp) if you're wondering why we chose a NodeJS dependency. 
 Also note that it's optional, but highly recommended due to the conveniences it provides.
 
-### Getting Started
+## Getting Started
 
 ABCWeb requires Go 1.8 or higher.
 
 It's dead easy to generate a web app using ABCWeb.
 
-#### Step 1:
+### Step 1:
 [Install NodeJS](#how-do-i-install-nodejs-npm-and-gulp).
 
 This is required for the asset pipeline (Gulp). Using Gulp is optional (`--no-gulp`), 
 but we highly recommend it because it makes the development process SO much easier.
 
-#### Step 2:
+### Step 2:
 ```
 # download and install abcweb
 go get -u -t github.com/volatiletech/abcweb
@@ -163,7 +163,7 @@ rebuild your go web-server, however they will require a manual browser refresh
 (automatically refreshing in the middle of server changes could put you in 
 a pickle, so we decided against it).
 
-### Usage
+## Usage
 
 ```
 ABCWeb is a tool to help you scaffold and develop Go web applications.
@@ -187,7 +187,7 @@ Flags:
 Use "abcweb [command] --help" for more information about a command.
 ```
 
-### Configuration
+## Configuration
 
 This project loads configuration in the order of:
 
@@ -204,7 +204,7 @@ override values passed in through the config.toml and env vars.
 * `abcweb dev` Go auto-rebuild configuration is found in `watch.toml`.
 * Asset pipeline, task runner and build system configuration is found in `gulpfile.js`.
 
-### Gulp
+## Gulp
 
 See the [FAQ](#faq) for installation instructions.
 
@@ -230,7 +230,7 @@ incoming file names to the fingerprinted asset file names, for example: `{"/css/
 Once you've finishing building your binary and assets, all you need to do is deploy your binary,
 your configuration files and your `public/assets` folder to your production server.
 
-### FAQ
+## FAQ
 
 ### Why did you choose to use Gulp?
 
