@@ -144,7 +144,7 @@ abcweb new github.com/username/appname
 
 Your app has now been generated!
 
-To continue from here:
+#### Where to from here?
 
 ```
 # cd into your new project folder
