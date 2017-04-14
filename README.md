@@ -149,7 +149,7 @@ go get -u -t github.com/volatiletech/abcweb
 abcweb deps -u 
 
 # generate your app (abcweb automatically uses the GOPATH to find your src folder)
-abcweb new github.com/username/appname
+abcweb new github.com/username/myapp
 ```
 
 Your app has now been generated!
@@ -158,10 +158,11 @@ Your app has now been generated!
 
 ```shell
 # cd into your new project folder
-cd $GOPATH/src/github.com/username/appname 
+cd $GOPATH/src/github.com/username/myapp 
 
-# run abcweb dev for auto-rebuild of app, assets and LiveReload
-abcweb dev
+# Run abcweb dev for auto-rebuild of app, assets and LiveReload.
+# You can optionally set your default environment in config.toml
+MYAPP_ENV=dev abcweb dev
 ```
 
 Navigate your browser to your now running server at http://localhost:4000/, 
