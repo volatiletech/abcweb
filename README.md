@@ -52,30 +52,31 @@ see [PACKAGES.md](https://github.com/volatiletech/abcweb/blob/master/PACKAGES.md
 #### Database ORM
 
 [SQLBoiler](https://github.com/vattle/sqlboiler) is one of our other core projects and was a natural 
-fit for ABCWeb: It is the fastest ORM by far (on par with stdlib), it is featureful 
+fit for ABCWeb. It is the fastest ORM by far (on par with stdlib), it is featureful 
 and has excellent relationship support, and its generation approach allows for type-safety and
-editor autocompletion. We've made using SQLBoiler easy by bundling it into the `abcweb gen` command.
+editor auto-completion. We've made using SQLBoiler easy by bundling it into the `abcweb gen` command.
 
 #### Database Migrations
 
 [mig](https://github.com/volatiletech/mig) is our fork of [Goose](https://github.com/pressly/goose)
-that patches some niggling issues and was tweaked to make it work better with ABCWeb. It does
+that patches some big issues and was tweaked to make it work better with ABCWeb. It does
 everything you'd expect a migration tool to do, and has both a library and command-line component.
-Mig supports MySQL and Postgres at present.
+Mig supports MySQL and Postgres at present. It has been bundled into the `abcweb gen` 
+and `abcweb migrate` commands.
 
 #### Sessions, Cookies & Flash Messages
 
 [ABCSessions](https://github.com/volatiletech/abcsessions) was designed to make working with 
-HTTP sessions and cookies a breeze, and comes bundled with a flash messages API. ABCSessions 
+HTTP sessions and cookies a breeze, and it also comes with a flash messages API. ABCSessions 
 ships with disk, memory, redis and cookie storers, and the ability to easily add new storers using
 our provided interfaces.
 
 #### Rendering API
 
-[Render](https://github.com/unrolled/render) Render is a package that provides functionality for 
+[Render](https://github.com/unrolled/render) is a package that provides functionality for 
 easily rendering JSON, XML, text, binary data, and HTML templates. We have also written an interface
 wrapper for Render ([ABCRender](https://github.com/volatiletech/abcrender)) that allows you to
-easily add support for any templating engine you choose, if Go's html/template is not enough for you.
+easily add support for any templating engine you choose if Go's `html/template` is not enough for you.
 
 #### Routing
 
@@ -85,7 +86,7 @@ in Go 1.7. It's elegant API design and stdlib-only philosophy is what has Chi st
 
 #### Logging
 
-[zap](https://github.com/uber-go/zap) was written by Uber, and is widely regarded as the fastest and
+[Zap](https://github.com/uber-go/zap) was written by Uber, and is widely regarded as the fastest and
 most performant logging package, even rivaling the standard library. It is a structured, leveled &
 colored logger.
 
@@ -105,11 +106,11 @@ in it. The `abcweb new` command will automatically sync your `vendor` folder on 
 
 ABCWeb uses [Gulp](https://github.com/gulpjs/gulp/tree/4.0) to handle asset compilation,
 minification, task running and live reloading of the browser on changes to the asset files or
-html templates. Read the [Gulp](#gulp) section of this readme if you'd like further information.
+html templates. Read the [Gulp section of this readme](#gulp) if you'd like further information.
 ABCWeb also uses [refresh](https://github.com/markbates/refresh) to rebuild your go web app on changes 
 to your configuration or .go files. Refresh can be highly customized using the `watch.toml` config file.
 
-[Read here](#why-did-you-choose-to-use-gulp) if you're wondering why we chose a Nodejs dependency. 
+[Read here](#why-did-you-choose-to-use-gulp) if you're wondering why we chose a NodeJS dependency. 
 Also note that it's optional, but highly recommended due to the conveniences it provides.
 
 ### Getting Started
@@ -220,6 +221,7 @@ will first remove all files in the public assets directory, then it will compile
 minify, gzip and fingerprint all assets and then generate a `manifest.json` file
 that will be loaded by your app in production mode. The assets manifest maps all of the
 incoming file names to the fingerprinted asset file names, for example: `{"/css/main.css": "/css/main-a2e4fe.css"}`.
+
 Once you've finishing building your binary and assets, all you need to do is deploy your binary,
 your configuration files and your `public/assets` folder to your production server.
 
@@ -228,7 +230,7 @@ your configuration files and your `public/assets` folder to your production serv
 ### Why did you choose to use Gulp?
 
 We decided to use [Gulp](https://github.com/gulpjs/gulp/tree/4.0) for our build system and
-task running. We realize that some people may not enjoy having a Nodejs dependency so we've
+task running. We realize that some people may not enjoy having a NodeJS dependency so we've
 made this entirely optional (`abcweb new --no-gulp`), however we highly recommend using it
 due to the conveniences it provides. Unfortunately there are no robust solutions in the Go
 ecosystem for this problem yet, and when we started to [make our own](https://github.com/nullbio/pipedream)
@@ -238,18 +240,18 @@ that Go is compiled and all of the existing asset tools out there are either wri
 written for Javascript. With that being said, Gulp is extremely easy to use, and ABCWeb
 makes it even easier to use.
 
-### How do I install nodejs, npm and gulp?
+### How do I install NodeJS, NPM and Gulp?
 
-Installing nodejs is system dependant. `nvm` is a nice option on some systems
+Installing NodeJS is system dependant. `nvm` is a nice option on some systems
 but is not supported in some shells such as [fish shell](https://fishshell.com/).
 NPM comes bundled with NodeJS.
 
-[Download Node.js](https://nodejs.org/en/download/)
-[Installing Node.js via package manager](https://nodejs.org/en/download/package-manager/)
+* [Download Node.js](https://nodejs.org/en/download/)
+* [Installing Node.js via package manager](https://nodejs.org/en/download/package-manager/)
 
 
-ABCWeb uses [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) as its task runner and asset build system. Once nodejs and 
-npm is installed you can install [Gulp](https://github.com/gulpjs/gulp/tree/4.0) using:
+ABCWeb uses [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) as its task runner and asset build system. Once NodeJS and 
+NPM is installed you can install [Gulp](https://github.com/gulpjs/gulp/tree/4.0) using:
 
 `abcweb deps -u`
 
@@ -270,7 +272,7 @@ Instructions for fixing this can be found [here.](https://docs.npmjs.com/getting
 
 Bootstrap 4 dependencies (included by default):
 
-[JQuery](https://jquery.com/)
-[Tether](http://tether.io/)
-[TransitionJS](http://transitionjs.org/)
+* [JQuery](https://jquery.com/)
+* [Tether](http://tether.io/)
+* [TransitionJS](http://transitionjs.org/)
 
