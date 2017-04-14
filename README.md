@@ -4,7 +4,6 @@
 [![GoDoc](https://godoc.org/github.com/volatiletech/abcweb?status.svg)](https://godoc.org/github.com/volatiletech/abcweb)
 [![Go Report Card](https://goreportcard.com/badge/volatiletech/abcweb)](http://goreportcard.com/report/volatiletech/abcweb)
 
-
 ABCWeb was heavily inspired by Rails for its ease-of-use, flexibility, 
 and development speed. The goal of this project is to make developing a 
 web app in Go just as painless.
