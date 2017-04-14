@@ -54,14 +54,14 @@ Go community has to offer. These packages were chosen specifically because
 they are fast, intelligently designed, easy to use and modern. For a full list
 see [PACKAGES.md](https://github.com/volatiletech/abcweb/blob/master/PACKAGES.md):
 
-### Database ORM
+#### Database ORM
 
 [SQLBoiler](https://github.com/vattle/sqlboiler) is one of our other core projects and was a natural 
 fit for ABCWeb. It is the fastest ORM by far (on par with stdlib), it is featureful 
 and has excellent relationship support, and its generation approach allows for type-safety and
 editor auto-completion. We've made using SQLBoiler easy by bundling it into the `abcweb gen` command.
 
-### Database Migrations
+#### Database Migrations
 
 [mig](https://github.com/volatiletech/mig) is our fork of [Goose](https://github.com/pressly/goose)
 that patches some big issues and was tweaked to make it work better with ABCWeb. It does
@@ -69,39 +69,39 @@ everything you'd expect a migration tool to do, and has both a library and comma
 Mig supports MySQL and Postgres at present. It has been bundled into the `abcweb gen` 
 and `abcweb migrate` commands.
 
-### Sessions, Cookies & Flash Messages
+#### Sessions, Cookies & Flash Messages
 
 [ABCSessions](https://github.com/volatiletech/abcsessions) was designed to make working with 
 HTTP sessions and cookies a breeze, and it also comes with a flash messages API. ABCSessions 
 ships with disk, memory, redis and cookie storers, and the ability to easily add new storers using
 our provided interfaces.
 
-### Rendering API
+#### Rendering API
 
 [Render](https://github.com/unrolled/render) is a package that provides functionality for 
 easily rendering JSON, XML, text, binary data, and HTML templates. We have also written an interface
 wrapper for Render ([ABCRender](https://github.com/volatiletech/abcrender)) that allows you to
 easily add support for any templating engine you choose if Go's `html/template` is not enough for you.
 
-### Routing
+#### Routing
 
 [Chi](https://github.com/pressly/chi) is one of the fastest and most modern routers in the eco-system
 and is starting to gain a cult following. Chi was built on the `context` package that was introduced
 in Go 1.7. It's elegant API design and stdlib-only philosophy is what has Chi standing out from the rest.
 
-### Logging
+#### Logging
 
 [Zap](https://github.com/uber-go/zap) was written by Uber, and is widely regarded as the fastest and
 most performant logging package, even rivaling the standard library. It is a structured, leveled &
 colored logger.
 
-### Command Line and Configuration
+#### Command Line and Configuration
 
 ABCWeb comes with [Cobra](https://github.com/spf13/cobra) for handling command-line arguments and
 [Viper](https://github.com/spf13/viper) for handling configuration loading. These packages are widely
 known, widely used and widely enjoyed.
 
-### Vendoring
+#### Vendoring
 
 When ABCWeb generates your app it also includes a `vendor.json` file with all of its dependencies
 in it. The `abcweb new` command will automatically sync your `vendor` folder on generation.
