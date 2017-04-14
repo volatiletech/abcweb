@@ -1,14 +1,16 @@
 # abcweb
 
-ABCWeb was heavily inspired by Rails and was designed to be the only Go web framework you'll need.
+ABCWeb was heavily inspired by Rails for its ease-of-use, flexibility, 
+and development speed. The goal of this project is to make developing a 
+web app in Go just as painless.
 
-The `abcweb new` command creates a new Go web app with a default directory
-structure and configuration at the path you specify.
+Getting started is as simple as running the `abcweb new` command which will
+generate you a new Go web app that comes working out of the box.
 
 You can specify extra `abcweb new` command-line arguments to tell the generator 
 what features and packages you would like enabled.
 
-This customizability allows abcweb to suit your needs, whether that be a 
+This customizability allows abcweb to suit your requirements, whether that be a 
 server-side rendered web app (html templates), a client-side rendered 
 web app (reactjs, angularjs) or a stand-alone web API server.
 
@@ -21,52 +23,136 @@ flags to the `abcweb new` command.
 * Database ORM
 * Database migrations
 * Build system and task runner (Gulp 4)
-* Automaticly rebuild Go app on code change
 * Automatic asset compilation on asset change
 * Automatic browser refreshing with LiveReload
-* [Font-Awesome](http://fontawesome.io/) and [Twitter Bootstrap 4](https://v4-alpha.getbootstrap.com/)
+* Automatically rebuild Go app on code change
+* Automatically run migrations against test database for testing
 * SCSS and LESS support
-* Asset fingerprinting and minification
+* Asset fingerprinting, compilation, minification and gzip
+* [Font-Awesome](http://fontawesome.io/) and [Twitter Bootstrap 4](https://v4-alpha.getbootstrap.com/)
 * Infinite environments in configuration
 * Command-line and environment variable configuration
 * Flexible routing (stdlib context.Context) 
 * Flexible rendering (HTML, JSON, XML, text & binary data)
-* Colored & leveled logging 
+* Colored and leveled logging 
 * TLS1.2/SSL support
 * HTTP sessions (supports cookie, disk, memory and redis sessions) 
 * Flash messages 
-* Rendering interface to add support for any templating engine
+* Rendering interface to easily add support for any templating engine
 * Vendored dependencies to ensure consistent compatibility 
 * Many more features!
 
 ### Packages
 
-Some of the most notable packages:
+ABCWeb uses a collection of the very best open-source projects and packages the
+Go community has to offer. These packages were chosen specifically because 
+they are fast, intelligently designed, easy to use and modern. For a full list
+see [PACKAGES.md](https://github.com/volatiletech/abcweb/PACKAGES.md):
 
-* [sqlboiler](https://github.com/vattle/sqlboiler) *-- Database ORM generator*
-* [mig](https://github.com/volatiletech/mig) *-- Database migrations*
-* [abcsessions](https://github.com/volatiletech/abcsessions) *-- HTTP sessions*
-* [abcmiddleware](https://github.com/volatiletech/abcmiddleware) *-- Zap logging and panic recovery middleware*
-* [abcrender](https://github.com/volatiletech/abcrender) *-- Rendering interface to support other templating engines*
-* [render](https://github.com/unrolled/render) *-- Template rendering*
-* [refresh](https://github.com/markbates/refresh) *-- Automatic Go rebuild*
-* [cobra](https://github.com/spf13/cobra) *-- Command line arguments*
-* [viper](https://github.com/spf13/viper) *-- Configuration loading*
-* [zap](https://github.com/uber-go/zap) *-- Logging* 
-* [chi](https://github.com/pressly/chi) *-- Routing*
-* [govendor](github.com/kardianos/govendor) *-- Vendoring*
+#### Database ORM
 
-### Configuration
+[SQLBoiler](https://github.com/vattle/sqlboiler) is one of our other core projects and was a natural 
+fit for ABCWeb: It is the fastest ORM by far (on par with stdlib), it is featureful 
+and has excellent relationship support, and its generation approach allows for type-safety and
+editor autocompletion. We've made using SQLBoiler easy by bundling it into the `abcweb gen` command.
 
-This project loads configuration in the order of:
+#### Database Migrations
 
-1. Command line argument default values
-2. config.toml
-3. Environment variables
-4. Supplied command line arguments
+[mig](https://github.com/volatiletech/mig) is our fork of [Goose](https://github.com/pressly/goose)
+that patches some niggling issues and was tweaked to make it work better with ABCWeb. It does
+everything you'd expect a migration tool to do, and has both a library and command-line component.
+Mig supports MySQL and Postgres at present.
 
-This means that values passed into the command line will
-override values passed in through the config.toml and env vars.
+#### Sessions, Cookies & Flash Messages
+
+[ABCSessions](https://github.com/volatiletech/abcsessions) was designed to make working with 
+HTTP sessions and cookies a breeze, and comes bundled with a flash messages API. ABCSessions 
+ships with disk, memory, redis and cookie storers, and the ability to easily add new storers using
+our provided interfaces.
+
+#### Rendering API
+
+[Render](https://github.com/unrolled/render) Render is a package that provides functionality for 
+easily rendering JSON, XML, text, binary data, and HTML templates. We have also written an interface
+wrapper for Render ([ABCRender](https://github.com/volatiletech/abcrender)) that allows you to
+easily add support for any templating engine you choose, if Go's html/template is not enough for you.
+
+#### Routing
+
+[Chi](https://github.com/pressly/chi) is one of the fastest and most modern routers in the eco-system
+and is starting to gain a cult following. Chi was built on the `context` package that was introduced
+in Go 1.7. It's elegant API design and stdlib-only philosophy is what has Chi standing out from the rest.
+
+#### Logging
+
+[zap](https://github.com/uber-go/zap) was written by Uber, and is widely regarded as the fastest and
+most performant logging package, even rivaling the standard library. It is a structured, leveled &
+colored logger.
+
+#### Command Line and Configuration
+
+ABCWeb comes with [cobra](https://github.com/spf13/cobra) for handling command-line arguments and
+[viper](https://github.com/spf13/viper) for handling configuration loading. These packages are widely
+known, widely used and widely enjoyed.
+
+#### Vendoring
+
+When ABCWeb generates your app it also includes a `vendor.json` file with all of its dependencies
+in it. The `abcweb new` command will automatically sync your `vendor` folder on generation.
+[Govendor](github.com/kardianos/govendor) was the tool of choice here. It's functional and easy to use.
+
+#### Build System, Asset Pipeline & Task Running
+
+ABCWeb uses [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) to handle asset compilation,
+minification, task running and live reloading of the browser on changes to the asset files or
+html templates. Read the [Gulp](#gulp) section of this readme if you'd like further information.
+ABCWeb also uses [refresh](https://github.com/markbates/refresh) to rebuild your go web app on changes 
+to your configuration or .go files. Refresh can be highly customized using the `watch.toml` config file.
+
+[Read here](#why-did-you-choose-to-use-gulp-4) if you're wondering why we chose a Nodejs dependency. 
+Also note that it's optional, but highly recommended due to the conveniences it provides.
+
+### Getting Started
+
+It's dead easy to generate a web app using ABCWeb. The only annoying part
+is installing NodeJS if you haven't already done so, and it is optional (`--no-gulp`), but
+we highly recommend it because it makes the development process SO much easier.
+
+#### Step 1:
+[Install NodeJS and NPM](#how-do-i-install-nodejs-npm-and-gulp).
+
+#### Step 2:
+```
+# download and install abcweb
+go get -u -t github.com/volatiletech/abcweb
+
+# install and upgrade all dependencies (including Gulp 4)
+abcweb deps -u 
+
+# generate your app (abcweb automatically uses the GOPATH to find your src folder)
+abcweb new github.com/username/appname
+```
+
+Your app has now been generated!
+
+To continue from here:
+
+```
+# cd into your new project folder
+cd $GOPATH/src/github.com/username/appname 
+
+# run abcweb dev for auto-rebuild of app, assets and LiveReload
+abcweb dev
+```
+
+Navigate your browser to your now running app webserver, 
+modify your `templates/main/home.html` template, and you should see your changes
+automatically load. Awesome!
+
+Note that changes to the `.go` files or `.toml` config files will automatically
+rebuild your go web-server, however they will require a manual browser refresh
+(automatically refreshing in the middle of server changes could put you in 
+a pickle, so we decided against it).
 
 ### Usage
 
@@ -92,9 +178,62 @@ Flags:
 Use "abcweb [command] --help" for more information about a command.
 ```
 
-### Getting Started
+### Configuration
+
+This project loads configuration in the order of:
+
+1. Command line argument default values
+2. config.toml
+3. Environment variables
+4. Supplied command line arguments
+
+This means that values passed into the command line will
+override values passed in through the config.toml and env vars.
+
+* App configuration is found in `config.toml`.
+* Database configuration is found in `database.toml`.
+* `abcweb dev` Go auto-rebuild configuration is found in `watch.toml`.
+* Asset pipeline, task runner and build system configuration is found in `gulpfile.js`.
+
+### Gulp
+
+See the [FAQ](#faq) for installation instructions.
+
+When ABCWeb generates your app it also includes a `gulpfile.js` for you that has been written
+to perform all steps of the build process incrementally. Out of the box this includes
+SCSS, LESS, CSS, JS, fonts, video, images and audio. The `gulpfile.js` has also been configured to
+parse your CSS assets through [PostCSS Autoprefixer](https://github.com/postcss/autoprefixer) so
+CSS vendor prefixes are a thing of the past. This is also a Bootstrap 4 dependency.
+
+Your gulp file also comes with a watch task that can be run using `abcweb dev` that will 
+watch all of your asset files and templates for changes, recompile them if necessary,
+move them to your public assets folder and reload your browser automatically using LiveReload.
+You can run this task manually using `gulp watch` if desired, but it works better through `abcweb dev`
+so you also can take advantage of the Go app rebuilding.
+
+Once you're ready to build your assets for production, it's as simple as calling `abcweb build` which will
+build your Go binary for deployment and then run the gulp task called `build`. This build task
+will first remove all files in the public assets directory, then it will compile,
+minify, gzip and fingerprint all assets and then generate a `manifest.json` file
+that will be loaded by your app in production mode. The assets manifest maps all of the
+incoming file names to the fingerprinted asset file names, for example: `{"/css/main.css": "/css/main-a2e4fe.css"}`.
+Once you've finishing building your binary and assets, all you need to do is deploy your binary,
+your configuration files and your `public/assets` folder to your production server.
 
 ### FAQ
+
+### Why did you choose to use Gulp 4?
+
+We decided to use [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) for our build system and
+task running. We realize that some people may not enjoy having a Nodejs dependency so we've
+made this entirely optional (`abcweb new --no-gulp`), however we highly recommend using it
+due to the conveniences it provides. Unfortunately there are no robust solutions in the Go
+ecosystem for this problem yet, and when we started to [make our own](https://github.com/nullbio/pipedream)
+we quickly realized that not only would it not work effectively for a multitude of reasons,
+but it would also never be as flexible and simple to use as Gulp is due to the fact
+that Go is compiled and all of the existing asset tools out there are either written in or
+written for Javascript. With that being said, Gulp is extremely easy to use, and ABCWeb
+makes it even easier to use.
 
 ### How do I install nodejs, npm and gulp?
 
@@ -106,8 +245,8 @@ NPM comes bundled with NodeJS.
 [Installing Node.js via package manager](https://nodejs.org/en/download/package-manager/)
 
 
-ABCWeb uses Gulp 4 as its task runner and asset build system. Once nodejs and 
-npm is installed you can install Gulp 4 using:
+ABCWeb uses [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) as its task runner and asset build system. Once nodejs and 
+npm is installed you can install [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) using:
 
 `abcweb deps -u`
 
