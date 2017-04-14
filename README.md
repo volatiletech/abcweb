@@ -114,12 +114,15 @@ Also note that it's optional, but highly recommended due to the conveniences it 
 
 ### Getting Started
 
-It's dead easy to generate a web app using ABCWeb. The only annoying part
-is installing NodeJS if you haven't already done so, and it is optional (`--no-gulp`), but
-we highly recommend it because it makes the development process SO much easier.
+ABCWeb requires Go 1.8 or higher.
+
+It's dead easy to generate a web app using ABCWeb.
 
 #### Step 1:
 [Install NodeJS](#how-do-i-install-nodejs-npm-and-gulp).
+
+This is required for the asset pipeline (Gulp). Using Gulp is optional (`--no-gulp`), 
+but we highly recommend it because it makes the development process SO much easier.
 
 #### Step 2:
 ```
