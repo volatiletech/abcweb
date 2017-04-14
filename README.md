@@ -47,7 +47,7 @@ flags to the `abcweb new` command.
 ABCWeb uses a collection of the very best open-source projects and packages the
 Go community has to offer. These packages were chosen specifically because 
 they are fast, intelligently designed, easy to use and modern. For a full list
-see [PACKAGES.md](https://github.com/volatiletech/abcweb/PACKAGES.md):
+see [PACKAGES.md](https://github.com/volatiletech/abcweb/blob/master/PACKAGES.md):
 
 #### Database ORM
 
@@ -91,8 +91,8 @@ colored logger.
 
 #### Command Line and Configuration
 
-ABCWeb comes with [cobra](https://github.com/spf13/cobra) for handling command-line arguments and
-[viper](https://github.com/spf13/viper) for handling configuration loading. These packages are widely
+ABCWeb comes with [Cobra](https://github.com/spf13/cobra) for handling command-line arguments and
+[Viper](https://github.com/spf13/viper) for handling configuration loading. These packages are widely
 known, widely used and widely enjoyed.
 
 #### Vendoring
@@ -119,7 +119,7 @@ is installing NodeJS if you haven't already done so, and it is optional (`--no-g
 we highly recommend it because it makes the development process SO much easier.
 
 #### Step 1:
-[Install NodeJS and NPM](#how-do-i-install-nodejs-npm-and-gulp).
+[Install NodeJS](#how-do-i-install-nodejs-npm-and-gulp).
 
 #### Step 2:
 ```
@@ -145,7 +145,7 @@ cd $GOPATH/src/github.com/username/appname
 abcweb dev
 ```
 
-Navigate your browser to your now running app webserver, 
+Navigate your browser to your now running server at http://localhost:4000/, 
 modify your `templates/main/home.html` template, and you should see your changes
 automatically load. Awesome!
 
