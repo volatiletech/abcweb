@@ -1,0 +1,168 @@
+package db
+
+import (
+	"fmt"
+	"database/sql"
+	"path/filepath"
+	"io/ioutil"
+	
+	// mysql driver
+	_ "github.com/go-sql-driver/mysql"
+	// postgres driver
+	_ "github.com/lib/pq"
+	"github.com/vattle/sqlboiler/bdb/drivers"
+	"github.com/volatiletech/helpers/git"
+	"github.com/volatiletech/mig"
+	"github.com/pkg/errors"
+	"{{.ImportPath}}/config"
+)
+
+// GetConnStr returns a connection string for the database software used
+func GetConnStr(cfg *config.DBConfig) string {
+	if len(cfg.DB) == 0 {
+		panic("db field in database.toml must be provided")
+	}
+
+	if cfg.DB == "postgres" {
+		return drivers.PostgresBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode)
+	} else if cfg.DB == "mysql" {
+		return drivers.MySQLBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode)
+	}
+
+	panic(fmt.Sprintf("cannot get connection string for unknown database %q", cfg.DB))
+}
+
+// Setup executes the migrations "up" against the passed in database and also
+// inserts the test data defined in testdata.sql.
+//
+// Setup is used primarily as a testing helper, and is called in
+// controllers/controllers_test.go to set up the database state for the
+// controller tests.
+func Setup(cfg *config.DBConfig) (int, error) {
+	appPath, err := git.GetAppPath()
+	if err != nil {
+		return 0, err
+	}
+
+	// copy cfg into cfgNew
+	cfgNew := *cfg
+
+	// Drop and create the database if it exists so each test run starts
+	// on a clean slate
+	if cfgNew.DB == "postgres" {
+		// Set the db to the default postgres db so we have something to connect to
+		// to create a new database or drop old databases
+		cfgNew.DBName = "postgres"
+
+		connStr := GetConnStr(&cfgNew)
+		db, err := sql.Open(cfgNew.DB, connStr)
+		if err != nil {
+			return 0, err
+		}
+
+		_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", cfg.DBName))
+		if err != nil {
+			return 0, errors.Wrap(err, "drop if exists failed")
+		}
+
+		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", cfg.DBName))
+		if err != nil {
+			return 0, errors.Wrap(err, "create database failed")
+		}
+
+		db.Close()
+	} else if cfgNew.DB == "mysql" {
+		cfgNew.DBName = ""
+
+		connStr := GetConnStr(&cfgNew)
+		db, err := sql.Open(cfgNew.DB, connStr)
+		if err != nil {
+			return 0, err
+		}
+
+		_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", cfg.DBName))
+		if err != nil {
+			return 0, errors.Wrap(err, "drop if exists failed")
+		}
+
+		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", cfg.DBName))
+		if err != nil {
+			return 0, errors.Wrap(err, "create database failed")
+		}
+
+		db.Close()
+	}
+
+	connStr := GetConnStr(cfg)
+
+	count, err := mig.Up(cfg.DB, connStr, filepath.Join(appPath, "db", "migrations"))
+	if err != nil {
+		return count, err
+	}
+
+	if err := sqlTestdata(cfg); err != nil {
+		return count, err
+	}
+
+	err = goTestdata(cfg.DB, connStr)
+
+	return count, err
+}
+
+// pgEnv returns a slice of the connection related environment variables
+func pgEnv(cfg *config.DBConfig, passFilePath string) []string {
+	return []string{
+		fmt.Sprintf("PGHOST=%s", cfg.Host),
+		fmt.Sprintf("PGPORT=%d", cfg.Port),
+		fmt.Sprintf("PGUSER=%s", cfg.User),
+		fmt.Sprintf("PGPASSFILE=%s", passFilePath),
+	}
+}
+
+// pgPassFile creates a file in the temp directory containing the connection
+// details and password for the database to be passed into the mysql cmdline cmd
+func pgPassFile(cfg *config.DBConfig) (string, error) {
+	tmp, err := ioutil.TempFile("", "pgpass")
+	if err != nil {
+		return "", errors.New("failed to create postgres pass file")
+	}
+	defer tmp.Close()
+
+	fmt.Fprintf(tmp, "%s:%d:%s:%s", cfg.Host, cfg.Port, cfg.DBName, cfg.User)
+	if len(cfg.Pass) != 0 {
+		fmt.Fprintf(tmp, ":%s", cfg.Pass)
+	}
+	fmt.Fprintln(tmp)
+
+	return tmp.Name(), nil
+}
+
+// mysqlPassFile creates a file in the temp directory containing the connection
+// details and password for the database to be passed into the mysql cmdline cmd
+func mysqlPassFile(cfg *config.DBConfig) (string, error) {
+	tmp, err := ioutil.TempFile("", "mysqlpass")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create mysql pass file")
+	}
+	defer tmp.Close()
+
+	fmt.Fprintln(tmp, "[client]")
+	fmt.Fprintf(tmp, "host=%s\n", cfg.Host)
+	fmt.Fprintf(tmp, "port=%d\n", cfg.Port)
+	fmt.Fprintf(tmp, "user=%s\n", cfg.User)
+	fmt.Fprintf(tmp, "password=%s\n", cfg.Pass)
+
+	var sslMode string
+	switch cfg.SSLMode {
+	case "true":
+		sslMode = "REQUIRED"
+	case "false":
+		sslMode = "DISABLED"
+	default:
+		sslMode = "PREFERRED"
+	}
+
+	fmt.Fprintf(tmp, "ssl-mode=%s\n", sslMode)
+
+	return tmp.Name(), nil
+}

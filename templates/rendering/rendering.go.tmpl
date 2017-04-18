@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"path/filepath"
 
+	"{{.ImportPath}}/app/serving"
 	"{{.ImportPath}}/config"
 	"github.com/unrolled/render"
 	"github.com/volatiletech/abcrender"
@@ -78,17 +78,13 @@ func InitRenderer(cfg *config.AppConfig, templatesDir string) abcrender.Renderer
 
 	return &abcrender.Render{
 		Render: render.New(render.Options{
+			Asset:         serving.Asset,
+			AssetNames:    serving.AssetNames,
 			Directory:     templatesDir,
 			Layout:        "layouts/main",
 			Extensions:    []string{".tmpl", ".html"},
 			IsDevelopment: cfg.RenderRecompile,
 			Funcs:         []template.FuncMap{helpers},
-
-			// If you do not wish to handle Render errors yourself you can remove
-			// this line. If this line is removed the Render library will
-			// write the error.String() value to the HTTP response and
-			// set the status code to 500. Note that removing this line can result
-			// in leaking sensitive info through the error message strings.
 			DisableHTTPErrorRendering: true,
 		}),
 	}
@@ -98,7 +94,7 @@ func InitRenderer(cfg *config.AppConfig, templatesDir string) abcrender.Renderer
 // and returns a map of its mappings. Returns error if manifest.json not found.
 func GetManifest(publicPath string) (map[string]string, error) {
 	manifestPath := filepath.Join(publicPath, "assets", "manifest.json")
-	contents, err := ioutil.ReadFile(manifestPath)
+	contents, err := serving.ReadFile(manifestPath)
 	if err != nil {
 		return nil, err
 	}

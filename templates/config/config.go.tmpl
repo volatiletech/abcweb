@@ -2,14 +2,12 @@ package config
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 	"fmt"
 	"time"
 
 	"github.com/spf13/viper"
 	"github.com/spf13/pflag"
-	"github.com/volatiletech/helpers/git"
 )
 
 // AppConfig is config for the app loaded through environment variables, 
@@ -74,14 +72,9 @@ func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
 	{{$envAppNm := envAppName .AppName -}}
 	env := os.Getenv("{{$envAppNm}}_ENV")
 
-	appPath, err := git.GetAppPath()
-	if err != nil {
-		return nil, err
-	}
-
 	v := viper.New()
 	v.SetConfigType("toml")
-	v.SetConfigFile(filepath.Join(appPath, "config.toml"))
+	v.SetConfigFile("config.toml")
 	v.SetEnvPrefix("{{$envAppNm}}")
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	v.ReadInConfig()
@@ -115,20 +108,13 @@ func NewDBViper(env string) (*viper.Viper, error) {
 		return nil, fmt.Errorf("empty environment parameter received")
 	}
 
-	appPath, err := git.GetAppPath()
-	if err != nil {
-		return nil, err
-	}
-
-	cfgPath := filepath.Join(appPath, "database.toml")
-	
-	if _, err := os.Stat(cfgPath); os.IsNotExist(err) {
+	if _, err := os.Stat("database.toml"); os.IsNotExist(err) {
 		return nil, nil
 	}
 
 	v := viper.New()
 	v.SetConfigType("toml")
-	v.SetConfigFile(cfgPath)
+	v.SetConfigFile("database.toml")
 	v.SetEnvPrefix("{{$envAppNm}}")
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	v.ReadInConfig()

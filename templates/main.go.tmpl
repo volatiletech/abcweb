@@ -70,7 +70,7 @@ func main() {
 		}
 
 		// Configure the renderer (rendering/rendering.go)
-		state.Render = rendering.InitRenderer(state.AppConfig, "./templates")
+		state.Render = rendering.InitRenderer(state.AppConfig, "templates")
 
 		// Enable middleware for the router (app/middleware.go)
 		state.InitMiddleware()

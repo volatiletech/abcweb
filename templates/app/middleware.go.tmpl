@@ -1,9 +1,6 @@
 package app
 
 import (
-	{{if not .NoSessions -}}
-	"github.com/volatiletech/abcsessions"
-	{{- end}}
 	"github.com/volatiletech/abcmiddleware"
 	"github.com/markbates/refresh/refresh/web"
 	chimiddleware "github.com/pressly/chi/middleware"
@@ -75,12 +72,15 @@ func (s *State) InitMiddleware() {
 	// s.Router.Use(cors.Default().Handler)
 
 	{{if not .NoSessions -}}
-	// Resets the expiry of the active session on each web request
-	s.Router.Use(s.Session.ResetMiddleware)
-
 	// Convert the ResponseWriter object to a SessionsResponse for buffering
 	// session cookies across session API requests.
-	// Note: This is a mandatory middleware when using the abcsessions library.
-	s.Router.Use(abcsessions.Middleware)
+	//
+	// MiddlewareWithReset also resets the expiry of the active session
+	// on each web request.
+	// 
+	// Note: This (or abcsessions.Middleware instead) is a mandatory middleware
+	// when using the abcsessions library. If you do not want the refresh
+	// component you can replace this call with abcsessions.Middleware.
+	s.Router.Use(s.Session.MiddlewareWithReset)
 	{{- end}}
 }
