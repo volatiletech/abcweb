@@ -15,7 +15,7 @@ var buildCmdConfig buildConfig
 var buildCmd = &cobra.Command{
 	Use:     "build",
 	Short:   "Builds your abcweb binary and executes the gulp build task",
-	Long:    "Builds your abcweb binary and executes the gulp build task",
+	Long:    "Builds your web app binary and assets, and bundles them in the dist folder",
 	Example: "abcweb build",
 	RunE:    buildCmdRun,
 }
@@ -30,18 +30,14 @@ func init() {
 func buildCmdRun(cmd *cobra.Command, args []string) error {
 	cnf.ModeViper.BindPFlags(cmd.Flags())
 
-	if !cnf.ModeViper.GetBool("go-only") {
-		fmt.Println("Building assets...")
-		if err := buildAssets(); err != nil {
-			return err
-		}
+	fmt.Println("Building assets...")
+	if err := buildAssets(); err != nil {
+		return err
 	}
 
-	if !cnf.ModeViper.GetBool("assets-only") {
-		fmt.Println("Building Go app...")
-		if err := buildApp(); err != nil {
-			return err
-		}
+	fmt.Println("Building Go app...")
+	if err := buildApp(); err != nil {
+		return err
 	}
 
 	return nil

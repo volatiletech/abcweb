@@ -143,7 +143,7 @@ but we highly recommend it because it makes the development process SO much easi
 ### Step 2:
 ```shell
 # download and install abcweb
-go get -u -t github.com/volatiletech/abcweb
+go get -u github.com/volatiletech/abcweb
 
 # install and upgrade all dependencies (including Gulp)
 abcweb deps -u 
