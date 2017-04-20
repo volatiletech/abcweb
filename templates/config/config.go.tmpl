@@ -34,8 +34,6 @@ type AppConfig struct {
 	WriteTimeout time.Duration
 	// Maximum duration before timing out idle keep-alive connection
 	IdleTimeout time.Duration
-	// Public assets folder path
-	AssetsPublic string 
 	// Use manifest.json assets mapping
 	AssetsManifest bool
 	// Disable browsers caching asset files by setting response headers
@@ -143,7 +141,6 @@ func LoadAppConfig(v *viper.Viper) *AppConfig {
 		ReadTimeout:		v.GetDuration("read-timeout"),
 		WriteTimeout:		v.GetDuration("write-timeout"),
 		IdleTimeout:      v.GetDuration("idle-timeout"),
-		AssetsPublic:		v.GetString("assets-public"),
 		AssetsManifest:   v.GetBool("assets-manifest"),
 		AssetsNoCache:		v.GetBool("assets-no-cache"),
 		RenderRecompile:	v.GetBool("render-recompile"),

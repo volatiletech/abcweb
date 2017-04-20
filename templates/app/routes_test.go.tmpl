@@ -39,7 +39,6 @@ func TestNotFound(t *testing.T) {
 
 	state := &State{}
 	state.AppConfig = &config.AppConfig{
-		AssetsPublic:    "../public",
 		RenderRecompile: true,
 	}
 	state.InitLogger()

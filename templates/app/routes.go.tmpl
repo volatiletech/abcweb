@@ -104,10 +104,10 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			fpath = fname
 		}
-		fpath = filepath.Join(s.AppConfig.AssetsPublic, "assets", fpath)
+		fpath = filepath.Join("public", "assets", fpath)
 	} else { // Set path to regular non-manifest asset
 		// Split on ? to discard any query parameters
-		fpath = filepath.Join(s.AppConfig.AssetsPublic, strings.Split(reqURI, "?")[0])
+		fpath = filepath.Join("public", strings.Split(reqURI, "?")[0])
 	}
 
 	stat, err := serving.Stat(fpath)

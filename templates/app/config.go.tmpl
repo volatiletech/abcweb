@@ -40,7 +40,6 @@ func RegisterFlags(root *cobra.Command) {
 	root.Flags().DurationP("read-timeout", "", time.Second*10, "Maximum duration before timing out read of the request")
 	root.Flags().DurationP("write-timeout", "", time.Second*15, "Maximum duration before timing out write of the response")
 	root.Flags().DurationP("idle-timeout", "", time.Second*120, "Maximum duration before timing out idle keep-alive connection")
-	root.Flags().StringP("assets-public", "", "./public", "Public assets folder path")
 
 	// manifest.json is created as a part of the gulp production "build" task,
 	// it maps fingerprinted asset names to regular asset names, for example:

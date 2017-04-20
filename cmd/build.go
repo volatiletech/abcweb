@@ -21,8 +21,7 @@ var buildCmd = &cobra.Command{
 }
 
 func init() {
-	buildCmd.Flags().BoolP("go-only", "g", false, "Only watch and rebuild the go app by piping to refresh app")
-	buildCmd.Flags().BoolP("assets-only", "a", false, "Only watch and build the assets by piping to gulp watch")
+	buildCmd.Flags().BoolP("config", "c", false, "Generate fresh config files in dist package")
 
 	RootCmd.AddCommand(buildCmd)
 }

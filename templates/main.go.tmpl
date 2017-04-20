@@ -63,7 +63,7 @@ func main() {
 
 		// Cache the assets manifest.json file mappings (app/render.go)
 		if state.AppConfig.AssetsManifest {
-			rendering.AssetsManifest, err = rendering.GetManifest(state.AppConfig.AssetsPublic)
+			rendering.AssetsManifest, err = rendering.GetManifest("public")
 			if err != nil {
 				return err
 			}
