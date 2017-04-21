@@ -29,6 +29,9 @@ func init() {
 func buildCmdRun(cmd *cobra.Command, args []string) error {
 	cnf.ModeViper.BindPFlags(cmd.Flags())
 
+	// Bare minimum requires git and go dependencies
+	checkDep("git", "go")
+
 	fmt.Println("Building assets...")
 	if err := buildAssets(); err != nil {
 		return err
@@ -43,12 +46,6 @@ func buildCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func buildApp() error {
-	_, err := exec.LookPath("go")
-	if err != nil {
-		fmt.Println("Cannot Go in PATH.")
-		return nil
-	}
-
 	cmd := exec.Command("go", "build")
 	cmd.Dir = cnf.AppPath
 
@@ -56,7 +53,7 @@ func buildApp() error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 
-	if err = cmd.Run(); err != nil {
+	if err := cmd.Run(); err != nil {
 		return err
 	}
 
@@ -67,7 +64,7 @@ func buildApp() error {
 func buildAssets() error {
 	_, err := os.Stat(filepath.Join(cnf.AppPath, "gulpfile.js"))
 	if os.IsNotExist(err) {
-		fmt.Println("No gulpfile.js present, skipping gulp build")
+		fmt.Println("No gulpfile.js present, skipping gulp build.")
 		return nil
 	} else if err != nil {
 		return err
@@ -75,7 +72,7 @@ func buildAssets() error {
 
 	_, err = exec.LookPath("gulp")
 	if err != nil {
-		fmt.Println("Cannot find gulp in PATH. Is it installed?")
+		fmt.Println("Cannot find gulp in PATH. Is it installed? Skipping gulp build.")
 		return nil
 	}
 

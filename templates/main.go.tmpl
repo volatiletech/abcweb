@@ -5,83 +5,31 @@ import (
 	"{{.ImportPath}}/config"
 	"{{.ImportPath}}/db"
 	"{{.ImportPath}}/rendering"
-	"github.com/pkg/errors"
-	"github.com/pressly/chi"
-	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
+// These are set by the linker when running the "abcweb build" command.
+var version = "unknown"
+var buildTime = "unknown"
+
 func main() {
-	var state app.State
-
-	state.Root = &cobra.Command{
-		Use:   "{{.AppName}} [flags]",
-		Short: "{{.AppName}} web app server",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// Start https and/or http listeners (app/server.go)
-			return state.StartServer()
-		},
+	// Display the version hash and build time
+	args := os.Args
+	if len(args) == 2 && args[1] == "--version" {
+		fmt.Println(fmt.Sprintf("version %q, built %s", version, buildTime))
+		return
 	}
+	
+	state := &app.State{}
 
-	// Register the command-line configuration flags (app/config.go)
-	app.RegisterFlags(state.Root)
+	// Setup the main app (root command)
+	rootSetup(state)
 
-	// The pre-run function will initialize the app.
-	state.Root.PreRunE = func(cmd *cobra.Command, args []string) error {
-		// Build app Config using env vars, config.toml file and cmd line flags (app/config.go)
-		appCfgViper, err := config.NewAppViper(state.Root.Flags())
-		if err != nil {
-			return errors.Wrap(err, "failed to load app config")
-		}
-		state.AppConfig = config.LoadAppConfig(appCfgViper)
+	// Setup and bind the migrate command
+	migrateSetup(state)
 
-		// Build db Config using env vars and database.toml cfg file (app/config.go)
-		dbCfgViper, err := config.NewDBViper(state.AppConfig.ActiveEnv)
-		if err != nil {
-			return errors.Wrap(err, "failed to load db config")
-		}
-		// if dbCfgViper is nil then don't load the DBConfig struct 
-		// and presume we want to run the app without a database.
-		if dbCfgViper != nil {
-			state.DBConfig = config.LoadDBConfig(dbCfgViper)
-			// Initialize the global database handle
-			if err := db.InitDB(state.DBConfig); err != nil {
-				return errors.Wrap(err, "failed to connect with global db handle")
-			}
-		}
-
-		// Initialize the zap logger (app/logger.go)
-		state.InitLogger()
-
-		// Create a new router
-		state.Router = chi.NewRouter()
-
-		{{if not .NoSessions -}}
-		// Configure the sessions overseer (app/sessions.go)
-		state.InitSessions()
-		{{- end}}
-
-		// Cache the assets manifest.json file mappings (app/render.go)
-		if state.AppConfig.AssetsManifest {
-			rendering.AssetsManifest, err = rendering.GetManifest("public")
-			if err != nil {
-				return err
-			}
-		}
-
-		// Configure the renderer (rendering/rendering.go)
-		state.Render = rendering.InitRenderer(state.AppConfig, "templates")
-
-		// Enable middleware for the router (app/middleware.go)
-		state.InitMiddleware()
-
-		// Initialize the routes with the renderer (app/routes.go)
-		state.InitRoutes()
-		return nil
-	}
-
-	// Execute the root command Run method
 	if err := state.Root.Execute(); err != nil {
 		state.Log.Fatal("root command execution failed", zap.Error(err))
 	}
 }
+
