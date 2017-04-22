@@ -1,11 +1,17 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"{{.ImportPath}}/app"
-	"{{.ImportPath}}/app/serving"
-	"{{.ImportPath}}/config"
 	"{{.ImportPath}}/db"
 	"{{.ImportPath}}/rendering"
+	"github.com/pkg/errors"
+	"github.com/pressly/chi"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/volatiletech/mig"
 )
 
 // rootSetup sets up the root cobra command
