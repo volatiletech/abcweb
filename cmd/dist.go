@@ -13,9 +13,12 @@ var buildCmdConfig buildConfig
 
 // buildCmd represents the new command
 var buildCmd = &cobra.Command{
-	Use:     "build",
-	Short:   "Builds your abcweb binary and executes the gulp build task",
-	Long:    "Builds your abcweb binary and executes the gulp build task",
+	Use:   "dist",
+	Short: "Dist creates a distribution bundle for deployment",
+	Long: `Dist compiles your binary, builds your assets, and copies
+the binary, assets, templates and migrations into a dist folder
+for easy deployment to your production server. It can also
+optionally zip your dist bundle for a single file deploy.`,
 	Example: "abcweb build",
 	RunE:    buildCmdRun,
 }
