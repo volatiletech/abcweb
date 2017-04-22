@@ -9,7 +9,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"{{.ImportPath}}/app/serving"
 	"{{.ImportPath}}/rendering"
 	"{{.ImportPath}}/controllers"
 	"{{.ImportPath}}/middleware"
@@ -110,7 +109,7 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 		fpath = filepath.Join("public", strings.Split(reqURI, "?")[0])
 	}
 
-	stat, err := serving.Stat(fpath)
+	stat, err := os.Stat(fpath)
 	// If file doesn't exist, or there's no error and the path is a dir, then 404
 	if os.IsNotExist(err) || (err == nil && stat.IsDir()) {
 		if err := s.Render.HTML(w, http.StatusNotFound, "errors/404", nil); err != nil {
@@ -130,7 +129,7 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fh, err := serving.Open(fpath)
+	fh, err := os.Open(fpath)
 	if err != nil {
 		log.Fatal("failed to open asset",
 			zap.String("request_uri", r.RequestURI),

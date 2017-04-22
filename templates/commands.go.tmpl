@@ -24,27 +24,10 @@ func rootSetup(state *app.State) {
 
 	// The pre-run function will initialize the app.
 	state.Root.PreRunE = func(cmd *cobra.Command, args []string) error {
-		// Build app Config using env vars, config.toml file and cmd line flags (app/config.go)
-		appCfgViper, err := config.NewAppViper(state.Root.Flags())
-		if err != nil {
-			return errors.Wrap(err, "failed to load app config")
-		}
-		state.AppConfig = config.LoadAppConfig(appCfgViper)
+		var err error
 
-		// Build db Config using env vars and database.toml cfg file (app/config.go)
-		dbCfgViper, err := config.NewDBViper(state.AppConfig.ActiveEnv)
-		if err != nil {
-			return errors.Wrap(err, "failed to load db config")
-		}
-		// if dbCfgViper is nil then don't load the DBConfig struct 
-		// and presume we want to run the app without a database.
-		if dbCfgViper != nil {
-			state.DBConfig = config.LoadDBConfig(dbCfgViper)
-			// Initialize the global database handle
-			if err := db.InitDB(state.DBConfig); err != nil {
-				return errors.Wrap(err, "failed to connect with global db handle")
-			}
-		}
+		// Initialize the AppConfig and DBConfig (app/config.go)
+		state.InitConfig()	
 
 		// Initialize the zap logger (app/logger.go)
 		state.InitLogger()
@@ -83,60 +66,35 @@ func migrateSetup(state *app.State) {
 		Use:   "migrate",
 		Short: "Run your database migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Get the path of the web app binary
-			path, err := os.Executable()
-			if err != nil {
-				return errors.Wrap(err, "unable to get web app binary path")
+			viper.BindPFlags(cmd.Flags())
+
+			// Initialize the AppConfig and DBConfig (app/config.go)
+			state.InitConfig()	
+
+			if _, err := os.Stat("migrations"); err != nil {
+				return errors.Wrap(err, "could not find migrations folder")
 			}
 
-			migrationsPath := filepath.Join(path, "migrations")
-
-			found := false
-			if _, err := os.Stat("migrations"); err == nil {
-				found = true
-			}
-
-			// Restore the gobindata assets to disk if using bundled binary
-			if !found {
-				files, err := serving.AssetDir("migrations")
-				if err != nil {
-					return errors.Wrap(err, "unable to get migrations dir listing")
-				}
-
-				for _, file := range files {
-					if err := serving.RestoreAsset("migrations", file); err != nil {
-						return errors.Wrap(err, fmt.Sprintf("cannot restore asset %s", file))
-					}
-				}
-
-				// Remove all migrations from disk once complete
-				defer os.RemoveAll()
-			}
-
-			// Build app Config using env vars, config.toml file and cmd line flags (app/config.go)
-			appCfgViper, err := config.NewAppViper(state.Root.Flags())
-			if err != nil {
-				return errors.Wrap(err, "failed to load app config")
-			}
-			state.AppConfig = config.LoadAppConfig(appCfgViper)
-
-			// Build db Config using env vars and database.toml cfg file (app/config.go)
-			dbCfgViper, err := config.NewDBViper(state.AppConfig.ActiveEnv)
-			if err != nil || dbCfgViper == nil {
-				return errors.Wrap(err, "failed to load db config")
-			}
-			state.DBConfig = config.LoadDBConfig(dbCfgViper)
-	
 			connStr := db.GetConnStr(state.DBConfig)
-			count, err := mig.Up(state.DBConfig.DB, connStr, "migrations")
-			if err != nil {
-				return errors.Wrap(err, "call to mig up failed")
+			if viper.GetBool("down") {
+				name, err := mig.Down(state.DBConfig.DB, connStr, "migrations")
+				if err != nil {
+					return errors.Wrap(err, "call to mig down failed")
+				}
+				fmt.Printf("rolled back migration %q\n", name)
+			} else {
+				count, err := mig.Up(state.DBConfig.DB, connStr, "migrations")
+				if err != nil {
+					return errors.Wrap(err, "call to mig up failed")
+				}
+				fmt.Printf("migrated %d database migrations\n", count)
 			}
-			fmt.Printf("migrated %d database migrations\n", count)
 
 			return nil
 		},
 	}
+
+	migrate.Flags().BoolP("down", "d", false, "Roll back the database migration version by one")
 	
 	state.Root.AddCommand(migrate)
 }

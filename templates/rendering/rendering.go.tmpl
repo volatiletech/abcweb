@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"path/filepath"
 
-	"{{.ImportPath}}/app/serving"
 	"{{.ImportPath}}/config"
 	"github.com/unrolled/render"
 	"github.com/volatiletech/abcrender"
@@ -78,8 +77,6 @@ func InitRenderer(cfg *config.AppConfig, templatesDir string) abcrender.Renderer
 
 	return &abcrender.Render{
 		Render: render.New(render.Options{
-			Asset:         serving.Asset,
-			AssetNames:    serving.AssetNames,
 			Directory:     templatesDir,
 			Layout:        "layouts/main",
 			Extensions:    []string{".tmpl", ".html"},
@@ -94,7 +91,7 @@ func InitRenderer(cfg *config.AppConfig, templatesDir string) abcrender.Renderer
 // and returns a map of its mappings. Returns error if manifest.json not found.
 func GetManifest(publicPath string) (map[string]string, error) {
 	manifestPath := filepath.Join(publicPath, "assets", "manifest.json")
-	contents, err := serving.ReadFile(manifestPath)
+	contents, err := ioutil.ReadFile(manifestPath)
 	if err != nil {
 		return nil, err
 	}
