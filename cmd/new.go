@@ -112,8 +112,6 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 }
 
 func newCmdRun(cmd *cobra.Command, args []string) error {
-	checkDep("goimports")
-
 	if !newCmdConfig.Silent {
 		fmt.Println("Generating in:", newCmdConfig.AppPath)
 	}
@@ -361,14 +359,6 @@ func newCmdWalk(cfg newConfig, basePath string, path string, info os.FileInfo, e
 
 		err = afero.WriteFile(appFS, fullPath, fileContents.Bytes(), 0664)
 		if err != nil {
-			return err
-		}
-
-		// Run goimports on all .go files after save.
-		if strings.HasSuffix(fullPath, ".go") {
-			exc := exec.Command("goimports", "-w", fullPath)
-			exc.Dir = cfg.AppPath
-			err := exc.Run()
 			return err
 		}
 	}
