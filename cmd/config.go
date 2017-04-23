@@ -8,8 +8,8 @@ const (
 	migrationsDirectory = "db/migrations"
 )
 
-type buildConfig struct {
-}
+type buildConfig struct{}
+type distConfig struct{}
 
 type modelsConfig struct {
 	config.DBConfig
@@ -23,6 +23,7 @@ type newConfig struct {
 	AppPath          string
 	ImportPath       string
 	AppName          string
+	AppEnvName       string
 	TLSCommonName    string
 	ProdStorer       string
 	DevStorer        string

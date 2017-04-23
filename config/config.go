@@ -36,7 +36,8 @@ type Configuration struct {
 	// AppName is the name of the application, derived from the path
 	AppName string
 
-	// AppEnvName is the environment variable containing the app environment
+	// AppEnvName is the name of the app in environment variable prefix format
+	// for example "MYAPP" instead of "MyApp".
 	AppEnvName string
 
 	// ActiveEnv is the environment mode currently set by "env" in config.toml

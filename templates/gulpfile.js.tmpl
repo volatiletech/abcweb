@@ -5,28 +5,16 @@
 var gulp = require('gulp');
 var util = require('gulp-util');
 var es   = require('event-stream');
+var path = require('path');
 
 var config = {
 	// paths to the assets.
 	paths: {
-		src:  __dirname + '/assets/',
-		dist: __dirname + '/dist/',
-		build: {
-			dev:  __dirname + '/public/assets/',
-			prod: __dirname + '/dist/public/assets/'
-		},
-		public: {
-			dev:  __dirname + '/public/',
-			prod: __dirname + '/dist/public/'
-		},
-		migrations: {
-			dev:  __dirname + '/db/migrations/',
-			prod: __dirname + '/dist/migrations/'
-		},
-		templates: {
-			dev:  __dirname + '/templates/',
-			prod: __dirname + '/dist/templates/'
-		}
+		src:        __dirname + '/assets/',
+		build:      __dirname + '/public/assets/',
+		publics:    __dirname + '/public/',
+		migrations: __dirname + '/db/migrations/',
+		templates:  __dirname + '/templates/'
 	},
 
 	// The manifest file holds the mappings for the fingerprinted files,
@@ -45,20 +33,26 @@ var config = {
 	production: !!util.env.production,
 
 	// buildTarget is initialized by the setup function.
-	// buildTarget is set to build.dev or build.prod depending on whether
-	// the gulp build task is called, or the --production flag is present.
+	// buildTarget is set to build or {{.AppEnvName}}_PUBLIC_PATH if present. 
 	// All tasks get their build output path from this variable.
 	buildTarget: "",
 };
 
-// update the buildTarget if --production flag is set or build task is called.
+// update the buildTarget if {{.AppEnvName}}_PUBLIC_PATH env var is set.
+// This will be set to a /tmp folder when running "abcweb dev", so that
+// your development assets compile to tmp instead of ./public
+// which is usually reserved for full builds.
+// setup also sets config.production to true if executing the build task.
 (function setup() {
-	if (config.production || process.argv.slice(2).indexOf("build") != -1) {
-		// production could be false, if build task is called set to true
-		config.production = true
-		config.buildTarget = config.paths.build.prod
+	if (process.env.{{.AppEnvName}}_PUBLIC_PATH) {
+		config.buildTarget = path.join(process.env.{{.AppEnvName}}_PUBLIC_PATH, 'assets')
 	} else {
-		config.buildTarget = config.paths.build.dev
+		config.buildTarget = config.paths.build
+	}
+
+	// set config.production to true if executing the gulp build task
+	if (process.argv.slice(2).indexOf("build") != -1) {
+		config.production = true
 	}
 })();
 
@@ -72,48 +66,61 @@ gulp.task('compile-css', function() {
 	var postcss = require('gulp-postcss');
 
 	return es.merge(
-		gulp.src([config.paths.src + 'css/**/*.scss', config.paths.src + 'css/**/*.sass']).pipe(sass()),
-		gulp.src(config.paths.src + 'css/**/*.less').pipe(less()),
-		gulp.src([config.paths.src + 'css/**/*.css', config.paths.src + 'vendor/css/**/*.css'])
+		gulp.src(path.join(config.paths.src, 'css/**/*.less')).pipe(less()),
+		gulp.src([
+			path.join(config.paths.src, 'css/**/*.scss'), 
+			path.join(config.paths.src, 'css/**/*.sass')
+		]).pipe(sass()),
+		gulp.src([
+			path.join(config.paths.src, 'css/**/*.css'), 
+			path.join(config.paths.src, 'vendor/css/**/*.css')
+		])
 	).pipe(postcss([require('autoprefixer', 'postcss-flexbug-fixes')]))
-		.pipe(gulp.dest(config.buildTarget + 'css'))
+		.pipe(gulp.dest(path.join(config.buildTarget, 'css')));
 });
 
 gulp.task('compile-js', function() {
 	var glob = [
-		config.paths.src + 'js/**/*.js', 
-		config.paths.src + 'vendor/js/**/*.js'
+		path.join(config.paths.src, 'js/**/*.js'), 
+		path.join(config.paths.src, 'vendor/js/**/*.js')
 	]
 
 	{{- if not .NoLiveReload}}
 	// ignore specific files when in production mode
 	if (config.production) {
-		glob.push('!' + config.paths.src + 'vendor/js/livereload.js')
+		glob.push('!' + path.join(config.paths.src, 'vendor/js/livereload.js'));
 	}
 	{{- end}}
 
-	return gulp.src(glob)
-		.pipe(gulp.dest(config.buildTarget + 'js'))
+	return gulp.src(glob).pipe(gulp.dest(path.join(config.buildTarget, 'js')));
 });
 
 gulp.task('compile-img', function() {
-	return gulp.src([config.paths.src + 'img/**/*', config.paths.src + 'vendor/img/**/*'])
-		.pipe(gulp.dest(config.buildTarget + 'img'))
+	return gulp.src([
+		path.join(config.paths.src, 'img/**/*'), 
+		path.join(config.paths.src, 'vendor/img/**/*')
+	]).pipe(gulp.dest(path.join(config.buildTarget, 'img')));
 });
 
 gulp.task('compile-fonts', function() {
-	return gulp.src([config.paths.src + 'fonts/**/*', config.paths.src + 'vendor/fonts/**/*'])
-		.pipe(gulp.dest(config.buildTarget + 'fonts'))
+	return gulp.src([
+		path.join(config.paths.src, 'fonts/**/*'), 
+		path.join(config.paths.src, 'vendor/fonts/**/*')
+	]).pipe(gulp.dest(path.join(config.buildTarget, 'fonts')));
 });
 
 gulp.task('compile-video', function() {
-	return gulp.src([config.paths.src + 'video/**/*', config.paths.src + 'vendor/video/**/*'])
-		.pipe(gulp.dest(config.buildTarget + 'video'))
+	return gulp.src([
+		path.join(config.paths.src, 'video/**/*'), 
+		path.join(config.paths.src, 'vendor/video/**/*')
+	]).pipe(gulp.dest(path.join(config.buildTarget, 'video')));
 });
 
 gulp.task('compile-audio', function() {
-	return gulp.src([config.paths.src + 'audio/**/*', config.paths.src + 'vendor/audio/**/*'])
-		.pipe(gulp.dest(config.buildTarget + 'audio'))
+	return gulp.src([
+		path.join(config.paths.src, 'audio/**/*'),
+		path.join(config.paths.src, 'vendor/audio/**/*')
+	]).pipe(gulp.dest(path.join(config.buildTarget, 'audio')));
 });
 
 /**
@@ -122,17 +129,17 @@ gulp.task('compile-audio', function() {
 
 gulp.task('minify-css', function() {
 	var minifyCSS = require('gulp-clean-css');
-	return gulp.src(config.buildTarget + 'css/**/*.css')
+	return gulp.src(path.join(config.buildTarget, 'css/**/*.css'))
 		.pipe(minifyCSS())
-		.pipe(gulp.dest(config.buildTarget + 'css'));
+		.pipe(gulp.dest(path.join(config.buildTarget, 'css')));
 });
 
 gulp.task('minify-js', function() {
 	var minifyJS = require('gulp-minify');
 
-	return gulp.src(config.buildTarget + 'js/**/*.js')
+	return gulp.src(path.join(config.buildTarget, 'js/**/*.js'))
 		.pipe(minifyJS({noSource: true, ext: {min: '.js'}}))
-		.pipe(gulp.dest(config.buildTarget + 'js'));
+		.pipe(gulp.dest(path.join(config.buildTarget, 'js')));
 });
 
 /**
@@ -142,7 +149,7 @@ gulp.task('minify-js', function() {
 gulp.task('gzip', function() {
 	var gzip = require('gulp-gzip');
 
-	return gulp.src(config.buildTarget + '**/*')
+	return gulp.src(path.join(config.buildTarget, '**/*'))
 		.pipe(gzip())
 		.pipe(gulp.dest(config.buildTarget));
 });
@@ -157,7 +164,7 @@ gulp.task('manifest', function() {
 
 	// Fingerprint all assets, delete old assets and then
 	// create the manifest file out of the new asset filenames.
-	return gulp.src(config.buildTarget + '**/*')
+	return gulp.src(path.join(config.buildTarget, '**/*'))
 		.pipe(rev())
 		.pipe(revdel())
 		.pipe(gulp.dest(function(file) {
@@ -174,28 +181,25 @@ gulp.task('manifest', function() {
 gulp.task('clean', function() {
 	var del = require('del');
 
-	return del([config.paths.dist])
+	// Safety catch.
+	if (config.buildTarget == "" || config.buildTarget == "/") {
+		return
+	}
+
+	return del([config.buildTarget], {force: true})
 });
 
 /**
-	COPY TASK - COPY THE NON-BUILD ASSETS FROM PUBLIC TO DIST/PUBLIC
-	          - COPY THE MIGRATION FILES FROM DB/MIGRATIONS TO DIST/MIGRATIONS
+	COPY TASK - COPY NON-COMPILED ASSETS INTO {{.AppEnvName}}_PUBLIC_PATH IF SET 
 */
 
-gulp.task('copy', function(cb) {
-	// Copy over the non-build public assets
-	gulp.src(config.paths.build.dev + '**/*', '!' + config.paths.build.dev)
-		.pipe(gulp.dest(config.paths.public.prod))
-	
-	// Copy over the migrations
-	gulp.src(config.paths.migrations.dev + '**/*')
-		.pipe(gulp.dest(config.paths.migrations.prod))
-
-	// Copy over the templates
-	gulp.src(config.paths.templates.dev + '**/*')
-		.pipe(gulp.dest(config.paths.templates.prod))
-	
-	cb();
+gulp.task('copy', function() {
+	if (process.env.{{.AppEnvName}}_PUBLIC_PATH) {
+		return gulp.src([
+			path.join(config.paths.publics, '**/*'), 
+			'!' + config.paths.build
+		]).pipe(gulp.dest(process.env.{{.AppEnvName}}_PUBLIC_PATH))
+	}
 });
 
 /**
@@ -226,7 +230,7 @@ gulp.task('default', gulp.series('compile'));
 {{- else -}}
 // for change and recompiles them.
 {{- end}}
-gulp.task('watch', gulp.series('compile', function() {
+gulp.task('watch', gulp.series('clean', 'copy', 'compile', function() {
 	var watch      = require('gulp-watch');
 	var less       = require('gulp-less');
 	var sass       = require('gulp-sass');
@@ -238,57 +242,88 @@ gulp.task('watch', gulp.series('compile', function() {
 	livereload.listen();
 	{{- end}}
 	
+	// stylesheets
 	es.merge(
-		watch([config.paths.src + 'css/**/*.scss', config.paths.src + 'css/**/*.sass'])
-			.pipe(plumber())
-			.pipe(sass()),
-		watch(config.paths.src + 'css/**/*.less', { ignoreInitial: true })
-			.pipe(plumber())
-			.pipe(less()),
-		watch([config.paths.src + 'css/**/*.css', config.paths.src + 'vendor/css/**/*.css'])
+		watch([
+			path.join(config.paths.src, 'css/**/*.scss'), 
+			path.join(config.paths.src, 'css/**/*.sass')
+		]).pipe(plumber()).pipe(sass()),
+		watch(path.join(config.paths.src, 'css/**/*.less'), { ignoreInitial: true })
+			.pipe(plumber()).pipe(less()),
+		watch([
+			path.join(config.paths.src, 'css/**/*.css'),
+			path.join(config.paths.src, 'vendor/css/**/*.css')
+		])
 	).pipe(postcss([require('autoprefixer', 'postcss-flexbug-fixes')]))
-		.pipe(gulp.dest(config.buildTarget + 'css'))
+		.pipe(gulp.dest(path.join(config.buildTarget, 'css')))
 		{{if not .NoLiveReload -}}
 		.pipe(livereload())
 		{{- end}}
 
-	watch([config.paths.src + 'js/**/*.js', config.paths.src + 'vendor/js/**/*.js'])
-		.pipe(plumber())
-		.pipe(gulp.dest(config.buildTarget + 'js'))
+	// javascript
+	watch([
+		path.join(config.paths.src, 'js/**/*.js'), 
+		path.join(config.paths.src, 'vendor/js/**/*.js')
+	]).pipe(plumber())
+		.pipe(gulp.dest(path.join(config.buildTarget, 'js')))
 		{{if not .NoLiveReload -}}
 		.pipe(livereload())
 		{{- end}}
 
-	watch([config.paths.src + 'img/**/*', config.paths.src + 'vendor/img/**/*'])
-		.pipe(plumber())
-		.pipe(gulp.dest(config.buildTarget + 'img'))
+	// images
+	watch([
+		path.join(config.paths.src, 'img/**/*'),
+		path.join(config.paths.src, 'vendor/img/**/*')
+	]).pipe(plumber())
+		.pipe(gulp.dest(path.join(config.buildTarget, 'img')))
 		{{if not .NoLiveReload -}}
 		.pipe(livereload())
 		{{- end}}
 
-	watch([config.paths.src + 'fonts/**/*', config.paths.src + 'vendor/fonts/**/*'])
-		.pipe(plumber())
-		.pipe(gulp.dest(config.buildTarget + 'fonts'))
+	// fonts
+	watch([
+		path.join(config.paths.src, 'fonts/**/*'), 
+		path.join(config.paths.src, 'vendor/fonts/**/*')
+	]).pipe(plumber())
+		.pipe(gulp.dest(path.join(config.buildTarget, 'fonts')))
 		{{if not .NoLiveReload -}}
 		.pipe(livereload())
 		{{- end}}
 
-	watch([config.paths.src + 'video/**/*', config.paths.src + 'vendor/video/**/*'])
-		.pipe(plumber())
-		.pipe(gulp.dest(config.buildTarget + 'video'))
+	// videos
+	watch([
+		path.join(config.paths.src, 'video/**/*'),
+		path.join(config.paths.src, 'vendor/video/**/*')
+	]).pipe(plumber())
+		.pipe(gulp.dest(path.join(config.buildTarget, 'video')))
 		{{if not .NoLiveReload -}}
 		.pipe(livereload())
 		{{- end}}
 
-	watch([config.paths.src + 'audio/**/*', config.paths.src + 'vendor/audio/**/*'])
-		.pipe(plumber())
-		.pipe(gulp.dest(config.buildTarget + 'audio'))
+	// audio
+	watch([
+		path.join(config.paths.src, 'audio/**/*'),
+		path.join(config.paths.src, 'vendor/audio/**/*')
+	]).pipe(plumber())
+		.pipe(gulp.dest(path.join(config.buildTarget, 'audio')))
 		{{if not .NoLiveReload -}}
 		.pipe(livereload())
 		{{- end}}
+	
+	// non-compiled assets copy in public folder
+	if (process.env.{{.AppEnvName}}_PUBLIC_PATH) {
+		watch([
+			path.join(config.paths.publics, '**/*'), 
+			'!' + config.paths.build
+		]).pipe(plumber())
+			.pipe(gulp.dest(process.env.{{.AppEnvName}}_PUBLIC_PATH))
+			{{if not .NoLiveReload -}}
+			.pipe(livereload())
+			{{- end}}
+	}
 
 	// Watch html templates
-	return watch(config.paths.templates + '**/*')
+	return watch(path.join(config.paths.templates, '**/*'))
 		{{if not .NoLiveReload -}}
 		.pipe(livereload())
 		{{- end}}

@@ -11,7 +11,7 @@ import (
 
 var buildCmdConfig buildConfig
 
-// buildCmd represents the new command
+// buildCmd represents the build command
 var buildCmd = &cobra.Command{
 	Use:     "build",
 	Short:   "Builds your abcweb binary and executes the gulp build task",

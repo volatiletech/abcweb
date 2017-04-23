@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/volatiletech/abcweb/cert"
+	"github.com/volatiletech/abcweb/strmangle"
 )
 
 var newCmdConfig newConfig
@@ -107,7 +108,8 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid bootstrap option (%q) supplied, valid options are: none|regular|gridonly|rebootonly|gridandrebootonly", newCmdConfig.Bootstrap)
 	}
 
-	newCmdConfig.AppPath, newCmdConfig.ImportPath, newCmdConfig.AppName, err = getAppPath(args)
+	newCmdConfig.AppPath, newCmdConfig.ImportPath, newCmdConfig.AppName, newCmdConfig.AppEnvName, err = getAppPath(args)
+	fmt.Printf("\n\nappName: %s, appEnvName: %s\n\n", newCmdConfig.AppName, newCmdConfig.AppEnvName)
 	return err
 }
 
@@ -463,9 +465,9 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 	return false, nil
 }
 
-func getAppPath(args []string) (appPath string, importPath string, appName string, err error) {
+func getAppPath(args []string) (appPath, importPath, appName, appEnvName string, err error) {
 	if len(args) == 0 {
-		return "", "", "", errors.New("must provide an app path")
+		return "", "", "", "", errors.New("must provide an app path")
 	}
 
 	appPath = filepath.Clean(args[0])
@@ -474,18 +476,20 @@ func getAppPath(args []string) (appPath string, importPath string, appName strin
 	// Somewhat validate provided app path, valid paths will have at least 2 components
 	appPathChunks := strings.Split(appPath, string(os.PathSeparator))
 	if len(appPathChunks) < 2 {
-		return "", "", "", errors.New("invalid app path provided, see --help for example")
+		return "", "", "", "", errors.New("invalid app path provided, see --help for example")
 	}
 
 	_, appName = filepath.Split(appPath)
 
 	if appName == "" || appName == "." || appName == "/" {
-		return "", "", "", errors.New("app path must contain an output folder name")
+		return "", "", "", "", errors.New("app path must contain an output folder name")
 	}
+
+	appEnvName = strmangle.EnvAppName(appName)
 
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
-		return "", "", "", errors.New("cannot get GOPATH from environment variables")
+		return "", "", "", "", errors.New("cannot get GOPATH from environment variables")
 	}
 
 	// If GOPATH has more than one directory, prompt user to choose which one
@@ -508,7 +512,7 @@ func getAppPath(args []string) (appPath string, importPath string, appName strin
 
 	// Target directory is $GOPATH/src/<import_path>
 	appPath = filepath.Join(gopath, "src", appPath)
-	return appPath, importPath, appName, nil
+	return appPath, importPath, appName, appEnvName, nil
 }
 
 func getProcessedPaths(path string, pathSeparator string, cfg newConfig) (cleanPath string, fullPath string) {
