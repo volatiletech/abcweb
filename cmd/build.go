@@ -21,7 +21,8 @@ var buildCmd = &cobra.Command{
 }
 
 func init() {
-	buildCmd.Flags().BoolP("config", "c", false, "Generate fresh config files in dist package")
+	buildCmd.Flags().BoolP("go-only", "g", false, "Only build the go binary")
+	buildCmd.Flags().BoolP("assets-only", "a", false, "Only build the assets")
 
 	RootCmd.AddCommand(buildCmd)
 }
@@ -32,14 +33,18 @@ func buildCmdRun(cmd *cobra.Command, args []string) error {
 	// Bare minimum requires git and go dependencies
 	checkDep("git", "go")
 
-	fmt.Println("Building assets...")
-	if err := buildAssets(); err != nil {
-		return err
+	if !cnf.ModeViper.GetBool("go-only") {
+		fmt.Println("Building assets...")
+		if err := buildAssets(); err != nil {
+			return err
+		}
 	}
 
-	fmt.Println("Building Go app...")
-	if err := buildApp(); err != nil {
-		return err
+	if !cnf.ModeViper.GetBool("assets-only") {
+		fmt.Println("Building Go app...")
+		if err := buildApp(); err != nil {
+			return err
+		}
 	}
 
 	return nil

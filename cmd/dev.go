@@ -28,8 +28,7 @@ the page once the corresponding watcher task is finished.`,
 }
 
 func init() {
-	devCmd.Flags().BoolP("go-only", "g", false, "Only watch and rebuild the go app by piping to refresh app")
-	devCmd.Flags().BoolP("assets-only", "a", false, "Only watch and build the assets by piping to gulp watch")
+	devCmd.Flags().BoolP("go-only", "g", false, "Only watch and rebuild the go app")
 
 	RootCmd.AddCommand(devCmd)
 }
@@ -42,25 +41,32 @@ func devCmdRun(cmd *cobra.Command, args []string) {
 
 	if cnf.ModeViper.GetBool("go-only") {
 		go func() {
-			err := startRefresh(ctx)
+			r, err := startRefresh("", ctx)
 			if err != nil {
 				cancel()
 				fmt.Println(err)
 				os.Exit(1)
 			}
-		}()
-	} else if cnf.ModeViper.GetBool("assets-only") {
-		go func() {
-			err := startGulp(ctx)
-			if err != nil {
+
+			if err := r.Start(); err != nil {
 				cancel()
 				fmt.Println(err)
 				os.Exit(1)
 			}
 		}()
 	} else {
+		publicPath := filepath.Join(os.TempDir(), cnf.AppName, "public")
+		err := os.MkdirAll(publicPath, 0755)
+		if err != nil {
+			cancel()
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		publicPathEnv := fmt.Sprintf("%s_PUBLIC_PATH=%s", cnf.AppEnvName, publicPath)
+
 		go func() {
-			err := startGulp(ctx)
+			err := startGulp(publicPathEnv, ctx)
 			if err != nil {
 				cancel()
 				fmt.Println(err)
@@ -70,8 +76,23 @@ func devCmdRun(cmd *cobra.Command, args []string) {
 		// Delay build so terminal output is grouped together for first run.
 		time.Sleep(1500 * time.Millisecond)
 		go func() {
-			err := startRefresh(ctx)
+			r, err := startRefresh(publicPathEnv, ctx)
 			if err != nil {
+				cancel()
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			// Start "hit enter key to rebuild" go routine
+			go func() {
+				var input string
+				for {
+					fmt.Scanln(&input)
+					r.Restart <- true
+				}
+			}()
+
+			if err := r.Start(); err != nil {
 				cancel()
 				fmt.Println(err)
 				os.Exit(1)
@@ -84,7 +105,7 @@ func devCmdRun(cmd *cobra.Command, args []string) {
 }
 
 // startGulp starts "gulp watch" if it can find gulpfile.js and the gulp command.
-func startGulp(ctx context.Context) error {
+func startGulp(publicPathEnv string, ctx context.Context) error {
 	_, err := os.Stat(filepath.Join(cnf.AppPath, "gulpfile.js"))
 	if os.IsNotExist(err) {
 		fmt.Println("No gulpfile.js present, skipping gulp watch")
@@ -104,6 +125,7 @@ func startGulp(ctx context.Context) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
+	cmd.Env = append([]string{publicPathEnv}, os.Environ()...)
 
 	return cmd.Run()
 }
@@ -118,17 +140,18 @@ type refreshConfig struct {
 	BuildDelay         time.Duration `toml:"build_delay" yaml:"build_delay"`
 	BinaryName         string        `toml:"binary_name" yaml:"binary_name"`
 	CommandFlags       []string      `toml:"command_flags" yaml:"command_flags"`
+	CommandEnv         []string      `toml:"command_env" yaml:"command_env"`
 	EnableColors       bool          `toml:"enable_colors" yaml:"enable_colors"`
 	LogName            string        `toml:"log_name" yaml:"log_name"`
 }
 
 // startRefresh starts the refresh server to watch go files for recompilation.
-func startRefresh(ctx context.Context) error {
+func startRefresh(publicPathEnv string, ctx context.Context) (*refresh.Manager, error) {
 	cfgFile := filepath.Join(cnf.AppPath, "watch.toml")
 
 	_, err := os.Stat(cfgFile)
 	if err != nil && !os.IsNotExist(err) {
-		return err
+		return nil, err
 	}
 
 	c := &refreshConfig{
@@ -139,6 +162,7 @@ func startRefresh(ctx context.Context) error {
 		BuildDelay:         200,
 		BinaryName:         "watch-build",
 		CommandFlags:       []string{},
+		CommandEnv:         []string{},
 		EnableColors:       true,
 	}
 
@@ -146,9 +170,12 @@ func startRefresh(ctx context.Context) error {
 	if !os.IsNotExist(err) {
 		_, err = toml.DecodeFile(cfgFile, c)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
+
+	// Append the APPNAME_PUBLIC_PATH environment var to refresh libs CommandEnv.
+	c.CommandEnv = append(c.CommandEnv, publicPathEnv)
 
 	rc := &refresh.Configuration{
 		AppRoot:            c.AppRoot,
@@ -158,10 +185,12 @@ func startRefresh(ctx context.Context) error {
 		BuildDelay:         c.BuildDelay,
 		BinaryName:         c.BinaryName,
 		CommandFlags:       c.CommandFlags,
+		CommandEnv:         c.CommandEnv,
 		EnableColors:       c.EnableColors,
 		LogName:            c.LogName,
 	}
 
 	r := refresh.NewWithContext(rc, ctx)
-	return r.Start()
+
+	return r, nil
 }
