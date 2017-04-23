@@ -193,13 +193,15 @@ gulp.task('clean', function() {
 	COPY TASK - COPY NON-COMPILED ASSETS INTO {{.AppEnvName}}_PUBLIC_PATH IF SET 
 */
 
-gulp.task('copy', function() {
+gulp.task('copy', function(cb) {
 	if (process.env.{{.AppEnvName}}_PUBLIC_PATH) {
 		return gulp.src([
 			path.join(config.paths.publics, '**/*'), 
 			'!' + config.paths.build
 		]).pipe(gulp.dest(process.env.{{.AppEnvName}}_PUBLIC_PATH))
 	}
+
+	return cb();
 });
 
 /**

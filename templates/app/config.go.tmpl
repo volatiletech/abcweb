@@ -1,6 +1,7 @@
 package app
 
 import (
+	"os"
 	"time"
 
 	"{{.ImportPath}}/config"
@@ -69,6 +70,15 @@ func (s *State) InitConfig() error {
 		return errors.Wrap(err, "failed to load app config")
 	}
 	s.AppConfig = config.LoadAppConfig(appCfgViper)
+
+	// If the {{.AppEnvName}}_PUBLIC_PATH env var is set, set
+	// the AppConfig to that path. This will be set by the "abcweb dev"
+	// command which compiles assets to the /tmp folder.
+	s.AppConfig.PublicPath = os.Getenv("{{.AppEnvName}}_PUBLIC_PATH")
+	// Set the default value if the env var is not set.
+	if s.AppConfig.PublicPath == "" {
+		s.AppConfig.PublicPath = "public"
+	}
 
 	// Build db Config using env vars and database.toml cfg file
 	dbCfgViper, err := config.NewDBViper(s.AppConfig.ActiveEnv)

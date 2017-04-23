@@ -33,7 +33,7 @@ func rootSetup(state *app.State) {
 		var err error
 
 		// Initialize the AppConfig and DBConfig (app/config.go)
-		state.InitConfig()	
+		state.InitConfig()
 
 		// Initialize the zap logger (app/logger.go)
 		state.InitLogger()
@@ -48,7 +48,7 @@ func rootSetup(state *app.State) {
 
 		// Cache the assets manifest.json file mappings (app/render.go)
 		if state.AppConfig.AssetsManifest {
-			rendering.AssetsManifest, err = rendering.GetManifest("public")
+			rendering.AssetsManifest, err = rendering.GetManifest(state.AppConfig.PublicPath)
 			if err != nil {
 				return err
 			}
