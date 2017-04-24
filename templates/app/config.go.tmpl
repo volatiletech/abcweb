@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"{{.ImportPath}}/config"
+	{{if not .NoDB -}}
 	"{{.ImportPath}}/db"
+	{{- end}}
 	{{if not .NoSessions -}}
 	"github.com/volatiletech/abcsessions"
 	{{- end}}
@@ -20,7 +22,9 @@ import (
 // The controllers are passed variables from this object when initialized.
 type State struct {
 	AppConfig *config.AppConfig
+	{{if not .NoDB -}}
 	DBConfig	 *config.DBConfig
+	{{- end}}
 	Log		 *zap.Logger
 	Router	 *chi.Mux
 	Render	 abcrender.Renderer
@@ -63,7 +67,11 @@ func RegisterFlags(root *cobra.Command) {
 	root.Flags().BoolP("version", "", false, "Display the build version hash")
 }
 
+{{if not .NoDB -}}
 // InitConfig loads the AppConfig and DBConfig into the passed in app State
+{{- else -}}
+// InitConfig loads the AppConfig into the passed in app State
+{{- end}}
 func (s *State) InitConfig() error {
 	// Build app Config using env vars, config.toml file and cmd line flags
 	appCfgViper, err := config.NewAppViper(s.Root.Flags())
@@ -81,6 +89,7 @@ func (s *State) InitConfig() error {
 		s.AppConfig.PublicPath = "public"
 	}
 
+	{{- if not .NoDB}}
 	// Build db Config using env vars and database.toml cfg file
 	dbCfgViper, err := config.NewDBViper(s.AppConfig.ActiveEnv)
 	if err != nil {
@@ -95,6 +104,7 @@ func (s *State) InitConfig() error {
 			return errors.Wrap(err, "failed to connect with global db handle")
 		}
 	}
+	{{- end}}
 
 	return nil
 }

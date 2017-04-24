@@ -25,8 +25,10 @@ func main() {
 	// Setup the main app (root command)
 	rootSetup(state)
 
+	{{- if not .NoDB}}
 	// Setup and bind the migrate command
 	migrateSetup(state)
+	{{- end}}
 
 	if err := state.Root.Execute(); err != nil {
 		state.Log.Fatal("root command execution failed", zap.Error(err))

@@ -6,19 +6,26 @@ import (
 	"testing"
 
 	"{{.ImportPath}}/config"
+	{{if not .NoDB -}}
 	"{{.ImportPath}}/db"
+	{{- end}}
 )
 
 func TestMain(m *testing.M) {
 	// Your custom TestMain pre-Run() code goes here
 
+	{{if not .NoDB -}}
 	r := testMainMigrations(m)
+	{{- else -}}
+	r := m.Run()
+	{{- end}}
 
 	// Your custom TestMain post-Run() code goes here
 
 	os.Exit(r)
 }
 
+{{- if not .NoDB}}
 // testMainMigrations executes the database migrations for the test database
 // defined in database.toml and executes testdata.sql, then runs the unit tests.
 // It returns a status code to be used with os.Exit(). Codes > 0 indicate error.
@@ -47,6 +54,7 @@ func testMainMigrations(m *testing.M) int {
 	// Run the package tests
 	return m.Run()
 }
+{{- end}}
 
 func TestNewRootMock(t *testing.T) {
 	t.Parallel()

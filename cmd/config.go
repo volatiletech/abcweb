@@ -29,6 +29,7 @@ type newConfig struct {
 	DevStorer        string
 	DefaultEnv       string
 	Bootstrap        string
+	NoDB             bool
 	NoBootstrapJS    bool
 	NoGulp           bool
 	NoFontAwesome    bool

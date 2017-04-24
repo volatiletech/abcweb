@@ -48,9 +48,11 @@ type AppConfig struct {
 	// and disk storer for prod.
 	SessionsDevStorer bool 
 	{{- end}}
+	{{if not .NoDB -}}
 	// Throw an error when the app starts if the database is not
 	// using the latest migration
 	EnforceMigration bool
+	{{- end}}
 	// PublicPath defaults to "public", but can be set to something else
 	// by the {{.AppEnvName}}_PUBLIC_PATH environment variable.
 	// This is set by the "abcweb dev" command to instruct the app to
@@ -58,6 +60,7 @@ type AppConfig struct {
 	PublicPath string
 }
 
+{{- if not .NoDB}}
 // DBConfig holds the database config for the app loaded through
 // environment variables, or the database.toml file.
 type DBConfig struct {
@@ -70,6 +73,7 @@ type DBConfig struct {
 	Pass    string
 	SSLMode string
 }
+{{- end}}
 
 // NewAppViper returns a viper instance activated against the active environment
 // configuration subsection and initialized with the config.toml
@@ -106,6 +110,7 @@ func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
 	return v, nil
 }
 
+{{- if not .NoDB}}
 // NewDBViper returns a viper instance activated against the active environment
 // configuration subsection and initialized with the database.toml
 // configuration file and the environment variable prefix.
@@ -133,6 +138,7 @@ func NewDBViper(env string) (*viper.Viper, error) {
 	v.Set("env", env)
 	return v, nil
 }
+{{- end}}
 
 // LoadAppConfig loads the config.toml app configuration object
 func LoadAppConfig(v *viper.Viper) *AppConfig {
@@ -152,13 +158,16 @@ func LoadAppConfig(v *viper.Viper) *AppConfig {
 		AssetsManifest:   v.GetBool("assets-manifest"),
 		AssetsNoCache:		v.GetBool("assets-no-cache"),
 		RenderRecompile:	v.GetBool("render-recompile"),
+		{{- if not .NoDB}}
 		EnforceMigration: v.GetBool("enforce-migration"),
+		{{- end}}
 		{{if not .NoSessions -}}
 		SessionsDevStorer: v.GetBool("sessions-dev-storer"),
 		{{- end}}
 	}
 }
 
+{{- if not .NoDB}}
 // LoadDBConfig loads the database.toml database configuration object
 func LoadDBConfig(v *viper.Viper) *DBConfig {
 	cfg := &DBConfig{
@@ -189,3 +198,4 @@ func LoadDBConfig(v *viper.Viper) *DBConfig {
 
 	return cfg
 }
+{{- end}}

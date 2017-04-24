@@ -46,6 +46,7 @@ func init() {
 	newCmd.Flags().StringP("tls-common-name", "", "localhost", "Common Name for generated TLS certificate")
 	newCmd.Flags().StringP("default-env", "", "prod", "Default $APP_ENV to use when starting server")
 	newCmd.Flags().StringP("bootstrap", "b", "regular", "Include Twitter Bootstrap 4 (none|regular|gridonly|rebootonly|gridandrebootonly)")
+	newCmd.Flags().BoolP("no-db", "", false, "Skip generation of database package, migrations and database config")
 	newCmd.Flags().BoolP("no-gulp", "", false, "Skip generation of gulpfile.js, package.json and installation of gulp dependencies")
 	newCmd.Flags().BoolP("no-bootstrap-js", "j", false, "Skip Twitter Bootstrap 4 javascript inclusion")
 	newCmd.Flags().BoolP("no-font-awesome", "f", false, "Skip Font Awesome inclusion")
@@ -72,6 +73,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 	viper.BindPFlags(cmd.Flags())
 
 	newCmdConfig = newConfig{
+		NoDB:             viper.GetBool("no-db"),
 		NoGulp:           viper.GetBool("no-gulp"),
 		NoBootstrapJS:    viper.GetBool("no-bootstrap-js"),
 		NoFontAwesome:    viper.GetBool("no-font-awesome"),
@@ -133,6 +135,10 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 		// Make the empty folders that cannot be committed to git.
 		for _, d := range emptyDirs {
+			// Skip migrations if --no-db set
+			if d == "db/migrations" && newCmdConfig.NoDB {
+				continue
+			}
 			emptyDir := filepath.Join(newCmdConfig.AppPath, d)
 			err := appFS.MkdirAll(emptyDir, 0755)
 			if err != nil {
@@ -388,6 +394,10 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 		if cfg.NoFontAwesome && info.Name() == "font-awesome" {
 			return true, filepath.SkipDir
 		}
+		// Skip db package if requested
+		if cfg.NoDB && info.Name() == "db" {
+			return true, filepath.SkipDir
+		}
 
 		for _, skipDir := range skipDirs {
 			if info.Name() == skipDir {
@@ -428,6 +438,13 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 	if cfg.NoConfig {
 		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" ||
 			info.Name() == "database.toml" || info.Name() == "database.toml.tmpl" {
+			return true, nil
+		}
+	}
+
+	// Skip database related files if requested
+	if cfg.NoDB {
+		if info.Name() == "database.toml" || info.Name() == "database.toml.tmpl" {
 			return true, nil
 		}
 	}

@@ -20,7 +20,9 @@ env = "{{.DefaultEnv}}"
 	render-recompile = true
 	sessions-dev-storer = true
 	# do not error in dev mode if database is not using latest migration.
+	{{if not .NoDB -}}
 	enforce-migration = false
+	{{- end}}
 [prod]
 	bind = ":80"
 	tls-bind = ":443"
