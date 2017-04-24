@@ -59,6 +59,7 @@ func RegisterFlags(root *cobra.Command) {
 	// Defined in app/sessions.go -- Usually cookie storer for dev and disk storer for prod.
 	root.Flags().BoolP("sessions-dev-storer", "", false, "Use the development mode sessions storer (defined in app/sessions.go)")
 	{{- end}}
+	root.Flags().BoolP("enforce-migration", "", true, "Throw error on app start if database is not using latest migration")
 	root.Flags().BoolP("version", "", false, "Display the build version hash")
 }
 

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"path/filepath"
 	"io/ioutil"
+	"strconv"
+	"regexp"
 	
 	// mysql driver
 	_ "github.com/go-sql-driver/mysql"
@@ -18,18 +20,18 @@ import (
 )
 
 // GetConnStr returns a connection string for the database software used
-func GetConnStr(cfg *config.DBConfig) string {
+func GetConnStr(cfg *config.DBConfig) (string, error) {
 	if len(cfg.DB) == 0 {
-		panic("db field in database.toml must be provided")
+		return "", errors.New("db field in database.toml must be provided")
 	}
 
 	if cfg.DB == "postgres" {
-		return drivers.PostgresBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode)
+		return drivers.PostgresBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode), nil
 	} else if cfg.DB == "mysql" {
-		return drivers.MySQLBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode)
+		return drivers.MySQLBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode), nil
 	}
 
-	panic(fmt.Sprintf("cannot get connection string for unknown database %q", cfg.DB))
+	return "", errors.New(fmt.Sprintf("cannot get connection string for unknown database %q", cfg.DB))
 }
 
 // Setup executes the migrations "up" against the passed in database and also
@@ -54,7 +56,11 @@ func Setup(cfg *config.DBConfig) (int, error) {
 		// to create a new database or drop old databases
 		cfgNew.DBName = "postgres"
 
-		connStr := GetConnStr(&cfgNew)
+		connStr, err := GetConnStr(&cfgNew)
+		if err != nil {
+			return 0, err
+		}
+
 		db, err := sql.Open(cfgNew.DB, connStr)
 		if err != nil {
 			return 0, err
@@ -74,7 +80,11 @@ func Setup(cfg *config.DBConfig) (int, error) {
 	} else if cfgNew.DB == "mysql" {
 		cfgNew.DBName = ""
 
-		connStr := GetConnStr(&cfgNew)
+		connStr, err := GetConnStr(&cfgNew)
+		if err != nil {
+			return 0, err
+		}
+
 		db, err := sql.Open(cfgNew.DB, connStr)
 		if err != nil {
 			return 0, err
@@ -93,7 +103,10 @@ func Setup(cfg *config.DBConfig) (int, error) {
 		db.Close()
 	}
 
-	connStr := GetConnStr(cfg)
+	connStr, err := GetConnStr(cfg)
+	if err != nil {
+		return 0, err
+	}
 
 	count, err := mig.Up(cfg.DB, connStr, filepath.Join(appPath, "db", "migrations"))
 	if err != nil {
@@ -107,6 +120,56 @@ func Setup(cfg *config.DBConfig) (int, error) {
 	err = goTestdata(cfg.DB, connStr)
 
 	return count, err
+}
+
+var (
+	rgxMigrationVersion = regexp.MustCompile(`([0-9]+)_.+\.sql`)
+	NoMigrationsErr = errors.New("no migrations found")
+)
+
+// IsMigrated returns true if the database is migrated to the
+// latest migration in the db/migrations folder. It also
+// returns the current database migration version number.
+func IsMigrated(cfg *config.DBConfig) (bool, int64, error) {
+	// Mimic success if there are no migrations
+	// because not every user will use migrations.
+	files, err := ioutil.ReadDir(filepath.Join("db", "migrations"))
+	if err != nil || len(files) == 0 {
+		return false, 0, NoMigrationsErr
+	}
+
+	connStr, err := GetConnStr(cfg)
+	if err != nil {
+		return false, 0, err
+	}
+
+	version, err := mig.Version(cfg.DB, connStr)
+	if err != nil {
+		return false, version, err
+	}
+
+	highestVersion := int64(0)
+	for _, file := range files {
+		fileVersion := rgxMigrationVersion.FindString(file.Name())
+		if fileVersion == "" {
+			continue
+		}
+
+		fileVersionNum, err := strconv.ParseInt(fileVersion, 10, 64)
+		if err != nil {
+			continue
+		}
+
+		if fileVersionNum > highestVersion {
+			highestVersion = fileVersionNum
+		}
+	}
+
+	if highestVersion != version {
+		return false, version, nil
+	}
+
+	return true, version, nil
 }
 
 // pgEnv returns a slice of the connection related environment variables

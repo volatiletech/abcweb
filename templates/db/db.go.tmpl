@@ -20,8 +20,12 @@ func InitDB(cfg *config.DBConfig) error {
 		return nil
 	}
 
-	var err error
-	DB, err = sql.Open(cfg.DB, GetConnStr(cfg))
+	connStr, err := GetConnStr(cfg)
+	if err != nil {
+		return err
+	}
+
+	DB, err = sql.Open(cfg.DB, connStr)
 	if err != nil {
 		return err
 	}
@@ -33,3 +37,4 @@ func InitDB(cfg *config.DBConfig) error {
 
 	return nil
 }
+

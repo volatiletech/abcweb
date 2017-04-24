@@ -48,6 +48,9 @@ type AppConfig struct {
 	// and disk storer for prod.
 	SessionsDevStorer bool 
 	{{- end}}
+	// Throw an error when the app starts if the database is not
+	// using the latest migration
+	EnforceMigration bool
 	// PublicPath defaults to "public", but can be set to something else
 	// by the {{.AppEnvName}}_PUBLIC_PATH environment variable.
 	// This is set by the "abcweb dev" command to instruct the app to
@@ -149,6 +152,7 @@ func LoadAppConfig(v *viper.Viper) *AppConfig {
 		AssetsManifest:   v.GetBool("assets-manifest"),
 		AssetsNoCache:		v.GetBool("assets-no-cache"),
 		RenderRecompile:	v.GetBool("render-recompile"),
+		EnforceMigration: v.GetBool("enforce-migration"),
 		{{if not .NoSessions -}}
 		SessionsDevStorer: v.GetBool("sessions-dev-storer"),
 		{{- end}}

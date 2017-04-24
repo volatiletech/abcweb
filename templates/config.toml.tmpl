@@ -19,6 +19,8 @@ env = "{{.DefaultEnv}}"
 	assets-no-cache = true
 	render-recompile = true
 	sessions-dev-storer = true
+	# do not error in dev mode if database is not using latest migration.
+	enforce-migration = false
 [prod]
 	bind = ":80"
 	tls-bind = ":443"

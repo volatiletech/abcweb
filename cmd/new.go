@@ -109,7 +109,6 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 	}
 
 	newCmdConfig.AppPath, newCmdConfig.ImportPath, newCmdConfig.AppName, newCmdConfig.AppEnvName, err = getAppPath(args)
-	fmt.Printf("\n\nappName: %s, appEnvName: %s\n\n", newCmdConfig.AppName, newCmdConfig.AppEnvName)
 	return err
 }
 
