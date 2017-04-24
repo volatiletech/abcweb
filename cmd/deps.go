@@ -28,8 +28,9 @@ your generated app or the abcweb tool by executing "go get" commands`,
 
 func init() {
 	depsCmd.Flags().BoolP("update", "u", false, "Also update already installed dependencies")
-	depsCmd.Flags().BoolP("verbose", "", false, "Very noisy verbose output")
-	depsCmd.Flags().BoolP("no-gulp", "", false, "Skip installing gulp.js dependencies")
+	depsCmd.Flags().BoolP("verbose", "v", false, "Very noisy verbose output")
+	depsCmd.Flags().BoolP("assets-only", "a", false, "Only install gulp.js dependencies")
+	depsCmd.Flags().BoolP("go-only", "g", false, "Only install Go dependencies")
 
 	RootCmd.AddCommand(depsCmd)
 }
@@ -78,7 +79,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		goGetArgs[i] = append(prependArgs, goGetArgs[i]...)
 	}
 
-	if !viper.GetBool("no-gulp") {
+	if !viper.GetBool("go-only") {
 		prependArgs = []string{"install", "--global"}
 		if viper.GetBool("verbose") {
 			prependArgs = append(prependArgs, "--verbose")
@@ -128,27 +129,29 @@ https://docs.npmjs.com/getting-started/fixing-npm-permissions
 		}
 	}
 
-	fmt.Printf("\nRetrieving all Go dependencies using \"go get\":\n\n")
+	if !viper.GetBool("assets-only") {
+		fmt.Printf("\nRetrieving all Go dependencies using \"go get\":\n\n")
 
-	for _, goGetArg := range goGetArgs {
-		fmt.Printf("%s ... ", goGetArg[len(goGetArg)-1])
+		for _, goGetArg := range goGetArgs {
+			fmt.Printf("%s ... ", goGetArg[len(goGetArg)-1])
 
-		exc := exec.Command("go", goGetArg...)
-		out, err := exc.CombinedOutput()
+			exc := exec.Command("go", goGetArg...)
+			out, err := exc.CombinedOutput()
 
-		if err != nil {
-			fmt.Printf("ERROR\n\n")
-		} else {
-			fmt.Printf("SUCCESS\n")
-		}
+			if err != nil {
+				fmt.Printf("ERROR\n\n")
+			} else {
+				fmt.Printf("SUCCESS\n")
+			}
 
-		if len(out) > 0 {
-			fmt.Print(string(out))
-		}
+			if len(out) > 0 {
+				fmt.Print(string(out))
+			}
 
-		if err != nil {
-			fmt.Printf("%s\n\n", err)
-			os.Exit(1)
+			if err != nil {
+				fmt.Printf("%s\n\n", err)
+				os.Exit(1)
+			}
 		}
 	}
 
