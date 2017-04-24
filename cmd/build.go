@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -23,6 +26,7 @@ var buildCmd = &cobra.Command{
 func init() {
 	buildCmd.Flags().BoolP("go-only", "g", false, "Only build the go binary")
 	buildCmd.Flags().BoolP("assets-only", "a", false, "Only build the assets")
+	buildCmd.Flags().BoolP("verbose", "v", false, "Verbose output")
 
 	RootCmd.AddCommand(buildCmd)
 }
@@ -51,9 +55,29 @@ func buildCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func buildApp() error {
-	cmd := exec.Command("go", "build")
-	cmd.Dir = cnf.AppPath
+	args := []string{"build"}
 
+	if cnf.ModeViper.GetBool("verbose") {
+		args = append(args, "-v")
+	}
+
+	var version string
+	cmd := exec.Command("git", "rev-parse", "--short", "HEAD")
+	out := &bytes.Buffer{}
+	cmd.Stdout = out
+	_ = cmd.Run()
+
+	version = strings.TrimSpace(out.String())
+	if len(version) == 0 {
+		version = "0"
+	}
+
+	buildTime := time.Now().Format(time.RFC3339)
+
+	args = append(args, "-ldflags", fmt.Sprintf("-X main.version=%s -X main.buildTime=%s", version, buildTime))
+
+	cmd = exec.Command("go", args...)
+	cmd.Dir = cnf.AppPath
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
