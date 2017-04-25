@@ -80,27 +80,16 @@ func distCmdRun(cmd *cobra.Command, args []string) error {
 
 	if cnf.ModeViper.GetBool("config") {
 		fmt.Println("Generating fresh config files in dist...")
-		cfg := &newConfig{}
-		_, err := toml.DecodeFile(filepath.Join(cnf.AppPath, ".abcweb.toml"), cfg)
-		if err != nil {
-			fmt.Println("warning, unable to find .abcweb.toml, so your config may need tweaking")
-		}
-		// Overwrite default env to prod
-		cfg.DefaultEnv = "prod"
-		cfg.AppName = cnf.AppName
-		cfg.AppEnvName = cnf.AppEnvName
-		cfg.AppPath = cnf.AppPath
-
-		err = genConfigFiles(filepath.Join(cnf.AppPath, "dist"), cfg, true)
-		if err != nil {
+		if err := freshConfig(); err != nil {
 			return err
 		}
-		fmt.Printf("SUCCESS.\n\n")
 	}
 
 	if cnf.ModeViper.GetBool("copy-config") {
 		fmt.Println("Copying all .toml files from app root into dist...")
-		// list all files in app root, copy all files ending in .toml
+		if err := copyConfig(); err != nil {
+			return err
+		}
 	}
 
 	if cnf.ModeViper.GetBool("zip") {
@@ -108,6 +97,58 @@ func distCmdRun(cmd *cobra.Command, args []string) error {
 		// zip dist folder, call it dist.zip
 	}
 
+	return nil
+}
+
+func copyConfig() error {
+	rootDir, err := os.Open(filepath.Join(cnf.AppPath))
+	if err != nil {
+		return err
+	}
+
+	files, err := rootDir.Readdir(0)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		name := file.Name()
+		if strings.HasSuffix(name, ".toml") {
+			err = copyFile(
+				filepath.Join(cnf.AppPath, name),
+				filepath.Join(cnf.AppPath, "dist", name),
+				file.Mode(),
+			)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	fmt.Printf("SUCCESS.\n\n")
+	return nil
+}
+
+func freshConfig() error {
+	cfg := &newConfig{}
+
+	_, err := toml.DecodeFile(filepath.Join(cnf.AppPath, ".abcweb.toml"), cfg)
+	if err != nil {
+		fmt.Println("warning, unable to find .abcweb.toml, so your config may need tweaking")
+	}
+
+	// Overwrite default env to prod
+	cfg.DefaultEnv = "prod"
+	cfg.AppName = cnf.AppName
+	cfg.AppEnvName = cnf.AppEnvName
+	cfg.AppPath = cnf.AppPath
+
+	err = genConfigFiles(filepath.Join(cnf.AppPath, "dist"), cfg, true)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("SUCCESS.\n\n")
 	return nil
 }
 
@@ -174,6 +215,7 @@ func copyFolders() error {
 		f, err := os.Stat(filepath.Join(cnf.AppPath, "db", "migrations"))
 		if err == nil && f.Size() > 0 {
 			migDir, err := os.Open(filepath.Join(cnf.AppPath, "db", "migrations"))
+			defer migDir.Close()
 			if err != nil {
 				return err
 			}
