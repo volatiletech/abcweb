@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/pierrre/archivefile/zip"
 	"github.com/spf13/cobra"
 )
 
@@ -94,9 +95,31 @@ func distCmdRun(cmd *cobra.Command, args []string) error {
 
 	if cnf.ModeViper.GetBool("zip") {
 		fmt.Println("Zipping dist folder into dist.zip...")
-		// zip dist folder, call it dist.zip
+		if err := zipDist(); err != nil {
+			return err
+		}
 	}
 
+	return nil
+}
+
+func zipDist() error {
+	// remove zip if it already exists
+	os.Remove(filepath.Join(cnf.AppPath, cnf.AppName+".zip"))
+
+	file, err := os.Create(filepath.Join(cnf.AppPath, cnf.AppName+".zip"))
+	defer file.Close()
+	if err != nil {
+		return err
+	}
+
+	distSrc := filepath.Join(cnf.AppPath, "dist") + string(filepath.Separator)
+	zip.Archive(distSrc, file, nil)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("SUCCESS.\n\n")
 	return nil
 }
 
