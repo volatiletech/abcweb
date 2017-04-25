@@ -2,6 +2,7 @@
 # Environment modes here must match your environment modes in config.toml.
 # The environment that is loaded can be set using:
 # env field in config.toml or {{envAppName .AppName}}_ENV environment variable.
+
 [dev]
 	# valid values are postgres|mysql
 	# db = "postgres"
@@ -14,10 +15,10 @@
 	# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
 	# MySQL: https://github.com/go-sql-driver/mysql#tls
 	sslmode = "require"
-	
 	# SQLBoiler (models generator) additional config
 	# tables to ignore when generating models (migration tables, etc)
 	blacklist = ["mig_migrations"]
+
 [prod]
 	# valid values are postgres|mysql
 	# db = "postgres"
@@ -30,10 +31,16 @@
 	# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
 	# MySQL: https://github.com/go-sql-driver/mysql#tls
 	sslmode = "require"
-	#
 	# SQLBoiler (models generator) additional config
 	# tables to ignore when generating models (migration tables, etc)
 	blacklist = ["mig_migrations"]
+
+# The test section is loaded by your app when running unit tests.
+# This should _ALWAYS_ point to a disposable test database so that
+# unit tests can load the migrations and test data into it.
+#
+# This section is a special case and does not require an accompanying
+# config.toml section.
 [test]
 	# The test segment defines the database to connect to when running unit
 	# tests and when executing unit test migrations.
@@ -51,7 +58,6 @@
 	# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
 	# MySQL: https://github.com/go-sql-driver/mysql#tls
 	sslmode = "require"
-	#
 	# SQLBoiler (models generator) additional config
 	# tables to ignore when generating models (migration tables, etc)
 	blacklist = ["mig_migrations"]

@@ -1,6 +1,7 @@
 # if an environment is not provided using the "{{envAppName .AppName}}_ENV"
 # environment variable, then your app will load the default environment set here.
 env = "{{.DefaultEnv}}"
+
 [dev]
 	bind = ":4000"
 	# Uncomment the below "tls-bind" line if you wish to use TLS in dev mode.
@@ -23,6 +24,7 @@ env = "{{.DefaultEnv}}"
 	{{if not .NoDB -}}
 	enforce-migration = false
 	{{- end}}
+
 [prod]
 	bind = ":80"
 	tls-bind = ":443"
