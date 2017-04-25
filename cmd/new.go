@@ -56,7 +56,6 @@ func init() {
 	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml and database.toml file")
 	newCmd.Flags().BoolP("no-sessions", "s", false, "Skip support for http sessions")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
-	newCmd.Flags().BoolP("tls-certs-only", "", false, "Only generate self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-http-redirect", "", false, "Disable the http -> https redirect when using TLS")
 	newCmd.Flags().BoolP("no-request-id", "", false, "Disable the Request ID middleware and Request ID logging")
 	newCmd.Flags().BoolP("skip-npm-install", "", false, "Skip running npm install command")
@@ -80,7 +79,6 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		NoLiveReload:     viper.GetBool("no-livereload"),
 		NoSessions:       viper.GetBool("no-sessions"),
 		NoTLSCerts:       viper.GetBool("no-tls-certs"),
-		TLSCertsOnly:     viper.GetBool("tls-certs-only"),
 		NoReadme:         viper.GetBool("no-readme"),
 		NoConfig:         viper.GetBool("no-config"),
 		NoRequestID:      viper.GetBool("no-request-id"),
@@ -120,40 +118,37 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Make the app directory if it doesnt already exist.
-	// Can get dir not exist errors on --tls-cert-only runs if we don't do this.
 	err := appFS.MkdirAll(newCmdConfig.AppPath, 0755)
 	if err != nil {
 		return err
 	}
 
-	if !newCmdConfig.TLSCertsOnly {
-		// Get base path containing templates folder and source files
-		p, _ := build.Default.Import(basePackage, "", build.FindOnly)
-		if p == nil || len(p.Dir) == 0 {
-			return errors.New("cannot locate base path containing templates folder")
-		}
+	// Get base path containing templates folder and source files
+	p, _ := build.Default.Import(basePackage, "", build.FindOnly)
+	if p == nil || len(p.Dir) == 0 {
+		return errors.New("cannot locate base path containing templates folder")
+	}
 
-		// Make the empty folders that cannot be committed to git.
-		for _, d := range emptyDirs {
-			// Skip migrations if --no-db set
-			if d == "db/migrations" && newCmdConfig.NoDB {
-				continue
-			}
-			emptyDir := filepath.Join(newCmdConfig.AppPath, d)
-			err := appFS.MkdirAll(emptyDir, 0755)
-			if err != nil {
-				return err
-			}
+	// Make the empty folders that cannot be committed to git.
+	for _, d := range emptyDirs {
+		// Skip migrations if --no-db set
+		if d == "db/migrations" && newCmdConfig.NoDB {
+			continue
 		}
-
-		// Walk all files in the templates folder
-		basePath := filepath.Join(p.Dir, "templates")
-		err := afero.Walk(appFS, basePath, func(path string, info os.FileInfo, err error) error {
-			return newCmdWalk(newCmdConfig, basePath, path, info, err)
-		})
+		emptyDir := filepath.Join(newCmdConfig.AppPath, d)
+		err := appFS.MkdirAll(emptyDir, 0755)
 		if err != nil {
 			return err
 		}
+	}
+
+	// Walk all files in the templates folder
+	basePath := filepath.Join(p.Dir, "templates")
+	err = afero.Walk(appFS, basePath, func(path string, info os.FileInfo, err error) error {
+		return newCmdWalk(newCmdConfig, basePath, path, info, err)
+	})
+	if err != nil {
+		return err
 	}
 
 	// Generate TLS certs if requested
@@ -242,11 +237,9 @@ func generateTLSCerts(cfg newConfig) error {
 	certFilePath := filepath.Join(cfg.AppPath, "cert.pem")
 	privateKeyPath := filepath.Join(cfg.AppPath, "private.key")
 
-	if !cfg.TLSCertsOnly {
-		_, err := appFS.Stat(certFilePath)
-		if err == nil || (err != nil && !os.IsNotExist(err)) {
-			return nil
-		}
+	_, err := appFS.Stat(certFilePath)
+	if err == nil || (err != nil && !os.IsNotExist(err)) {
+		return nil
 	}
 
 	if !cfg.Silent {

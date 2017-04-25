@@ -86,7 +86,7 @@ func buildApp() error {
 		return err
 	}
 
-	fmt.Printf("Build app complete.\n\n")
+	fmt.Printf("SUCCESS.\n\n")
 	return nil
 }
 
@@ -115,6 +115,6 @@ func buildAssets() error {
 		return err
 	}
 
-	fmt.Printf("Build assets complete.\n\n")
+	fmt.Printf("SUCCESS.\n\n")
 	return nil
 }

@@ -20,32 +20,31 @@ type migrateConfig struct {
 }
 
 type newConfig struct {
-	AppPath          string
-	ImportPath       string
-	AppName          string
-	AppEnvName       string
-	TLSCommonName    string
-	ProdStorer       string
-	DevStorer        string
-	DefaultEnv       string
-	Bootstrap        string
-	NoDB             bool
-	NoBootstrapJS    bool
-	NoGulp           bool
-	NoFontAwesome    bool
-	NoLiveReload     bool
-	NoTLSCerts       bool
-	NoReadme         bool
-	NoConfig         bool
-	NoSessions       bool
-	NoRequestID      bool
-	ForceOverwrite   bool
-	TLSCertsOnly     bool
-	NoHTTPRedirect   bool
-	SkipNPMInstall   bool
-	SkipGovendorSync bool
-	SkipGitInit      bool
-	Silent           bool
+	AppPath          string `toml:"app-path"`
+	ImportPath       string `toml:"import-path"`
+	AppName          string `toml:"app-name"`
+	AppEnvName       string `toml:"app-env-name"`
+	TLSCommonName    string `toml:"tls-common-name"`
+	ProdStorer       string `toml:"prod-storer"`
+	DevStorer        string `toml:"dev-storer"`
+	DefaultEnv       string `toml:"default-env"`
+	Bootstrap        string `toml:"bootstrap"`
+	NoDB             bool   `toml:"no-db"`
+	NoBootstrapJS    bool   `toml:"no-bootstrap-js"`
+	NoGulp           bool   `toml:"no-gulp"`
+	NoFontAwesome    bool   `toml:"no-font-awesome"`
+	NoLiveReload     bool   `toml:"no-live-reload"`
+	NoTLSCerts       bool   `toml:"no-tls-certs"`
+	NoReadme         bool   `toml:"no-readme"`
+	NoConfig         bool   `toml:"no-config"`
+	NoSessions       bool   `toml:"no-sessions"`
+	NoRequestID      bool   `toml:"no-request-id"`
+	ForceOverwrite   bool   `toml:"force-overwrite"`
+	NoHTTPRedirect   bool   `toml:"no-http-redirect"`
+	SkipNPMInstall   bool   `toml:"skip-npm-install"`
+	SkipGovendorSync bool   `toml:"skip-govendor-sync"`
+	SkipGitInit      bool   `toml:"skip-git-init"`
+	Silent           bool   `toml:"silent"`
 }
 
 // skipDirs are the directories to skip creating for new command
