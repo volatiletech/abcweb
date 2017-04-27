@@ -37,7 +37,7 @@ var generateCmd = &cobra.Command{
 var modelsCmd = &cobra.Command{
 	Use:   "models",
 	Short: "Generate your database models",
-	Long: `Generate models will connect to your database and generate your models from your existing database structure. 
+	Long: `Generate models will connect to your database and generate your models from your existing database structure.
 Don't forget to run your migrations.
 
 This tool pipes out to SQLBoiler: https://github.com/vattle/sqlboiler -- See README.md at sqlboiler repo for API guidance.`,
@@ -316,9 +316,11 @@ func configCmdRun(cmd *cobra.Command, args []string) error {
 	fmt.Println("Generating fresh config files...")
 	cfg := &newConfig{}
 	_, err := toml.DecodeFile(filepath.Join(cnf.AppPath, ".abcweb.toml"), cfg)
-	if err != nil {
+	if err == os.ErrNotExist {
 		fmt.Println("warning: unable to find .abcweb.toml, so your config may need tweaking")
 		cfg.DefaultEnv = "prod"
+	} else if err != nil {
+		return err
 	}
 
 	cfg.AppName = cnf.AppName

@@ -194,7 +194,8 @@ func getAppPath() (string, error) {
 
 // getAppName gets the appname portion of a project path
 func getAppName(appPath string) string {
-	split := strings.Split(appPath, string(os.PathSeparator))
+	// Is "/" on both Windows and Linux
+	split := strings.Split(appPath, "/")
 	return split[len(split)-1]
 }
 
