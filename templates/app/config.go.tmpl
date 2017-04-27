@@ -91,7 +91,7 @@ func (s *State) InitConfig() error {
 
 	{{- if not .NoDB}}
 	// Build db Config using env vars and database.toml cfg file
-	dbCfgViper, err := config.NewDBViper(s.AppConfig.ActiveEnv)
+	dbCfgViper, err := config.NewDBViper(s.AppConfig.ActiveEnv, "database.toml")
 	if err != nil {
 		return errors.Wrap(err, "failed to load db config")
 	}

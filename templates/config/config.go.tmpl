@@ -114,18 +114,18 @@ func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
 // NewDBViper returns a viper instance activated against the active environment
 // configuration subsection and initialized with the database.toml
 // configuration file and the environment variable prefix.
-func NewDBViper(env string) (*viper.Viper, error) {
+func NewDBViper(env, dbConfig string) (*viper.Viper, error) {
 	if env == "" {
 		return nil, fmt.Errorf("empty environment parameter received")
 	}
 
-	if _, err := os.Stat("database.toml"); err != nil {
+	if _, err := os.Stat(dbConfig); err != nil {
 		return nil, err
 	}
 
 	v := viper.New()
 	v.SetConfigType("toml")
-	v.SetConfigFile("database.toml")
+	v.SetConfigFile(dbConfig)
 	v.SetEnvPrefix("{{$envAppNm}}")
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	v.ReadInConfig()
