@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -48,7 +47,7 @@ func testCmdRun(cmd *cobra.Command, args []string) {
 		exc = exec.Command("go", "test", "-p", "1")
 	}
 
-	rgx, err := regexp.Compile(filepath.Join(cnf.AppName, "vendor"))
+	rgx, err := regexp.Compile(cnf.AppName + "/vendor")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
