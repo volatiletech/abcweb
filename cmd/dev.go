@@ -29,12 +29,22 @@ the page once the corresponding watcher task is finished.`,
 
 func init() {
 	devCmd.Flags().BoolP("go-only", "g", false, "Only watch and rebuild the go app")
+	devCmd.Flags().StringP("env", "e", "dev", "The config files development environment to load")
 
 	RootCmd.AddCommand(devCmd)
 }
 
 func devCmdRun(cmd *cobra.Command, args []string) {
 	cnf.ModeViper.BindPFlags(cmd.Flags())
+
+	// If the env command flag is set manually or ActiveEnv
+	// is set to "", then set it to the viper value.
+	// "dev" is a much more sane default for abcweb dev, and Windows
+	// doesn't work well with temporary environment variables so setting
+	// the env with APP_ENV is a lot less feasible.
+	if cnf.ActiveEnv == "" || cmd.Flag("env").Changed {
+		cnf.ActiveEnv = cnf.ModeViper.GetString("env")
+	}
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -162,8 +172,10 @@ func startRefresh(publicPathEnv string, ctx context.Context) (*refresh.Manager, 
 		BuildDelay:         200,
 		BinaryName:         "watch-build",
 		CommandFlags:       []string{},
-		CommandEnv:         []string{},
-		EnableColors:       true,
+		CommandEnv: []string{
+			fmt.Sprintf("%s_ENV=%s", cnf.AppEnvName, cnf.ActiveEnv),
+		},
+		EnableColors: true,
 	}
 
 	// Only read the config file if it exists, otherwise use the defaults above.

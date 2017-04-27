@@ -65,6 +65,7 @@ func RegisterFlags(root *cobra.Command) {
 	{{- end}}
 	root.Flags().BoolP("enforce-migration", "", true, "Throw error on app start if database is not using latest migration")
 	root.Flags().BoolP("version", "", false, "Display the build version hash")
+	root.Flags().StringP("env", "e", "prod", "The config files environment to load")
 }
 
 {{if not .NoDB -}}

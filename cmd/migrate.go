@@ -9,6 +9,7 @@ import (
 
 	"github.com/kat-co/vala"
 	"github.com/spf13/cobra"
+	"github.com/volatiletech/abcweb/config"
 )
 
 var migrateCmdConfig migrateConfig
@@ -67,6 +68,7 @@ var dbVersionCmd = &cobra.Command{
 func init() {
 	// migrate flags
 	migrateCmd.PersistentFlags().StringP("db", "d", "", `Valid options: postgres|mysql (default: "database.toml db field")`)
+	migrateCmd.PersistentFlags().StringP("env", "e", "dev", "The database config file environment to load")
 
 	RootCmd.AddCommand(migrateCmd)
 	migrateCmd.AddCommand(upCmd)
@@ -75,18 +77,36 @@ func init() {
 	migrateCmd.AddCommand(statusCmd)
 	migrateCmd.AddCommand(dbVersionCmd)
 
-	migrateCmd.PreRun = func(*cobra.Command, []string) {
+	migrateCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		// Usually the RootCmd persistent pre-run does this init for us,
+		// but since we have to override the persistent pre-run here
+		// to provide configuration to all children commands, we have to
+		// do the init ourselves.
+		var err error
+		cnf, err = config.Initialize()
+		if err != nil {
+			return err
+		}
+
 		cnf.ModeViper.BindPFlags(migrateCmd.PersistentFlags())
+		cnf.ModeViper.BindPFlags(cmd.Flags())
+
+		// If the env command flag is set manually or ActiveEnv
+		// is set to "", then set it to the viper value.
+		// "dev" is a much more sane default for abcweb migrate
+		// (especially considering the built binary has its own migrate for prod),
+		// and Windows doesn't work well with temporary environment
+		// variables so setting the env with APP_ENV is a lot less feasible.
+		if cnf.ActiveEnv == "" || cmd.Flag("env").Changed {
+			cnf.ActiveEnv = cnf.ModeViper.GetString("env")
+		}
+
+		return nil
 	}
 }
 
 func migrateExec(cmd *cobra.Command, args []string, subCmd string) error {
 	checkDep("mig")
-
-	err := cnf.CheckEnv()
-	if err != nil {
-		return err
-	}
 
 	migrateCmdConfig.DB = cnf.ModeViper.GetString("db")
 	migrateCmdConfig.DBName = cnf.ModeViper.GetString("dbname")
@@ -121,7 +141,7 @@ func migrateExec(cmd *cobra.Command, args []string, subCmd string) error {
 		connStr = mysqlConnStr(migrateCmdConfig)
 	}
 
-	err = vala.BeginValidation().Validate(
+	err := vala.BeginValidation().Validate(
 		vala.StringNotEmpty(migrateCmdConfig.DB, "db"),
 		vala.StringNotEmpty(migrateCmdConfig.User, "user"),
 		vala.StringNotEmpty(migrateCmdConfig.Host, "host"),

@@ -79,29 +79,20 @@ type DBConfig struct {
 // configuration subsection and initialized with the config.toml
 // configuration file and the environment variable prefix.
 func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
-	{{$envAppNm := envAppName .AppName -}}
-	env := os.Getenv("{{$envAppNm}}_ENV")
-
 	v := viper.New()
+	v.BindPFlags(flags)
 	v.SetConfigType("toml")
 	v.SetConfigFile("config.toml")
-	v.SetEnvPrefix("{{$envAppNm}}")
+	v.SetEnvPrefix("{{.AppEnvName}}")
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	v.ReadInConfig()
-
-	// If we cannot get the active environment from {{$envAppNm}}_ENV,
-	// try to get it from the config file's env variable.
-	if env == "" {
-	  env = v.GetString("env")
-	}
-	if env == "" {
-	  fmt.Println(`Warning: No environment chosen using {{$envAppNm}}_ENV or env field in config.toml, attempting to use fallback of "prod"`)
-	  env = "prod"
-	}
+	v.AutomaticEnv()
+	
+	env := v.GetString("env")
 
 	v = v.Sub(env)
 	if v == nil {
-		return nil, fmt.Errorf("unable to load environment %s from app config file", env)
+		return nil, fmt.Errorf("unable to load environment %q from app config file", env)
 	}
 
 	v.BindPFlags(flags)
@@ -126,13 +117,14 @@ func NewDBViper(env, dbConfig string) (*viper.Viper, error) {
 	v := viper.New()
 	v.SetConfigType("toml")
 	v.SetConfigFile(dbConfig)
-	v.SetEnvPrefix("{{$envAppNm}}")
+	v.SetEnvPrefix("{{.AppEnvName}}")
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	v.ReadInConfig()
+	v.AutomaticEnv()
 
 	v = v.Sub(env)
 	if v == nil {
-		return nil, fmt.Errorf("unable to load environment %s from database config file", env)
+		return nil, fmt.Errorf("unable to load environment %q from database config file", env)
 	}
 
 	v.Set("env", env)

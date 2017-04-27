@@ -10,6 +10,7 @@ import (
 	"{{.ImportPath}}/app"
 	{{if not .NoDB -}}
 	"{{.ImportPath}}/db"
+	"{{.ImportPath}}/config"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/mig"
 	"github.com/spf13/viper"
@@ -42,7 +43,9 @@ func rootSetup(state *app.State) {
 		{{- else -}}
 		// Initialize the AppConfig (app/config.go)
 		{{- end}}
-		state.InitConfig()
+		if err := state.InitConfig(); err != nil {
+			return err
+		}
 
 		// Initialize the zap logger (app/logger.go)
 		state.InitLogger()
@@ -97,28 +100,37 @@ func migrateSetup(state *app.State) {
 		Use:   "migrate",
 		Short: "Run your database migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			viper.BindPFlags(cmd.Flags())
+			appViper, err := config.NewAppViper(cmd.Flags())
+			if err != nil {
+				return errors.Wrap(err, "cannot create app config viper")
+			}
 
-			// Initialize the AppConfig and DBConfig (app/config.go)
-			state.InitConfig()	
+			appConfig := config.LoadAppConfig(appViper)
+
+			dbViper, err := config.NewDBViper(appConfig.ActiveEnv, "database.toml")
+			if err != nil {
+				return errors.Wrap(err, "cannot create db config viper")
+			}
+
+			dbConfig := config.LoadDBConfig(dbViper)
 
 			if _, err := os.Stat(filepath.Join("db", "migrations")); err != nil {
 				return errors.Wrap(err, "could not find migrations folder")
 			}
 
-			connStr, err := db.GetConnStr(state.DBConfig)
+			connStr, err := db.GetConnStr(dbConfig)
 			if err != nil {
 				return errors.Wrap(err, "could not create connection string")
 			}
 
 			if viper.GetBool("down") {
-				name, err := mig.Down(state.DBConfig.DB, connStr, filepath.Join("db", "migrations"))
+				name, err := mig.Down(dbConfig.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig down failed")
 				}
 				fmt.Printf("rolled back migration %q\n", name)
 			} else {
-				count, err := mig.Up(state.DBConfig.DB, connStr, filepath.Join("db", "migrations"))
+				count, err := mig.Up(dbConfig.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig up failed")
 				}
@@ -130,6 +142,7 @@ func migrateSetup(state *app.State) {
 	}
 
 	migrate.Flags().BoolP("down", "d", false, "Roll back the database migration version by one")
+	migrate.Flags().StringP("env", "e", "prod", "The database config file environment to load")
 	
 	state.Root.AddCommand(migrate)
 }
