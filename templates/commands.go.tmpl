@@ -2,6 +2,7 @@ package main
 
 import (
 	{{if not .NoDB -}}
+	"path/filepath"
 	"fmt"
 	"os"
 	{{- end}}
@@ -76,10 +77,10 @@ func rootSetup(state *app.State) {
 		// is true, and if the database.toml has a user set
 		if state.AppConfig.EnforceMigration {
 			migrated, version, err := db.IsMigrated(state.DBConfig)
-			if err != nil && err != db.NoMigrationsErr {
+			if err != nil && err != db.ErrNoMigrations {
 				return errors.Wrap(err, "failed to check if using latest migration")
 			}
-			if !migrated && err != db.NoMigrationsErr {
+			if !migrated && err != db.ErrNoMigrations {
 				return fmt.Errorf("database is out of sync with migrations, database version: %d", version)
 			}
 		}
@@ -101,7 +102,7 @@ func migrateSetup(state *app.State) {
 			// Initialize the AppConfig and DBConfig (app/config.go)
 			state.InitConfig()	
 
-			if _, err := os.Stat("migrations"); err != nil {
+			if _, err := os.Stat(filepath.Join("db", "migrations")); err != nil {
 				return errors.Wrap(err, "could not find migrations folder")
 			}
 
@@ -111,13 +112,13 @@ func migrateSetup(state *app.State) {
 			}
 
 			if viper.GetBool("down") {
-				name, err := mig.Down(state.DBConfig.DB, connStr, "migrations")
+				name, err := mig.Down(state.DBConfig.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig down failed")
 				}
 				fmt.Printf("rolled back migration %q\n", name)
 			} else {
-				count, err := mig.Up(state.DBConfig.DB, connStr, "migrations")
+				count, err := mig.Up(state.DBConfig.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig up failed")
 				}

@@ -39,11 +39,12 @@
 # This should _ALWAYS_ point to a disposable test database so that
 # unit tests can load the migrations and test data into it.
 #
+# If database details are not provided here then migrations will
+# be skipped for unit tests.
+#
 # This section is a special case and does not require an accompanying
 # config.toml section.
 [test]
-	# The test segment defines the database to connect to when running unit
-	# tests and when executing unit test migrations.
 	# valid values are postgres|mysql
 	# db = "postgres"
 	# If the user line is commented the database will not be connected to
@@ -58,6 +59,3 @@
 	# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
 	# MySQL: https://github.com/go-sql-driver/mysql#tls
 	sslmode = "require"
-	# SQLBoiler (models generator) additional config
-	# tables to ignore when generating models (migration tables, etc)
-	blacklist = ["mig_migrations"]

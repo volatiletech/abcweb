@@ -325,7 +325,7 @@ func configCmdRun(cmd *cobra.Command, args []string) error {
 	cfg.AppEnvName = cnf.AppEnvName
 	cfg.AppPath = cnf.AppPath
 
-	err = genConfigFiles(cnf.AppPath, cfg, cnf.ModeViper.GetBool("force"))
+	err = genConfigFiles(cnf.AppPath, cfg, false, cnf.ModeViper.GetBool("force"))
 	if err != nil {
 		return err
 	}
@@ -367,8 +367,10 @@ func certsCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// generate fresh config files into dstFolder
-func genConfigFiles(dstFolder string, cfg *newConfig, force bool) error {
+// genConfigFiles will generate fresh config files into dstFolder.
+// If skipNonProd is set to true it will skip config files that are not
+// required in production (such as watch.toml)
+func genConfigFiles(dstFolder string, cfg *newConfig, skipNonProd bool, force bool) error {
 	// Get base path containing templates folder and source files
 	p, _ := build.Default.Import(basePackage, "", build.FindOnly)
 	if p == nil || len(p.Dir) == 0 {
@@ -378,7 +380,10 @@ func genConfigFiles(dstFolder string, cfg *newConfig, force bool) error {
 	configFiles := map[string]string{
 		filepath.Join(p.Dir, "templates", "config.toml.tmpl"):   "config.toml",
 		filepath.Join(p.Dir, "templates", "database.toml.tmpl"): "database.toml",
-		filepath.Join(p.Dir, "templates", "watch.toml.tmpl"):    "watch.toml",
+	}
+
+	if !skipNonProd {
+		configFiles[filepath.Join(p.Dir, "templates", "watch.toml.tmpl")] = "watch.toml"
 	}
 
 	for src, fname := range configFiles {

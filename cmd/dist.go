@@ -166,7 +166,7 @@ func freshConfig() error {
 	cfg.AppEnvName = cnf.AppEnvName
 	cfg.AppPath = cnf.AppPath
 
-	err = genConfigFiles(filepath.Join(cnf.AppPath, "dist"), cfg, true)
+	err = genConfigFiles(filepath.Join(cnf.AppPath, "dist"), cfg, true, true)
 	if err != nil {
 		return err
 	}

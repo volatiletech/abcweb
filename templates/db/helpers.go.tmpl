@@ -31,7 +31,7 @@ func GetConnStr(cfg *config.DBConfig) (string, error) {
 		return drivers.MySQLBuildQueryString(cfg.User, cfg.Pass, cfg.DBName, cfg.Host, cfg.Port, cfg.SSLMode), nil
 	}
 
-	return "", errors.New(fmt.Sprintf("cannot get connection string for unknown database %q", cfg.DB))
+	return "", fmt.Errorf("cannot get connection string for unknown database %q", cfg.DB)
 }
 
 // Setup executes the migrations "up" against the passed in database and also
@@ -124,7 +124,7 @@ func Setup(cfg *config.DBConfig) (int, error) {
 
 var (
 	rgxMigrationVersion = regexp.MustCompile(`([0-9]+)_.+\.sql`)
-	NoMigrationsErr = errors.New("no migrations found")
+	ErrNoMigrations = errors.New("no migrations found")
 )
 
 // IsMigrated returns true if the database is migrated to the
@@ -135,7 +135,7 @@ func IsMigrated(cfg *config.DBConfig) (bool, int64, error) {
 	// because not every user will use migrations.
 	files, err := ioutil.ReadDir(filepath.Join("db", "migrations"))
 	if err != nil || len(files) == 0 {
-		return false, 0, NoMigrationsErr
+		return false, 0, ErrNoMigrations
 	}
 
 	connStr, err := GetConnStr(cfg)
@@ -150,10 +150,11 @@ func IsMigrated(cfg *config.DBConfig) (bool, int64, error) {
 
 	highestVersion := int64(0)
 	for _, file := range files {
-		fileVersion := rgxMigrationVersion.FindString(file.Name())
-		if fileVersion == "" {
+		a := rgxMigrationVersion.FindStringSubmatch(file.Name())
+		if len(a) <= 1 {
 			continue
 		}
+		fileVersion := a[1]
 
 		fileVersionNum, err := strconv.ParseInt(fileVersion, 10, 64)
 		if err != nil {
