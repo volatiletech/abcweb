@@ -189,13 +189,16 @@ Available Commands:
   build       Builds your abcweb binary and executes the gulp build task
   deps        Download and optionally update all abcweb dependencies
   dev         Runs your abcweb app for development
+  dist        Dist creates a distribution bundle for easy deployment
   gen         Generate your database models and migration files
   help        Help about any command
   migrate     Run migration tasks (up, down, redo, status, version)
   new         Generate a new abcweb app
+  revendor    Revendor updates your vendor.json file and resyncs your vendor folder
   test        Runs the tests for your abcweb app
 
 Flags:
+  -h, --help      help for abcweb
       --version   Print the abcweb version
 
 Use "abcweb [command] --help" for more information about a command.
