@@ -23,8 +23,8 @@ var revendorCmd = &cobra.Command{
 	Use:   "revendor",
 	Short: "Revendor updates your vendor.json file and resyncs your vendor folder",
 	Long: `Revendor updates your vendor/vendor.json file and resyncs your vendor folder.
-	Revendor will only update the packages that abcweb has provided and skip the rest.
-	Make sure you have run "abcweb deps -u" before running this command.`,
+Revendor will only update the packages that abcweb has provided and skip the rest.
+Make sure you have run "abcweb deps -u" before running this command.`,
 	Example: "abcweb revendor",
 	RunE:    revendorCmdRun,
 }
