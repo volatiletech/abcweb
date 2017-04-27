@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// AppConfig is config for the app loaded through environment variables, 
+// AppConfig is config for the app loaded through environment variables,
 // command line, or the config.toml file.
 type AppConfig struct {
 	// The active config file environment mode
@@ -37,16 +37,16 @@ type AppConfig struct {
 	// Use manifest.json assets mapping
 	AssetsManifest bool
 	// Disable browsers caching asset files by setting response headers
-	AssetsNoCache bool 
+	AssetsNoCache bool
 	// RenderRecompile enables recompilation of the template on every render call.
 	// This should be used in development mode so no server restart is required
 	// on template file changes.
-	RenderRecompile bool 
+	RenderRecompile bool
 	{{if not .NoSessions -}}
 	// Use the development mode sessions storer opposed to production mode storer
-	// defined in app/sessions.go -- Usually a cookie storer for dev 
+	// defined in app/sessions.go -- Usually a cookie storer for dev
 	// and disk storer for prod.
-	SessionsDevStorer bool 
+	SessionsDevStorer bool
 	{{- end}}
 	{{if not .NoDB -}}
 	// Throw an error when the app starts if the database is not
@@ -119,8 +119,8 @@ func NewDBViper(env string) (*viper.Viper, error) {
 		return nil, fmt.Errorf("empty environment parameter received")
 	}
 
-	if _, err := os.Stat("database.toml"); os.IsNotExist(err) {
-		return nil, nil
+	if _, err := os.Stat("database.toml"); err != nil {
+		return nil, err
 	}
 
 	v := viper.New()

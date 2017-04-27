@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"path/filepath"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -32,7 +33,7 @@ func TestNotFound(t *testing.T) {
 
 	// Only run the non-compiled assets hotpath test if it can
 	// find the robots.txt asset file to run against
-	_, err := os.Stat("../public/robots.txt")
+	_, err := os.Stat(filepath.FromSlash("../public/robots.txt"))
 	if err != nil {
 		t.Skip("cannot find robots.txt asset to run against, so skipping NotFound test")
 	}
@@ -40,14 +41,15 @@ func TestNotFound(t *testing.T) {
 	state := &State{}
 	state.AppConfig = &config.AppConfig{
 		RenderRecompile: true,
+		PublicPath: filepath.FromSlash("../public"),
 	}
 	state.InitLogger()
-	state.Render = rendering.InitRenderer(state.AppConfig, "../templates")
+	state.Render = rendering.InitRenderer(state.AppConfig, filepath.FromSlash("../templates"))
 
 	// test the non-compiled assets hotpath first
 	r := httptest.NewRequest("GET", "/robots.txt", nil)
 	w := httptest.NewRecorder()
-	
+
 	{{if not .NoSessions -}}
 	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, state.Log))
 	{{- end}}
@@ -65,7 +67,7 @@ func TestNotFound(t *testing.T) {
 
 	// Only run the compiled assets hotpath test if it can
 	// find the assets/main.css asset file to run against
-	_, err = os.Stat("../public/assets/css/main.css")
+	_, err = os.Stat(filepath.FromSlash("../public/assets/css/main.css"))
 	if err != nil {
 		t.Skip("cannot find main.css asset to run against, so skipping NotFound test")
 	}
