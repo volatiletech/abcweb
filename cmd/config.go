@@ -10,6 +10,7 @@ const (
 
 type buildConfig struct{}
 type distConfig struct{}
+type revendorConfig struct{}
 
 type modelsConfig struct {
 	config.DBConfig
