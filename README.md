@@ -6,7 +6,10 @@
 
 ABCWeb was heavily inspired by Rails for its ease-of-use, flexibility, 
 and development speed. The goal of this project is to make developing a 
-web app in Go just as painless.
+web app in Go just as painless. We've tried to remain as unopinionated
+as possible to make ABCWeb suited for many different application types,
+and our big selling point is the packages we've chosen, which we believe
+are the clear leaders in the eco-system.
 
 Getting started is as simple as running the `abcweb new` command which will
 generate you a new Go web app that comes working out of the box.
