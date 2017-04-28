@@ -38,6 +38,8 @@ func (s *State) InitRoutes() {
 	// 404 route handler
 	s.Router.NotFound(s.NotFound)
 
+	// 405 route handler
+	s.Router.MethodNotAllowed(s.MethodNotAllowed)
 
 	main := controllers.Main{Root: root}
 	s.Router.Get("/", m.Errors(main.Home))
@@ -148,4 +150,29 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 
 	fh.Close()
 	return
+}
+
+// MethodNotAllowed handler is called when someone attempts an operation
+// against a route that does not support that operation, for example
+// attempting a POST against a route that only supports a GET.
+func (s *State) MethodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	{{if .NoRequestID -}}
+	log := s.Log
+	{{- else -}}
+	// Get the Request ID scoped logger
+	log := abcmiddleware.Log(r)
+	{{- end}}
+
+	log.Warn("method not allowed",
+		zap.String("method", r.Method),
+		zap.String("uri", r.RequestURI),
+		zap.Bool("tls", r.TLS != nil),
+		zap.String("protocol", r.Proto),
+		zap.String("host", r.Host),
+		zap.String("remote_addr", r.RemoteAddr),
+	)
+
+	if err := s.Render.HTML(w, http.StatusMethodNotAllowed, "errors/405", nil); err != nil {
+		panic(err)
+	}
 }
