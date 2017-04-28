@@ -68,22 +68,21 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 	log := abcmiddleware.Log(r)
 	{{- end}}
 
-	reqURI := r.RequestURI
+	reqPath := r.URL.Path
 	// Ensure path is rooted at / to prevent path traversal
-	if reqURI[0] != '/' {
-		reqURI = "/" + reqURI
+	if reqPath[0] != '/' {
+		reqPath = "/" + reqPath
 	}
 
 	// Sanitize the path to prevent traversal exploits
-	reqURI = path.Clean(reqURI)
+	reqPath = path.Clean(reqPath)
 
 	// the path to the asset file on disk
 	var fpath string
 
 	// Set path to asset in /assets, potentially contained in manifest
-	if strings.HasPrefix(reqURI, "/assets/") {
-		// Split on ? to discard any query parameters
-		fname := strings.Split(strings.TrimPrefix(reqURI, "/assets/"), "?")[0]
+	if strings.HasPrefix(reqPath, "/assets/") {
+		fname := strings.TrimPrefix(reqPath, "/assets/")
 
 		ok := false
 		// Look up the gzip version of the asset in the manifest
@@ -108,7 +107,7 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 		fpath = filepath.Join(s.AppConfig.PublicPath, "assets", fpath)
 	} else { // Set path to regular non-manifest asset
 		// Split on ? to discard any query parameters
-		fpath = filepath.Join(s.AppConfig.PublicPath, strings.Split(reqURI, "?")[0])
+		fpath = filepath.Join(s.AppConfig.PublicPath, reqPath)
 	}
 
 	stat, err := os.Stat(fpath)
@@ -121,7 +120,6 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 	} else if err != nil { // if not a file not exist error then http 500
 		log.Fatal("failed to stat asset",
 			zap.String("request_uri", r.RequestURI),
-			zap.String("request_uri_sanitized", reqURI),
 			zap.String("file_path", fpath),
 			zap.Error(err),
 		)
@@ -135,7 +133,6 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal("failed to open asset",
 			zap.String("request_uri", r.RequestURI),
-			zap.String("request_uri_sanitized", reqURI),
 			zap.String("file_path", fpath),
 			zap.Error(err),
 		)
@@ -146,7 +143,7 @@ func (s *State) NotFound(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Serve the asset
-	http.ServeContent(w, r, reqURI, stat.ModTime(), fh)
+	http.ServeContent(w, r, reqPath, stat.ModTime(), fh)
 
 	fh.Close()
 	return
