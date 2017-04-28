@@ -357,7 +357,7 @@ func newCmdWalk(cfg newConfig, basePath string, path string, info os.FileInfo, e
 			}
 		}
 
-		err = afero.WriteFile(appFS, fullPath, fileContents.Bytes(), 0664)
+		err = afero.WriteFile(appFS, fullPath, fileContents.Bytes(), 0644)
 		if err != nil {
 			return err
 		}

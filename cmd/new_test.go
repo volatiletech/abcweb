@@ -252,7 +252,7 @@ func TestNewCmdWalk(t *testing.T) {
 	}
 
 	// check go file write
-	err = afero.WriteFile(appFS, "/templates/file.go", []byte("hello"), 0664)
+	err = afero.WriteFile(appFS, "/templates/file.go", []byte("hello"), 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +273,7 @@ func TestNewCmdWalk(t *testing.T) {
 	}
 
 	// check template file write
-	err = afero.WriteFile(appFS, "/templates/template.go.tmpl", []byte(`package    {{.AppName}}`), 0664)
+	err = afero.WriteFile(appFS, "/templates/template.go.tmpl", []byte(`package    {{.AppName}}`), 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
