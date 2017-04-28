@@ -1,7 +1,9 @@
 package rendering
 
 import (
+	{{if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
 	"bytes"
+	{{- end}}
 	"encoding/json"
 	"fmt"
 	"html/template"
