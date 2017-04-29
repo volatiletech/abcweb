@@ -1,6 +1,9 @@
 package cmd
 
-import "github.com/volatiletech/abcweb/config"
+import (
+	"github.com/vattle/sqlboiler/boilingcore"
+	"github.com/volatiletech/abcweb/config"
+)
 
 const (
 	basePackage         = "github.com/volatiletech/abcweb"
@@ -47,6 +50,13 @@ type newConfig struct {
 	SkipGitInit      bool   `toml:"skip-git-init"`
 	Silent           bool   `toml:"silent"`
 }
+
+// Create some config variables
+var (
+	migrateCmdConfig migrateConfig
+	modelsCmdConfig  *boilingcore.Config
+	modelsCmdState   *boilingcore.State
+)
 
 // skipDirs are the directories to skip creating for new command
 var skipDirs = []string{

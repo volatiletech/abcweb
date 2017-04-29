@@ -12,6 +12,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/volatiletech/abcweb/strmangle"
 )
@@ -53,7 +54,7 @@ type Configuration struct {
 }
 
 // Initialize the config
-func Initialize() (*Configuration, error) {
+func Initialize(env *pflag.Flag) (*Configuration, error) {
 	c := &Configuration{}
 
 	path, err := getAppPath()
@@ -65,14 +66,20 @@ func Initialize() (*Configuration, error) {
 	c.AppName = getAppName(c.AppPath)
 	c.AppEnvName = strmangle.EnvAppName(c.AppName)
 	c.ActiveEnv = getActiveEnv(c.AppPath, c.AppName)
+	// If ActiveEnv is not set via env var or config file,
+	// OR the user has passed in an override value through a flag,
+	// then set it to the flag value.
+	if env != nil && (c.ActiveEnv == "" || env.Changed) {
+		c.ActiveEnv = env.Value.String()
+	}
 	c.ModeViper = NewModeViper(c.AppPath, c.AppEnvName, c.ActiveEnv)
 
 	return c, nil
 }
 
 // InitializeP the config but panic if anything goes wrong
-func InitializeP() *Configuration {
-	c, err := Initialize()
+func InitializeP(env *pflag.Flag) *Configuration {
+	c, err := Initialize(env)
 	if err != nil {
 		panic(err)
 	}

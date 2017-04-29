@@ -20,12 +20,6 @@ import (
 	"github.com/volatiletech/abcweb/config"
 )
 
-var (
-	modelsCmdConfig    *boilingcore.Config
-	modelsCmdState     *boilingcore.State
-	migrationCmdConfig migrateConfig
-)
-
 // generateCmd represents the "generate" command
 var generateCmd = &cobra.Command{
 	Use:     "gen",
@@ -95,7 +89,7 @@ func init() {
 	modelsCmd.Flags().StringP("db", "", "", `Valid options: postgres|mysql (default "database.toml db field")`)
 	modelsCmd.Flags().StringP("schema", "s", "public", "The name of your database schema, for databases that support real schemas")
 	modelsCmd.Flags().StringP("pkgname", "p", "models", "The name you wish to assign to your generated package")
-	modelsCmd.Flags().StringP("output", "o", "models", "The name of the folder to output to. Automatically created relative to webapp root dir")
+	modelsCmd.Flags().StringP("output", "o", filepath.FromSlash("db/models"), "The name of the folder to output to. Automatically created relative to webapp root dir")
 	modelsCmd.Flags().StringP("basedir", "", "", "The base directory has the templates and templates_test folders")
 	modelsCmd.Flags().StringSliceP("blacklist", "b", nil, "Do not include these tables in your generated package")
 	modelsCmd.Flags().StringSliceP("whitelist", "w", nil, "Only include these tables in your generated package")
@@ -106,7 +100,7 @@ func init() {
 	modelsCmd.Flags().BoolP("no-hooks", "", false, "Disable hooks feature for your models")
 	modelsCmd.Flags().BoolP("no-auto-timestamps", "", false, "Disable automatic timestamps for created_at/updated_at")
 	modelsCmd.Flags().BoolP("tinyint-not-bool", "", false, "Map MySQL tinyint(1) in Go to int8 instead of bool")
-	modelsCmd.Flags().BoolP("wipe", "", false, "Delete the output folder (rm -rf) before generation to ensure sanity")
+	modelsCmd.Flags().BoolP("wipe", "", true, "Delete the output folder (rm -rf) before generation to ensure sanity")
 
 	// hide flags not recommended for use
 	modelsCmd.Flags().MarkHidden("replace")
@@ -146,6 +140,11 @@ func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	return modelsCmdSetup(cmd, args)
+}
+
+func modelsCmdSetup(cmd *cobra.Command, args []string) error {
+	var err error
 	modelsCmdConfig = &boilingcore.Config{
 		DriverName:       cnf.ModeViper.GetString("db"),
 		OutFolder:        filepath.Join(cnf.AppPath, cnf.ModeViper.GetString("output")),
