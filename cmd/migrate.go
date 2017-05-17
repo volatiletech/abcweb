@@ -46,11 +46,45 @@ var upCmd = &cobra.Command{
 	},
 }
 
+var upOneCmd = &cobra.Command{
+	Use:   "upone",
+	Short: "Migrate the database by one version",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		err := migrateExec(cmd, args, "upone")
+		if err != nil && err != errNoMigrations {
+			return err
+		}
+
+		if !cnf.ModeViper.GetBool("no-models") && err != errNoMigrations {
+			return modelsExec(cmd, args)
+		}
+
+		return nil
+	},
+}
+
 var downCmd = &cobra.Command{
 	Use:   "down",
 	Short: "Roll back the version by one",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := migrateExec(cmd, args, "down")
+		if err != nil && err != errNoMigrations {
+			return err
+		}
+
+		if !cnf.ModeViper.GetBool("no-models") && err != errNoMigrations {
+			return modelsExec(cmd, args)
+		}
+
+		return nil
+	},
+}
+
+var downAllCmd = &cobra.Command{
+	Use:   "downall",
+	Short: "Roll back all migrations",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		err := migrateExec(cmd, args, "downall")
 		if err != nil && err != errNoMigrations {
 			return err
 		}
@@ -135,12 +169,16 @@ func init() {
 	// hide flags not recommended for use
 
 	upCmd.Flags().AddFlagSet(modelsFlags)
+	upOneCmd.Flags().AddFlagSet(modelsFlags)
 	downCmd.Flags().AddFlagSet(modelsFlags)
+	downAllCmd.Flags().AddFlagSet(modelsFlags)
 	redoCmd.Flags().AddFlagSet(modelsFlags)
 
 	RootCmd.AddCommand(migrateCmd)
 	migrateCmd.AddCommand(upCmd)
+	migrateCmd.AddCommand(upOneCmd)
 	migrateCmd.AddCommand(downCmd)
+	migrateCmd.AddCommand(downAllCmd)
 	migrateCmd.AddCommand(redoCmd)
 	migrateCmd.AddCommand(statusCmd)
 	migrateCmd.AddCommand(dbVersionCmd)

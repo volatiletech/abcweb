@@ -45,6 +45,8 @@ func appHelpers() template.FuncMap {
 		"cssTag": cssTag,
 		"jsTag":  jsTag,
 
+		"joinPath":   func(pieces ...string) string { return strings.Join(pieces, "/") },
+
 		{{if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
 		// return all javascript include tags for all twitter bootstrap js plugins
 		"jsBootstrap": jsBootstrap,
