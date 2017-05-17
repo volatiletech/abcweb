@@ -22,7 +22,7 @@ import (
 // GetConnStr returns a connection string for the database software used
 func GetConnStr(cfg *config.DBConfig) (string, error) {
 	if len(cfg.DB) == 0 {
-		return "", errors.New("db field in database.toml must be provided")
+		return "", errors.New("db field in config.toml must be provided")
 	}
 
 	if cfg.DB == "postgres" {

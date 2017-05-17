@@ -18,8 +18,6 @@ import (
 )
 
 const (
-	// DBConfigFilename is the filename for the database config file
-	DBConfigFilename = "database.toml"
 	// AppConfigFilename is the filename for the app config file
 	AppConfigFilename = "config.toml"
 	// basePackage is used to find templates
@@ -47,7 +45,7 @@ type Configuration struct {
 	ActiveEnv string
 
 	// ModeViper is a *viper.Viper that has been initialized to:
-	// Load the active environment section of the AppPath/database.toml file
+	// Load the active environment section of the AppPath/config.toml file
 	// Load environment variables with a prefix of APPNAME
 	// Replace "-" with "_" in environment variable names
 	ModeViper *viper.Viper
@@ -87,16 +85,16 @@ func InitializeP(env *pflag.Flag) *Configuration {
 	return c
 }
 
-// DBConfig holds the configuration variables contained in the database.toml
+// DBConfig holds the configuration variables contained in the config.toml
 // file for the environment currently loaded (obtained from GetDatabaseEnv())
 type DBConfig struct {
-	DB      string
-	Host    string
-	Port    int
-	DBName  string
-	User    string
-	Pass    string
-	SSLMode string
+	DB      string `toml:"db.db" mapstructure:"db"`
+	Host    string `toml:"db.host" mapstructure:"host"`
+	Port    int    `toml:"db.port" mapstructure:"port"`
+	DBName  string `toml:"db.name" mapstructure:"dbname"`
+	User    string `toml:"db.user" mapstructure:"user"`
+	Pass    string `toml:"db.pass" mapstructure:"pass"`
+	SSLMode string `toml:"db.sslmode" mapstructure:"sslmode"`
 	// Other SQLBoiler flags
 	Blacklist        []string
 	Whitelist        []string
@@ -129,7 +127,7 @@ var testHarnessViperReadConfig = func(newViper *viper.Viper) error {
 func NewModeViper(appPath string, envAppName, env string) *viper.Viper {
 	newViper := viper.New()
 	newViper.SetConfigType("toml")
-	newViper.SetConfigFile(filepath.Join(appPath, DBConfigFilename))
+	newViper.SetConfigFile(filepath.Join(appPath, AppConfigFilename))
 	newViper.SetEnvPrefix(envAppName)
 	newViper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
@@ -152,7 +150,7 @@ func NewModeViper(appPath string, envAppName, env string) *viper.Viper {
 	return modeViper
 }
 
-// getActiveEnv attempts to get the config.toml and database.toml environment
+// getActiveEnv attempts to get the config.toml environment
 // to load by checking the following, in the following order:
 // 1. environment variable $APPNAME_ENV (APPNAME is envAppName variable value)
 // 2. config.toml default environment field "env"

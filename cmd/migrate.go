@@ -144,7 +144,7 @@ func init() {
 	}
 
 	// migrate flags
-	migrateCmd.PersistentFlags().StringP("db", "", "", `Valid options: postgres|mysql (default: "database.toml db field")`)
+	migrateCmd.PersistentFlags().StringP("db", "", "", `Valid options: postgres|mysql (default: "config.toml db field")`)
 	migrateCmd.PersistentFlags().StringP("env", "e", "dev", "The database config file environment to load")
 
 	// Up/Down/Redo flags

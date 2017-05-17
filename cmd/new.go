@@ -53,7 +53,7 @@ func init() {
 	newCmd.Flags().BoolP("no-livereload", "l", false, "Don't include LiveReload support")
 	newCmd.Flags().BoolP("no-tls-certs", "t", false, "Skip generation of self-signed TLS cert files")
 	newCmd.Flags().BoolP("no-readme", "r", false, "Skip README.md files")
-	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml and database.toml file")
+	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml file")
 	newCmd.Flags().BoolP("no-sessions", "s", false, "Skip support for http sessions")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("no-http-redirect", "", false, "Disable the http -> https redirect when using TLS")
@@ -427,17 +427,9 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 		}
 	}
 
-	// Skip default config.toml and database.toml if requested
+	// Skip default config.toml if requested
 	if cfg.NoConfig {
-		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" ||
-			info.Name() == "database.toml" || info.Name() == "database.toml.tmpl" {
-			return true, nil
-		}
-	}
-
-	// Skip database related files if requested
-	if cfg.NoDB {
-		if info.Name() == "database.toml" || info.Name() == "database.toml.tmpl" {
+		if info.Name() == "config.toml" || info.Name() == "config.toml.tmpl" {
 			return true, nil
 		}
 	}

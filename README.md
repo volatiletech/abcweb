@@ -217,7 +217,6 @@ This means that values passed into the command line will
 override values passed in through the config.toml and env vars.
 
 * App configuration is found in `config.toml`.
-* Database configuration is found in `database.toml`.
 * `abcweb dev` Go auto-rebuild configuration is found in `watch.toml`.
 * Asset pipeline, task runner and build system configuration is found in `gulpfile.js`.
 

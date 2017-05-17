@@ -68,18 +68,21 @@ func RegisterFlags(root *cobra.Command) {
 	root.Flags().StringP("env", "e", "prod", "The config files environment to load")
 }
 
-{{if not .NoDB -}}
-// InitConfig loads the AppConfig and DBConfig into the passed in app State
-{{- else -}}
 // InitConfig loads the AppConfig into the passed in app State
-{{- end}}
 func (s *State) InitConfig() error {
 	// Build app Config using env vars, config.toml file and cmd line flags
-	appCfgViper, err := config.NewAppViper(s.Root.Flags())
+	appViper, err := config.NewAppViper(s.Root.Flags(), "config.toml")
 	if err != nil {
 		return errors.Wrap(err, "failed to load app config")
 	}
-	s.AppConfig = config.LoadAppConfig(appCfgViper)
+	s.AppConfig = config.LoadAppConfig(appViper)
+
+	{{- if not .NoDB}}
+	// Initialize the global database handle
+	if err := db.InitDB(s.AppConfig.DB); err != nil {
+		return errors.Wrap(err, "failed to connect with global db handle")
+	}
+	{{- end}}
 
 	// If the {{.AppEnvName}}_PUBLIC_PATH env var is set, set
 	// the AppConfig to that path. This will be set by the "abcweb dev"
@@ -89,23 +92,6 @@ func (s *State) InitConfig() error {
 	if s.AppConfig.PublicPath == "" {
 		s.AppConfig.PublicPath = "public"
 	}
-
-	{{- if not .NoDB}}
-	// Build db Config using env vars and database.toml cfg file
-	dbCfgViper, err := config.NewDBViper(s.AppConfig.ActiveEnv, "database.toml")
-	if err != nil {
-		return errors.Wrap(err, "failed to load db config")
-	}
-	// if dbCfgViper is nil then don't load the DBConfig struct 
-	// and presume we want to run the app without a database.
-	if dbCfgViper != nil {
-		s.DBConfig = config.LoadDBConfig(dbCfgViper)
-		// Initialize the global database handle
-		if err := db.InitDB(s.DBConfig); err != nil {
-			return errors.Wrap(err, "failed to connect with global db handle")
-		}
-	}
-	{{- end}}
 
 	return nil
 }

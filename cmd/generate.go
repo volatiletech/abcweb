@@ -86,7 +86,7 @@ func init() {
 	}
 
 	// models flags
-	modelsCmd.Flags().StringP("db", "", "", `Valid options: postgres|mysql (default "database.toml db field")`)
+	modelsCmd.Flags().StringP("db", "", "", `Valid options: postgres|mysql (default "config.toml db field")`)
 	modelsCmd.Flags().StringP("schema", "s", "public", "The name of your database schema, for databases that support real schemas")
 	modelsCmd.Flags().StringP("pkgname", "p", "models", "The name you wish to assign to your generated package")
 	modelsCmd.Flags().StringP("output", "o", filepath.FromSlash("db/models"), "The name of the folder to output to. Automatically created relative to webapp root dir")
@@ -379,8 +379,7 @@ func genConfigFiles(dstFolder string, cfg *newConfig, skipNonProd bool, force bo
 	}
 
 	configFiles := map[string]string{
-		filepath.Join(p.Dir, "templates", "config.toml.tmpl"):   "config.toml",
-		filepath.Join(p.Dir, "templates", "database.toml.tmpl"): "database.toml",
+		filepath.Join(p.Dir, "templates", "config.toml.tmpl"): "config.toml",
 	}
 
 	if !skipNonProd {

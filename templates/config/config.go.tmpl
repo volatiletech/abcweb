@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"strings"
 	"fmt"
 	"time"
@@ -14,75 +13,79 @@ import (
 // command line, or the config.toml file.
 type AppConfig struct {
 	// The active config file environment mode
-	ActiveEnv string
+	ActiveEnv string `toml:"env" mapstructure:"env"`
 	// LiveReload enabled or disabled
-	LiveReload bool
-	// Use the production logger (JSON and log level warn), or the
+	LiveReload bool `toml:"live-reload" mapstructure:"live-reload"`
+	// Use the production logger (JSON and log level warn) or the
 	// development logger (console and log level info)
-	ProdLogger bool
+	ProdLogger bool `toml:"prod-logger" mapstructure:"prod-logger"`
 	// http bind address. ":<port>" for all interfaces
-	Bind string
+	Bind string `toml:"bind" mapstructure:"bind"`
 	// https bind address. ":<port>" for all interfaces
-	TLSBind string
+	TLSBind string `toml:"tls-bind" mapstructure:"tls-bind"`
 	// TLS certificate file path
-	TLSCertFile string
+	TLSCertFile string `toml:"tls-cert-file" mapstructure:"tls-cert-file"`
 	// TLS key file path
-	TLSKeyFile string
+	TLSKeyFile string `toml:"tls-key-file" mapstructure:"tls-key-file"`
 	// Maximum duration before timing out read of the request
-	ReadTimeout time.Duration
+	ReadTimeout time.Duration `toml:"read-timeout" mapstructure:"read-timeout"`
 	// Maximum duration before timing out write of the response
-	WriteTimeout time.Duration
+	WriteTimeout time.Duration `toml:"write-timeout" mapstructure:"write-timeout"`
 	// Maximum duration before timing out idle keep-alive connection
-	IdleTimeout time.Duration
+	IdleTimeout time.Duration `toml:"idle-timeout" mapstructure:"idle-timeout"`
 	// Use manifest.json assets mapping
-	AssetsManifest bool
+	AssetsManifest bool `toml:"assets-manifest" mapstructure:"assets-manifest"`
 	// Disable browsers caching asset files by setting response headers
-	AssetsNoCache bool
+	AssetsNoCache bool `toml:"assets-no-cache" mapstructure:"assets-no-cache"`
 	// RenderRecompile enables recompilation of the template on every render call.
 	// This should be used in development mode so no server restart is required
 	// on template file changes.
-	RenderRecompile bool
+	RenderRecompile bool `toml:"render-recompile" mapstructure:"render-recompile"`
 	{{if not .NoSessions -}}
 	// Use the development mode sessions storer opposed to production mode storer
 	// defined in app/sessions.go -- Usually a cookie storer for dev
 	// and disk storer for prod.
-	SessionsDevStorer bool
+	SessionsDevStorer bool `toml:"sessions-dev-storer" mapstructure:"sessions-dev-storer"`
 	{{- end}}
-	{{if not .NoDB -}}
-	// Throw an error when the app starts if the database is not
-	// using the latest migration
-	EnforceMigration bool
-	{{- end}}
-	// PublicPath defaults to "public", but can be set to something else
+	// PublicPath defaults to "public" but can be set to something else
 	// by the {{.AppEnvName}}_PUBLIC_PATH environment variable.
 	// This is set by the "abcweb dev" command to instruct the app to
 	// load assets from a /tmp folder instead of the local public folder.
-	PublicPath string
+	PublicPath string `toml:"public-path" mapstructure:"public-path"`
+
+	{{- if not .NoDB}}
+	// Throw an error when the app starts if the database is not
+	// using the latest migration
+	EnforceMigration bool `toml:"enforce-migration" mapstructure:"enforce-migration"`
+	// DB holds the database config for the app loaded through
+	// environment variables or the config.toml file.
+	DB *DBConfig `toml:"db" mapstructure:"db"`
+	{{- end}}
 }
 
 {{- if not .NoDB}}
 // DBConfig holds the database config for the app loaded through
-// environment variables, or the database.toml file.
+// environment variables, or the config.toml file.
 type DBConfig struct {
 	// DB is the database software; "postgres", "mysql", etc.
-	DB      string
-	Host    string
-	Port    int
-	DBName  string
-	User    string
-	Pass    string
-	SSLMode string
+	DB      string `toml:"db" mapstructure:"db"`
+	Host    string `toml:"host" mapstructure:"host"`
+	Port    int    `toml:"port" mapstructure:"port"`
+	DBName  string `toml:"name" mapstructure:"dbname"`
+	User    string `toml:"user" mapstructure:"user"`
+	Pass    string `toml:"pass" mapstructure:"pass"`
+	SSLMode string `toml:"sslmode" mapstructure:"sslmode"`
 }
 {{- end}}
 
 // NewAppViper returns a viper instance activated against the active environment
 // configuration subsection and initialized with the config.toml
 // configuration file and the environment variable prefix.
-func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
+func NewAppViper(flags *pflag.FlagSet, path string) (*viper.Viper, error) {
 	v := viper.New()
 	v.BindPFlags(flags)
 	v.SetConfigType("toml")
-	v.SetConfigFile("config.toml")
+	v.SetConfigFile(path)
 	v.SetEnvPrefix("{{.AppEnvName}}")
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	v.ReadInConfig()
@@ -92,7 +95,7 @@ func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
 
 	v = v.Sub(env)
 	if v == nil {
-		return nil, fmt.Errorf("unable to load environment %q from app config file", env)
+		return nil, fmt.Errorf("unable to load environment %q from %q", env, path)
 	}
 
 	v.BindPFlags(flags)
@@ -101,93 +104,14 @@ func NewAppViper(flags *pflag.FlagSet) (*viper.Viper, error) {
 	return v, nil
 }
 
-{{- if not .NoDB}}
-// NewDBViper returns a viper instance activated against the active environment
-// configuration subsection and initialized with the database.toml
-// configuration file and the environment variable prefix.
-func NewDBViper(env, dbConfig string) (*viper.Viper, error) {
-	if env == "" {
-		return nil, fmt.Errorf("empty environment parameter received")
-	}
-
-	if _, err := os.Stat(dbConfig); err != nil {
-		return nil, err
-	}
-
-	v := viper.New()
-	v.SetConfigType("toml")
-	v.SetConfigFile(dbConfig)
-	v.SetEnvPrefix("{{.AppEnvName}}")
-	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	v.ReadInConfig()
-	v.AutomaticEnv()
-
-	v = v.Sub(env)
-	if v == nil {
-		return nil, fmt.Errorf("unable to load environment %q from database config file", env)
-	}
-
-	v.Set("env", env)
-	return v, nil
-}
-{{- end}}
-
 // LoadAppConfig loads the config.toml app configuration object
 func LoadAppConfig(v *viper.Viper) *AppConfig {
-	return &AppConfig{
-		ActiveEnv:			v.GetString("env"),
-		{{if not .NoLiveReload -}}
-		LiveReload:			v.GetBool("live-reload"),
-		{{- end}}
-		ProdLogger:			v.GetBool("prod-logger"),
-		Bind:					v.GetString("bind"),
-		TLSBind:				v.GetString("tls-bind"),
-		TLSCertFile:		v.GetString("tls-cert-file"),
-		TLSKeyFile:			v.GetString("tls-key-file"),
-		ReadTimeout:		v.GetDuration("read-timeout"),
-		WriteTimeout:		v.GetDuration("write-timeout"),
-		IdleTimeout:      v.GetDuration("idle-timeout"),
-		AssetsManifest:   v.GetBool("assets-manifest"),
-		AssetsNoCache:		v.GetBool("assets-no-cache"),
-		RenderRecompile:	v.GetBool("render-recompile"),
-		{{- if not .NoDB}}
-		EnforceMigration: v.GetBool("enforce-migration"),
-		{{- end}}
-		{{if not .NoSessions -}}
-		SessionsDevStorer: v.GetBool("sessions-dev-storer"),
-		{{- end}}
-	}
-}
-
-{{- if not .NoDB}}
-// LoadDBConfig loads the database.toml database configuration object
-func LoadDBConfig(v *viper.Viper) *DBConfig {
-	cfg := &DBConfig{
-		DB:		v.GetString("db"),
-		Host:		v.GetString("host"),
-		Port:		v.GetInt("port"),
-		DBName:	v.GetString("dbname"),
-		User:		v.GetString("user"),
-		Pass:		v.GetString("pass"),
-		SSLMode: v.GetString("sslmode"),
-	}
-
-	if cfg.DB == "postgres" {
-		if cfg.Port == 0 {
-			cfg.Port = 5432
-		}
-		if cfg.SSLMode == "" {
-			cfg.SSLMode = "require"
-		}
-	} else if cfg.DB == "mysql" {
-		if cfg.Port == 0 {
-			cfg.Port = 3306
-		}
-		if cfg.SSLMode == "" {
-			cfg.SSLMode = "true"
-		}
+	cfg := &AppConfig{}
+	
+	err := v.Unmarshal(cfg)
+	if err != nil {
+		panic(err)
 	}
 
 	return cfg
 }
-{{- end}}
