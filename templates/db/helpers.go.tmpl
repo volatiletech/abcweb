@@ -51,7 +51,7 @@ func Setup(cfg *config.DBConfig) (int, error) {
 
 	// Drop and create the database if it exists so each test run starts
 	// on a clean slate
-	if cfgNew.DB == "postgres" {
+	if cfg.DB == "postgres" {
 		// Set the db to the default postgres db so we have something to connect to
 		// to create a new database or drop old databases
 		cfgNew.DBName = "postgres"
@@ -77,7 +77,7 @@ func Setup(cfg *config.DBConfig) (int, error) {
 		}
 
 		db.Close()
-	} else if cfgNew.DB == "mysql" {
+	} else if cfg.DB == "mysql" {
 		cfgNew.DBName = ""
 
 		connStr, err := GetConnStr(&cfgNew)

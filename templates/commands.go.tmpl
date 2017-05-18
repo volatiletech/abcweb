@@ -13,7 +13,6 @@ import (
 	"{{.ImportPath}}/config"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/mig"
-	"github.com/spf13/viper"
 	{{- end}}
 	"{{.ImportPath}}/rendering"
 	"github.com/pressly/chi"
@@ -74,7 +73,7 @@ func rootSetup(state *app.State) {
 		{{- if not .NoDB}}
 		// Check if using the latest database migration if EnforceLatestMigration
 		// is true, and if the config.toml has a database user set
-		if state.AppConfig.EnforceMigration {
+		if state.AppConfig.DB.EnforceMigration {
 			migrated, version, err := db.IsMigrated(state.AppConfig.DB)
 			if err != nil && err != db.ErrNoMigrations {
 				return errors.Wrap(err, "failed to check if using latest migration")
@@ -96,30 +95,33 @@ func migrateSetup(state *app.State) {
 		Use:   "migrate",
 		Short: "Run your database migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			appViper, err := config.NewAppViper(cmd.Flags(), "config.toml")
+			v, err := config.NewAppViper(cmd.Flags(), "config.toml")
 			if err != nil {
 				return errors.Wrap(err, "cannot create app config viper")
 			}
 
-			config := config.LoadAppConfig(appViper)
+			cfg := config.LoadAppConfig(v)
+			if err := config.ValidateDBConfig(cfg.DB); err != nil {
+				return errors.Wrap(err, "could not validate db config")
+			}
 
 			if _, err := os.Stat(filepath.Join("db", "migrations")); err != nil {
 				return errors.Wrap(err, "could not find migrations folder")
 			}
 
-			connStr, err := db.GetConnStr(config.DB)
+			connStr, err := db.GetConnStr(cfg.DB)
 			if err != nil {
 				return errors.Wrap(err, "could not create connection string")
 			}
 
-			if viper.GetBool("down") {
-				name, err := mig.Down(config.DB.DB, connStr, filepath.Join("db", "migrations"))
+			if v.GetBool("down") {
+				name, err := mig.Down(cfg.DB.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig down failed")
 				}
 				fmt.Printf("rolled back migration %q\n", name)
 			} else {
-				count, err := mig.Up(config.DB.DB, connStr, filepath.Join("db", "migrations"))
+				count, err := mig.Up(cfg.DB.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig up failed")
 				}

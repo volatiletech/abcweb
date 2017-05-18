@@ -16,22 +16,20 @@
 	assets-no-cache = true
 	render-recompile = true
 	sessions-dev-storer = true
-	# do not error in dev mode if database is not using latest migration.
-	{{if not .NoDB -}}
-	enforce-migration = false
-	{{- end}}
 	[dev.db]
 		# valid values are postgres|mysql
 		# db = "postgres"
 		# If the user line is commented the database will not be connected to.
 		# user = "username"
 		pass = "password"
-		name = "{{dbAppName .AppName}}_dev"
+		dbname = "{{dbAppName .AppName}}_dev"
 		host = "localhost"
 		# SSLMode possible values:
 		# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
 		# MySQL: https://github.com/go-sql-driver/mysql#tls
 		sslmode = "require"
+		# do not error in dev mode if database is not using latest migration.
+		enforce-migration = false
 		# SQLBoiler (models generator) additional config
 		# tables to ignore when generating models (migration tables, etc)
 		blacklist = ["mig_migrations"]
@@ -47,7 +45,7 @@
 		# If the user line is commented the database will not be connected to.
 		# user = "username"
 		pass = "password"
-		name = "{{dbAppName .AppName}}_prod"
+		dbname = "{{dbAppName .AppName}}_prod"
 		host = "localhost"
 		# SSLMode possible values:
 		# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html

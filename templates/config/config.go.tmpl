@@ -4,9 +4,11 @@ import (
 	"strings"
 	"fmt"
 	"time"
+	"errors"
 
 	"github.com/spf13/viper"
 	"github.com/spf13/pflag"
+	"github.com/kat-co/vala"
 )
 
 // AppConfig is config for the app loaded through environment variables,
@@ -53,43 +55,40 @@ type AppConfig struct {
 	// load assets from a /tmp folder instead of the local public folder.
 	PublicPath string `toml:"public-path" mapstructure:"public-path"`
 
-	{{- if not .NoDB}}
-	// Throw an error when the app starts if the database is not
-	// using the latest migration
-	EnforceMigration bool `toml:"enforce-migration" mapstructure:"enforce-migration"`
 	// DB holds the database config for the app loaded through
 	// environment variables or the config.toml file.
 	DB *DBConfig `toml:"db" mapstructure:"db"`
-	{{- end}}
 }
 
-{{- if not .NoDB}}
 // DBConfig holds the database config for the app loaded through
 // environment variables, or the config.toml file.
 type DBConfig struct {
 	// DB is the database software; "postgres", "mysql", etc.
 	DB      string `toml:"db" mapstructure:"db"`
+	// The database name
+	DBName  string `toml:"dbname" mapstructure:"dbname"`
 	Host    string `toml:"host" mapstructure:"host"`
 	Port    int    `toml:"port" mapstructure:"port"`
-	DBName  string `toml:"name" mapstructure:"dbname"`
 	User    string `toml:"user" mapstructure:"user"`
 	Pass    string `toml:"pass" mapstructure:"pass"`
 	SSLMode string `toml:"sslmode" mapstructure:"sslmode"`
+
+	// Throw an error when the app starts if the database is not
+	// using the latest migration
+	EnforceMigration bool `toml:"enforce-migration" mapstructure:"enforce-migration"`
 }
-{{- end}}
 
 // NewAppViper returns a viper instance activated against the active environment
 // configuration subsection and initialized with the config.toml
 // configuration file and the environment variable prefix.
 func NewAppViper(flags *pflag.FlagSet, path string) (*viper.Viper, error) {
 	v := viper.New()
-	v.BindPFlags(flags)
-	v.SetConfigType("toml")
-	v.SetConfigFile(path)
-	v.SetEnvPrefix("{{.AppEnvName}}")
-	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	v.ReadInConfig()
-	v.AutomaticEnv()
+
+	if flags != nil {
+		v.BindPFlags(flags)
+	}
+
+	ConfigureViper(v, path)
 	
 	env := v.GetString("env")
 
@@ -98,10 +97,23 @@ func NewAppViper(flags *pflag.FlagSet, path string) (*viper.Viper, error) {
 		return nil, fmt.Errorf("unable to load environment %q from %q", env, path)
 	}
 
-	v.BindPFlags(flags)
+	if flags != nil {
+		v.BindPFlags(flags)
+	}
 
 	v.Set("env", env)
 	return v, nil
+}
+
+// ConfigureViper sets the viper object to use the passed in config toml file
+// and also configures the configuration environment variables.
+func ConfigureViper(v *viper.Viper, path string) {
+	v.SetConfigType("toml")
+	v.SetConfigFile(path)
+	v.SetEnvPrefix("{{.AppEnvName}}")
+	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	v.ReadInConfig()
+	v.AutomaticEnv()
 }
 
 // LoadAppConfig loads the config.toml app configuration object
@@ -112,6 +124,39 @@ func LoadAppConfig(v *viper.Viper) *AppConfig {
 	if err != nil {
 		panic(err)
 	}
+	
+	if cfg.DB.DB == "postgres" {
+		if cfg.DB.Port == 0 {
+			cfg.DB.Port = 5432
+		}
+		if cfg.DB.SSLMode == "" {
+			cfg.DB.SSLMode = "require"
+		}
+	} else if cfg.DB.DB == "mysql" {
+		if cfg.DB.Port == 0 {
+			cfg.DB.Port = 3306
+		}
+		if cfg.DB.SSLMode == "" {
+			cfg.DB.SSLMode = "true"
+		}
+	}
 
 	return cfg
+}
+
+// ValidateDBConfig returns an error if any of the required db config
+// fields are not set to their appropriate values.
+func ValidateDBConfig(cfg *DBConfig) error {
+	if cfg.DB != "postgres" && cfg.DB != "mysql" {
+		return errors.New("not a valid driver name")
+	}
+
+	return vala.BeginValidation().Validate(
+		vala.StringNotEmpty(cfg.DB, "db"),
+		vala.StringNotEmpty(cfg.User, "user"),
+		vala.StringNotEmpty(cfg.Host, "host"),
+		vala.Not(vala.Equals(cfg.Port, 0, "port")),
+		vala.StringNotEmpty(cfg.DBName, "dbname"),
+		vala.StringNotEmpty(cfg.SSLMode, "sslmode"),
+	).Check()
 }

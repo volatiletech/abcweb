@@ -88,28 +88,28 @@ func InitializeP(env *pflag.Flag) *Configuration {
 // DBConfig holds the configuration variables contained in the config.toml
 // file for the environment currently loaded (obtained from GetDatabaseEnv())
 type DBConfig struct {
-	DB      string `toml:"db.db" mapstructure:"db"`
-	Host    string `toml:"db.host" mapstructure:"host"`
-	Port    int    `toml:"db.port" mapstructure:"port"`
-	DBName  string `toml:"db.name" mapstructure:"dbname"`
-	User    string `toml:"db.user" mapstructure:"user"`
-	Pass    string `toml:"db.pass" mapstructure:"pass"`
-	SSLMode string `toml:"db.sslmode" mapstructure:"sslmode"`
+	DB      string `toml:"db" mapstructure:"db"`
+	Host    string `toml:"host" mapstructure:"host"`
+	Port    int    `toml:"port" mapstructure:"port"`
+	DBName  string `toml:"dbname" mapstructure:"dbname"`
+	User    string `toml:"user" mapstructure:"user"`
+	Pass    string `toml:"pass" mapstructure:"pass"`
+	SSLMode string `toml:"sslmode" mapstructure:"sslmode"`
 	// Other SQLBoiler flags
-	Blacklist        []string
-	Whitelist        []string
-	Tag              []string
-	Replacements     []string
-	BaseDir          string
-	Output           string
-	PkgName          string
-	Schema           string
-	TinyintNotBool   bool
-	NoAutoTimestamps bool
-	Debug            bool
-	NoHooks          bool
-	NoTests          bool
-	Wipe             bool
+	Blacklist        []string `toml:"blacklist" mapstructure:"blacklist"`
+	Whitelist        []string `toml:"whitelist" mapstructure:"whitelist"`
+	Tag              []string `toml:"tag" mapstructure:"tag"`
+	Replacements     []string `toml:"replacements" mapstructure:"replacements"`
+	BaseDir          string   `toml:"base_dir" mapstructure:"base_dir"`
+	Output           string   `toml:"output" mapstructure:"output"`
+	PkgName          string   `toml:"pkg_name" mapstructure:"pkg_name"`
+	Schema           string   `toml:"schema" mapstructure:"schema"`
+	TinyintNotBool   bool     `toml:"tinyint_not_bool" mapstructure:"tinyint_not_bool"`
+	NoAutoTimestamps bool     `toml:"no_auto_timestamps" mapstructure:"no_auto_timestamps"`
+	Debug            bool     `toml:"debug" mapstructure:"debug"`
+	NoHooks          bool     `toml:"no_hooks" mapstructure:"no_hooks"`
+	NoTests          bool     `toml:"no_tests" mapstructure:"no_tests"`
+	Wipe             bool     `toml:"wipe" mapstructure:"wipe"`
 }
 
 // AppConfig holds the relevant generated app config.toml file variables
@@ -123,7 +123,7 @@ var testHarnessViperReadConfig = func(newViper *viper.Viper) error {
 
 // NewModeViper creates a viper.Viper with config path and environment prefixes
 // set. It also specifies a Sub of the active environment (the chosen env mode)
-// and reads in the config file.
+// and reads in the database config file section.
 func NewModeViper(appPath string, envAppName, env string) *viper.Viper {
 	newViper := viper.New()
 	newViper.SetConfigType("toml")
@@ -142,7 +142,7 @@ func NewModeViper(appPath string, envAppName, env string) *viper.Viper {
 		return newViper
 	}
 
-	modeViper := newViper.Sub(env)
+	modeViper := newViper.Sub(fmt.Sprintf("%s.db", env))
 	if modeViper == nil {
 		return newViper
 	}

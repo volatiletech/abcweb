@@ -78,9 +78,16 @@ func (s *State) InitConfig() error {
 	s.AppConfig = config.LoadAppConfig(appViper)
 
 	{{- if not .NoDB}}
-	// Initialize the global database handle
-	if err := db.InitDB(s.AppConfig.DB); err != nil {
-		return errors.Wrap(err, "failed to connect with global db handle")
+	// Skip initializing db if user is not set
+	if len(s.AppConfig.DB.User) > 0 {
+		if err := config.ValidateDBConfig(s.AppConfig.DB); err != nil {
+			return errors.Wrap(err, "cannot validate db config")
+		}
+
+		// Initialize the global database handle
+		if err := db.InitDB(s.AppConfig.DB); err != nil {
+			return errors.Wrap(err, "failed to connect with global db handle")
+		}
 	}
 	{{- end}}
 
