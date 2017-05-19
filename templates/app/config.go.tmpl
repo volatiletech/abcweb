@@ -1,19 +1,12 @@
 package app
 
 import (
-	"os"
-	"time"
-
-	"{{.ImportPath}}/config"
-	{{if not .NoDB -}}
-	"{{.ImportPath}}/db"
-	{{- end}}
+	"github.com/volatiletech/abcweb/abcconfig"
 	{{if not .NoSessions -}}
 	"github.com/volatiletech/abcsessions"
 	{{- end}}
 	"github.com/volatiletech/abcrender"
 	"github.com/pressly/chi"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -21,10 +14,7 @@ import (
 // State is the configuration state for the entire app.
 // The controllers are passed variables from this object when initialized.
 type State struct {
-	AppConfig *config.AppConfig
-	{{if not .NoDB -}}
-	DBConfig	 *config.DBConfig
-	{{- end}}
+	AppConfig *abcconfig.AppConfig
 	Log		 *zap.Logger
 	Router	 *chi.Mux
 	Render	 abcrender.Renderer
@@ -34,71 +24,9 @@ type State struct {
 	{{- end}}
 }
 
-// RegisterFlags registers the configuration flag defaults and help strings
-func RegisterFlags(root *cobra.Command) {
-	{{if not .NoLiveReload -}}
-	root.Flags().BoolP("live-reload", "", false, "Enable or disable LiveReload")
-	{{- end}}
-	root.Flags().BoolP("prod-logger", "", true, "Use the production logger, JSON and log level warn")
-	root.Flags().StringP("bind", "", ":80", `HTTP bind address, eg: ":80"`)
-	root.Flags().StringP("tls-bind", "", "", `HTTPS bind address, eg: ":443"`)
-	root.Flags().StringP("tls-cert-file", "", "", "TLS certificate file path")
-	root.Flags().StringP("tls-key-file", "", "", "TLS key file path")
-	root.Flags().DurationP("read-timeout", "", time.Second*10, "Maximum duration before timing out read of the request")
-	root.Flags().DurationP("write-timeout", "", time.Second*15, "Maximum duration before timing out write of the response")
-	root.Flags().DurationP("idle-timeout", "", time.Second*120, "Maximum duration before timing out idle keep-alive connection")
-
-	// manifest.json is created as a part of the gulp production "build" task,
-	// it maps fingerprinted asset names to regular asset names, for example:
-	// {"js/main.css": "js/e2a3ff9-main.css"}.
-	// This should only be set to true if doing asset fingerprinting.
-	root.Flags().BoolP("assets-manifest", "", true, "Use manifest.json for mapping asset names to fingerprinted assets")
-
-	// This should be used in development mode to prevent browser caching of assets
-	root.Flags().BoolP("assets-no-cache", "", false, "Disable browsers caching asset files by setting response headers")
-	// This should be used in development mode to avoid having to reload the
-	// server on every template file modification.
-	root.Flags().BoolP("render-recompile", "", false, "Enable recompilation of the template on each render")
-	{{if not .NoSessions -}}
-	// Defined in app/sessions.go -- Usually cookie storer for dev and disk storer for prod.
-	root.Flags().BoolP("sessions-dev-storer", "", false, "Use the development mode sessions storer (defined in app/sessions.go)")
-	{{- end}}
-	root.Flags().BoolP("enforce-migration", "", true, "Throw error on app start if database is not using latest migration")
-	root.Flags().BoolP("version", "", false, "Display the build version hash")
-	root.Flags().StringP("env", "e", "prod", "The config files environment to load")
-}
-
-// InitConfig loads the AppConfig into the passed in app State
-func (s *State) InitConfig() error {
-	// Build app Config using env vars, config.toml file and cmd line flags
-	appViper, err := config.NewAppViper(s.Root.Flags(), "config.toml")
-	if err != nil {
-		return errors.Wrap(err, "failed to load app config")
+// NewAppState returns an initialized app State object
+func NewAppState() *State {
+	return &State{
+		AppConfig: abcconfig.NewAppConfig(),
 	}
-	s.AppConfig = config.LoadAppConfig(appViper)
-
-	{{- if not .NoDB}}
-	// Skip initializing db if user is not set
-	if len(s.AppConfig.DB.User) > 0 {
-		if err := config.ValidateDBConfig(s.AppConfig.DB); err != nil {
-			return errors.Wrap(err, "cannot validate db config")
-		}
-
-		// Initialize the global database handle
-		if err := db.InitDB(s.AppConfig.DB); err != nil {
-			return errors.Wrap(err, "failed to connect with global db handle")
-		}
-	}
-	{{- end}}
-
-	// If the {{.AppEnvName}}_PUBLIC_PATH env var is set, set
-	// the AppConfig to that path. This will be set by the "abcweb dev"
-	// command which compiles assets to the /tmp folder.
-	s.AppConfig.PublicPath = os.Getenv("{{.AppEnvName}}_PUBLIC_PATH")
-	// Set the default value if the env var is not set.
-	if s.AppConfig.PublicPath == "" {
-		s.AppConfig.PublicPath = "public"
-	}
-
-	return nil
 }

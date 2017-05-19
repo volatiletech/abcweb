@@ -7,10 +7,10 @@ import (
 	"os"
 	{{- end}}
 
+	"github.com/volatiletech/abcweb/abcconfig"
 	"{{.ImportPath}}/app"
 	{{if not .NoDB -}}
 	"{{.ImportPath}}/db"
-	"{{.ImportPath}}/config"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/mig"
 	{{- end}}
@@ -28,64 +28,78 @@ func rootSetup(state *app.State) {
 			// Start https and/or http listeners (app/server.go)
 			return state.StartServer()
 		},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+
+			// Initialize the AppConfig 
+			if err := abcconfig.InitAppConfig(cmd.Flags(), state.AppConfig); err != nil {
+				return errors.Wrap(err, "cannot load app config")
+			}
+
+			// Initialize the global database handle if DB section is set
+			if state.AppConfig.DB != nil {
+				if err := db.InitDB(state.AppConfig.DB); err != nil {
+					return errors.Wrap(err, "failed to connect with global db handle")
+				}
+			}
+
+			// If the {{.AppEnvName}}_PUBLIC_PATH env var is set, set
+			// the AppConfig to that path. This will be set by the "abcweb dev"
+			// command which compiles assets to the /tmp folder.
+			state.AppConfig.Server.PublicPath = os.Getenv("{{.AppEnvName}}_PUBLIC_PATH")
+			// Set the default value if the env var is not set.
+			if state.AppConfig.Server.PublicPath == "" {
+				state.AppConfig.Server.PublicPath = "public"
+			}
+			
+			// Initialize the zap logger (app/logger.go)
+			state.InitLogger()
+
+			// Create a new router
+			state.Router = chi.NewRouter()
+
+			{{if not .NoSessions -}}
+			// Configure the sessions overseer (app/sessions.go)
+			state.InitSessions()
+			{{- end}}
+
+			// Cache the assets manifest.json file mappings (app/render.go)
+			if state.AppConfig.Server.AssetsManifest {
+				rendering.AssetsManifest, err = rendering.GetManifest(state.AppConfig.Server.PublicPath)
+				if err != nil {
+					return err
+				}
+			}
+
+			// Configure the renderer (rendering/rendering.go)
+			state.Render = rendering.InitRenderer(state.AppConfig, "templates")
+
+			// Enable middleware for the router (app/middleware.go)
+			state.InitMiddleware()
+
+			// Initialize the routes with the renderer (app/routes.go)
+			state.InitRoutes()
+
+			{{- if not .NoDB}}
+			// Check if using the latest database migration if EnforceLatestMigration
+			// is true, and if the config.toml has a database user set
+			if state.AppConfig.DB.EnforceMigration {
+				migrated, version, err := db.IsMigrated(state.AppConfig.DB)
+				if err != nil && err != db.ErrNoMigrations {
+					return errors.Wrap(err, "failed to check if using latest migration")
+				}
+				if !migrated && err != db.ErrNoMigrations {
+					return fmt.Errorf("database is out of sync with migrations, database version: %d", version)
+				}
+			}
+			{{- end}}
+
+			return nil
+		},
 	}
 
-	// Register the command-line configuration flags (app/config.go)
-	app.RegisterFlags(state.Root)
-
-	// The pre-run function will initialize the app.
-	state.Root.PreRunE = func(cmd *cobra.Command, args []string) error {
-		var err error
-
-		// Initialize the AppConfig (app/config.go)
-		if err := state.InitConfig(); err != nil {
-			return err
-		}
-
-		// Initialize the zap logger (app/logger.go)
-		state.InitLogger()
-
-		// Create a new router
-		state.Router = chi.NewRouter()
-
-		{{if not .NoSessions -}}
-		// Configure the sessions overseer (app/sessions.go)
-		state.InitSessions()
-		{{- end}}
-
-		// Cache the assets manifest.json file mappings (app/render.go)
-		if state.AppConfig.AssetsManifest {
-			rendering.AssetsManifest, err = rendering.GetManifest(state.AppConfig.PublicPath)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Configure the renderer (rendering/rendering.go)
-		state.Render = rendering.InitRenderer(state.AppConfig, "templates")
-
-		// Enable middleware for the router (app/middleware.go)
-		state.InitMiddleware()
-
-		// Initialize the routes with the renderer (app/routes.go)
-		state.InitRoutes()
-
-		{{- if not .NoDB}}
-		// Check if using the latest database migration if EnforceLatestMigration
-		// is true, and if the config.toml has a database user set
-		if state.AppConfig.DB.EnforceMigration {
-			migrated, version, err := db.IsMigrated(state.AppConfig.DB)
-			if err != nil && err != db.ErrNoMigrations {
-				return errors.Wrap(err, "failed to check if using latest migration")
-			}
-			if !migrated && err != db.ErrNoMigrations {
-				return fmt.Errorf("database is out of sync with migrations, database version: %d", version)
-			}
-		}
-		{{- end}}
-
-		return nil
-	}
+	// Register the cmd-line flags for --help output
+	state.Root.Flags().AddFlagSet(abcconfig.NewFlagSet())
 }
 
 {{- if not .NoDB}}
@@ -95,14 +109,16 @@ func migrateSetup(state *app.State) {
 		Use:   "migrate",
 		Short: "Run your database migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			v, err := config.NewAppViper(cmd.Flags(), "config.toml")
-			if err != nil {
-				return errors.Wrap(err, "cannot create app config viper")
+			// cfg := &abcconfig.AppConfig{}
+			cfg := &struct {
+				abcconfig.AppConfig
+				Down bool
+			}{
+				AppConfig: abcconfig.AppConfig{},
 			}
 
-			cfg := config.LoadAppConfig(v)
-			if err := config.ValidateDBConfig(cfg.DB); err != nil {
-				return errors.Wrap(err, "could not validate db config")
+			if err := abcconfig.InitAppConfig(cmd.Flags(), cfg); err != nil {
+				return errors.Wrap(err, "cannot load app config")
 			}
 
 			if _, err := os.Stat(filepath.Join("db", "migrations")); err != nil {
@@ -114,7 +130,7 @@ func migrateSetup(state *app.State) {
 				return errors.Wrap(err, "could not create connection string")
 			}
 
-			if v.GetBool("down") {
+			if cfg.Down {
 				name, err := mig.Down(cfg.DB.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig down failed")

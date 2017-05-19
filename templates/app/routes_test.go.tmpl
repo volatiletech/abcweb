@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"{{.ImportPath}}/config"
+	"github.com/volatiletech/abcweb/abcconfig"
 	"{{.ImportPath}}/rendering"
 	"github.com/pressly/chi"
 	"github.com/volatiletech/abcmiddleware"
@@ -39,7 +39,7 @@ func TestNotFound(t *testing.T) {
 	}
 
 	state := &State{}
-	state.AppConfig = &config.AppConfig{
+	state.AppConfig = &abcconfig.AppConfig{
 		RenderRecompile: true,
 		PublicPath: filepath.FromSlash("../public"),
 	}

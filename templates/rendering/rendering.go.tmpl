@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"{{.ImportPath}}/config"
+	"github.com/volatiletech/abcweb/abcconfig"
 	"github.com/unrolled/render"
 	"github.com/volatiletech/abcrender"
 	"github.com/pkg/errors"
@@ -72,12 +72,12 @@ func manifestHelper(typ string, relpath string) string {
 // InitRenderer initializes the renderer using the app configuration.
 // If you need to use multiple renderers, you can add more Renderer
 // variables to your State object and initialize them here.
-func InitRenderer(cfg *config.AppConfig, templatesDir string) abcrender.Renderer {
+func InitRenderer(cfg *abcconfig.AppConfig, templatesDir string) abcrender.Renderer {
 	helpers := appHelpers()
 
 	// create an appConfig helper function for use within templates.
 	// This helper func provides access to the s.AppConfig variables.
-	helpers["appConfig"] = func() config.AppConfig {
+	helpers["appConfig"] = func() abcconfig.AppConfig {
 		return *cfg
 	}
 
@@ -86,7 +86,7 @@ func InitRenderer(cfg *config.AppConfig, templatesDir string) abcrender.Renderer
 			Directory:     templatesDir,
 			Layout:        "layouts/main",
 			Extensions:    []string{".tmpl", ".html"},
-			IsDevelopment: cfg.RenderRecompile,
+			IsDevelopment: cfg.Server.RenderRecompile,
 			Funcs:         []template.FuncMap{helpers},
 			DisableHTTPErrorRendering: true,
 		}),

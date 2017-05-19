@@ -14,7 +14,7 @@ func (s *State) InitMiddleware() {
 	}
 	
 	// Display "abcweb dev" build errors in the browser.
-	if !s.AppConfig.ProdLogger {
+	if !s.AppConfig.Server.ProdLogger {
 		s.Router.Use(web.ErrorChecker)
 	}
 
@@ -61,7 +61,7 @@ func (s *State) InitMiddleware() {
 	// s.Router.Use(chimiddleware.CloseNotify)
 
 	// Sets response headers to prevent clients from caching
-	if s.AppConfig.AssetsNoCache {
+	if s.AppConfig.Server.AssetsNoCache {
 		s.Router.Use(chimiddleware.NoCache)
 	}
 

@@ -7,14 +7,14 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	// postgres driver
 	_ "github.com/lib/pq"
-	"{{.ImportPath}}/config"
+	"github.com/volatiletech/abcweb/abcconfig"
 )
 
 // DB is the global database handle to your config defined db
 var DB *sql.DB
 
 // InitDB initializes the DB global database handle
-func InitDB(cfg *config.DBConfig) error {
+func InitDB(cfg *abcconfig.DBConfig) error {
 	// No username provided is a signal to skip database usage
 	if len(cfg.User) == 0 {
 		return nil

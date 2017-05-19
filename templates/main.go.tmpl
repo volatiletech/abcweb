@@ -20,7 +20,7 @@ func main() {
 		return
 	}
 	
-	state := &app.State{}
+	state := app.NewAppState() 
 
 	// Setup the main app (root command)
 	rootSetup(state)

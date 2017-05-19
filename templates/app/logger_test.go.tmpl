@@ -2,15 +2,13 @@ package app
 
 import (
 	"testing"
-
-	"{{.ImportPath}}/config"
 )
 
 func TestInitLogger(t *testing.T) {
 	t.Parallel()
 
 	state := &State{}
-	state.AppConfig = &config.AppConfig{}
+	state.AppConfig = &abcconfig.AppConfig{}
 
 	state.AppConfig.ProdLogger = true
 

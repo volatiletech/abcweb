@@ -3,7 +3,7 @@ package controllers
 import (
 	"net/http"
 
-	"{{.ImportPath}}/config"
+	"github.com/volatiletech/abcweb/abcconfig"
 	"{{.ImportPath}}/rendering"
 	{{if not .NoSessions -}}
 	"github.com/volatiletech/abcsessions"
@@ -65,8 +65,8 @@ func NewRootMock(templatesDir string) Root {
 	}
 
 	// Set up the template renderer
-	appCfg := &config.AppConfig{}
-	appCfg.RenderRecompile = true
+	appCfg := &abcconfig.AppConfig{}
+	appCfg.Server.RenderRecompile = true
 
 	return Root{
 		{{if not .NoSessions -}}

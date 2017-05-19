@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"{{.ImportPath}}/config"
+	"github.com/volatiletech/abcweb/abcconfig"
 	{{if not .NoDB -}}
 	"path/filepath"
 	"{{.ImportPath}}/db"
@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 func testMainMigrations(m *testing.M) int {
 	// Load the database config from test env
 	v := viper.New()
-	config.ConfigureViper(v, filepath.FromSlash("../config.toml"))
+	abcconfig.ConfigureViper(v, filepath.FromSlash("../config.toml"))
  
 	v = v.Sub("test")
 	if v == nil {
@@ -45,12 +45,12 @@ func testMainMigrations(m *testing.M) int {
 		return 1
 	}
 
-	cfg := config.LoadAppConfig(v)
+	cfg := abcconfig.LoadAppConfig(v)
 
 	if len(cfg.DB.User) == 0 {
 		fmt.Println("No user defined in config.toml, skipping database migrations.")
 	} else {
-		err := config.ValidateDBConfig(cfg.DB)
+		err := abcconfig.ValidateDBConfig(cfg.DB)
 		if err != nil {
 			fmt.Printf("Invalid DB Configuration: %s\n", err)
 			return 2

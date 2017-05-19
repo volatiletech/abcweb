@@ -7,11 +7,11 @@ func (s *State) InitSessions() {
 	// Configure cookie options
 	opts := abcsessions.NewCookieOptions()
 	// If not using HTTPS, disable cookie secure flag
-	if len(s.AppConfig.TLSBind) == 0 {
+	if len(s.AppConfig.Server.TLSBind) == 0 {
 		opts.Secure = false
 	}
 
-	if s.AppConfig.SessionsDevStorer {
+	if s.AppConfig.Server.SessionsDevStorer {
 		{{if eq .DevStorer "cookie" -}}
 		s.Session = abcsessions.NewCookieOverseer(opts, []byte("{{randString 32}}"))
 		{{- else if eq .DevStorer "memory" -}}

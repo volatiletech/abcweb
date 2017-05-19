@@ -3,14 +3,14 @@ package app
 import (
 	"testing"
 
-	"{{.ImportPath}}/config"
+	"github.com/volatiletech/abcweb/abcconfig"
 )
 
 func TestInitSessions(t *testing.T) {
 	t.Parallel()
 
 	s := &State{}
-	s.AppConfig = &config.AppConfig{}
+	s.AppConfig = &abcconfig.AppConfig{}
 
 	s.AppConfig.SessionsDevStorer = true
 

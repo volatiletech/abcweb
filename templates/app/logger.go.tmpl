@@ -12,7 +12,7 @@ func (s *State) InitLogger() {
 
 	// JSON logging for production. Should be coupled with a log analyzer
 	// like newrelic, elk, logstash etc.
-	if s.AppConfig.ProdLogger {
+	if s.AppConfig.Server.ProdLogger {
 		cfg = zap.NewProductionConfig()
 	} else { // Enable colored logging
 		cfg = zap.NewDevelopmentConfig()

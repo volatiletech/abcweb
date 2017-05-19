@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"{{.ImportPath}}/config"
+	"github.com/volatiletech/abcweb/abcconfig"
 	"github.com/volatiletech/helpers/git"
 )
 
@@ -33,7 +33,7 @@ func goTestdata(driver string, conn string) error {
 
 // sqlTestdata executes the testdata.sql file SQL against the passed in test db.
 // This is not a function to be edited.
-func sqlTestdata(cfg *config.DBConfig) error {
+func sqlTestdata(cfg *abcconfig.DBConfig) error {
 	appPath, err := git.GetAppPath()
 	if err != nil {
 		return err

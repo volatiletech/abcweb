@@ -16,11 +16,11 @@ import (
 	"github.com/volatiletech/helpers/git"
 	"github.com/volatiletech/mig"
 	"github.com/pkg/errors"
-	"{{.ImportPath}}/config"
+	"github.com/volatiletech/abcweb/abcconfig"
 )
 
 // GetConnStr returns a connection string for the database software used
-func GetConnStr(cfg *config.DBConfig) (string, error) {
+func GetConnStr(cfg *abcconfig.DBConfig) (string, error) {
 	if len(cfg.DB) == 0 {
 		return "", errors.New("db field in config.toml must be provided")
 	}
@@ -40,7 +40,7 @@ func GetConnStr(cfg *config.DBConfig) (string, error) {
 // Setup is used primarily as a testing helper, and is called in
 // controllers/controllers_test.go to set up the database state for the
 // controller tests.
-func Setup(cfg *config.DBConfig) (int, error) {
+func Setup(cfg *abcconfig.DBConfig) (int, error) {
 	appPath, err := git.GetAppPath()
 	if err != nil {
 		return 0, err
@@ -130,7 +130,7 @@ var (
 // IsMigrated returns true if the database is migrated to the
 // latest migration in the db/migrations folder. It also
 // returns the current database migration version number.
-func IsMigrated(cfg *config.DBConfig) (bool, int64, error) {
+func IsMigrated(cfg *abcconfig.DBConfig) (bool, int64, error) {
 	// Mimic success if there are no migrations
 	// because not every user will use migrations.
 	files, err := ioutil.ReadDir(filepath.Join("db", "migrations"))
@@ -174,7 +174,7 @@ func IsMigrated(cfg *config.DBConfig) (bool, int64, error) {
 }
 
 // pgEnv returns a slice of the connection related environment variables
-func pgEnv(cfg *config.DBConfig, passFilePath string) []string {
+func pgEnv(cfg *abcconfig.DBConfig, passFilePath string) []string {
 	return []string{
 		fmt.Sprintf("PGHOST=%s", cfg.Host),
 		fmt.Sprintf("PGPORT=%d", cfg.Port),
@@ -185,7 +185,7 @@ func pgEnv(cfg *config.DBConfig, passFilePath string) []string {
 
 // pgPassFile creates a file in the temp directory containing the connection
 // details and password for the database to be passed into the mysql cmdline cmd
-func pgPassFile(cfg *config.DBConfig) (string, error) {
+func pgPassFile(cfg *abcconfig.DBConfig) (string, error) {
 	tmp, err := ioutil.TempFile("", "pgpass")
 	if err != nil {
 		return "", errors.New("failed to create postgres pass file")
@@ -203,7 +203,7 @@ func pgPassFile(cfg *config.DBConfig) (string, error) {
 
 // mysqlPassFile creates a file in the temp directory containing the connection
 // details and password for the database to be passed into the mysql cmdline cmd
-func mysqlPassFile(cfg *config.DBConfig) (string, error) {
+func mysqlPassFile(cfg *abcconfig.DBConfig) (string, error) {
 	tmp, err := ioutil.TempFile("", "mysqlpass")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create mysql pass file")
