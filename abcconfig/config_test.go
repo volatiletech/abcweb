@@ -169,7 +169,7 @@ func TestGetTagMappings(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := []mapping{
+	expected := Mappings{
 		{chain: "a", env: "A"},
 		{chain: "b.ba", env: "B_BA"},
 		{chain: "b.bb", env: "B_BB"},

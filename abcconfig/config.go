@@ -1,13 +1,13 @@
 package abcconfig
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/kat-co/vala"
+	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -19,6 +19,10 @@ var filename = "config.toml"
 // If you'd rather use your own struct so that you can add new values
 // to your configuration you can do so, but make sure you include
 // *ServerConfig objects and *DBConfig objects like below (if desired).
+//
+// If you do not wish to use a database then you can exclude the DBConfig
+// struct in your own struct, but if using this AppConfig struct then
+// DBConfig MUST be initialized and database configuration must be present.
 type AppConfig struct {
 	// The active environment section
 	Env string `toml:"env" mapstructure:"env" env:"ENV"`
@@ -99,9 +103,8 @@ func SetEnvAppName(name string) {
 // NewAppConfig returns an initialized AppConfig object
 func NewAppConfig() *AppConfig {
 	return &AppConfig{
-		// Server is not optional, so should be initialized.
-		// DB *is* optional, so it can be nil and thus is not initialized.
 		Server: &ServerConfig{},
+		DB:     &DBConfig{},
 	}
 }
 
@@ -110,7 +113,7 @@ func NewAppConfig() *AppConfig {
 // that viper instance, and then loads your server and db config into
 // the passed in cfg struct and validates the db config is set appropriately.
 func InitAppConfig(flags *pflag.FlagSet, cfg interface{}) error {
-	v, err := NewSubViper(flags, filename)
+	v, err := NewSubViper(flags, filename, cfg)
 	if err != nil {
 		return err
 	}
@@ -141,13 +144,15 @@ func InitAppConfig(flags *pflag.FlagSet, cfg interface{}) error {
 	return nil
 }
 
-type mapping struct {
+type Mapping struct {
 	chain string
 	env   string
 }
 
-func getTagMappingsRecursive(chain string, v reflect.Value) ([]mapping, error) {
-	mappings := []mapping{}
+type Mappings []Mapping
+
+func getTagMappingsRecursive(chain string, v reflect.Value) (Mappings, error) {
+	mappings := Mappings{}
 
 	for i := 0; i < v.NumField(); i++ {
 		cv := v.Field(i)
@@ -184,7 +189,7 @@ func getTagMappingsRecursive(chain string, v reflect.Value) ([]mapping, error) {
 			mappings = append(mappings, m...)
 		default:
 			if env != "" && ms != "" {
-				mappings = append(mappings, mapping{chain: nc, env: env})
+				mappings = append(mappings, Mapping{chain: nc, env: env})
 			}
 		}
 	}
@@ -192,7 +197,9 @@ func getTagMappingsRecursive(chain string, v reflect.Value) ([]mapping, error) {
 	return mappings, nil
 }
 
-func GetTagMappings(cfg interface{}) ([]mapping, error) {
+// GetTagMappings returns the viper .BindEnv mappings for an entire config
+// struct.
+func GetTagMappings(cfg interface{}) (Mappings, error) {
 	return getTagMappingsRecursive("", reflect.Indirect(reflect.ValueOf(cfg)))
 }
 
@@ -266,7 +273,9 @@ func NewDBFlagSet() *pflag.FlagSet {
 // NewSubViper returns a viper instance activated against the active environment
 // configuration subsection and initialized with the config.toml
 // configuration file and the environment variable prefix.
-func NewSubViper(flags *pflag.FlagSet, path string) (*viper.Viper, error) {
+// It also takes in the configuration struct so that it can generate the env
+// mappings.
+func NewSubViper(flags *pflag.FlagSet, path string, cfg interface{}) (*viper.Viper, error) {
 	v := viper.New()
 
 	if flags != nil {
@@ -283,7 +292,20 @@ func NewSubViper(flags *pflag.FlagSet, path string) (*viper.Viper, error) {
 
 	v = v.Sub(env)
 
-	v.BindEnv("server.tls-cert-file", strings.Join([]string{envAppName, "SERVER_TLS_CERT_FILE"}, "_"))
+	mappings, err := GetTagMappings(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get tag mappings for config struct")
+	}
+
+	if envAppName != "" {
+		for _, m := range mappings {
+			v.BindEnv(m.chain, strings.Join([]string{envAppName, m.env}, "_"))
+		}
+	} else {
+		for _, m := range mappings {
+			v.BindEnv(m.chain, m.env)
+		}
+	}
 
 	if v == nil {
 		return nil, fmt.Errorf("unable to load environment %q from %q", env, path)
