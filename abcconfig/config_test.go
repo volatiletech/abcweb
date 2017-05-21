@@ -35,7 +35,16 @@ func TestInitAppConfig(t *testing.T) {
 	[prod.server]
 		live-reload = true
 		tls-bind = "hahaha"
-[cool]`)
+	[prod.db]
+		user = "a"
+		host = "b"
+		dbname = "c"
+[cool]
+	[cool.db]
+		user = "a"
+		host = "b"
+		dbname = "c"
+`)
 
 	file, err := ioutil.TempFile("", "abcconfig")
 	if err != nil {
@@ -55,7 +64,7 @@ func TestInitAppConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = os.Setenv("ABCWEB_DB_DB", "mydb")
+	err = os.Setenv("ABCWEB_DB_DB", "postgres")
 	if err != nil {
 		t.Error(err)
 	}
