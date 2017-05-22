@@ -27,8 +27,8 @@ type AppConfig struct {
 	// The active environment section
 	Env string `toml:"env" mapstructure:"env" env:"ENV"`
 
-	Server *ServerConfig `toml:"server" mapstructure:"server"`
-	DB     *DBConfig     `toml:"db" mapstructure:"db"`
+	Server ServerConfig `toml:"server" mapstructure:"server"`
+	DB     DBConfig     `toml:"db" mapstructure:"db"`
 }
 
 // ServerConfig is config for the app loaded through environment variables,
@@ -100,48 +100,36 @@ func SetEnvAppName(name string) {
 	envAppName = name
 }
 
-// NewAppConfig returns an initialized AppConfig object
-func NewAppConfig() *AppConfig {
-	return &AppConfig{
-		Server: &ServerConfig{},
-		DB:     &DBConfig{},
-	}
-}
-
-// InitAppConfig binds your passed in config flags to a new viper
+// Bind binds your passed in config flags to a new viper
 // instance, retrieves the active environment section of your config file using
 // that viper instance, and then loads your server and db config into
 // the passed in cfg struct and validates the db config is set appropriately.
-func InitAppConfig(flags *pflag.FlagSet, cfg interface{}) error {
+func Bind(flags *pflag.FlagSet, cfg interface{}) (*viper.Viper, error) {
 	v, err := NewSubViper(flags, filename, cfg)
 	if err != nil {
-		return err
+		return v, err
 	}
 
 	if err := LoadAppConfig(cfg, v); err != nil {
-		return err
+		return v, err
 	}
 
 	val := reflect.Indirect(reflect.ValueOf(cfg))
 
 	// Check if there's a DBConfig object in the cfg struct.
-	// If there is one, check if there's a [db] section in the config
-	// file by checking if dbCfg is nil. If there is a [db] section
-	// then validate all fields on it are set appropriately.
+	// If found, then validate all fields on it are set appropriately.
 	for i := 0; i < val.NumField(); i++ {
-		dbCfg, ok := val.Field(i).Interface().(*DBConfig)
+		dbCfg, ok := val.Field(i).Interface().(DBConfig)
 		if !ok {
 			continue
 		}
-		if dbCfg != nil {
-			if err := ValidateDBConfig(dbCfg); err != nil {
-				return err
-			}
+		if err := ValidateDBConfig(&dbCfg); err != nil {
+			return v, err
 		}
 		break
 	}
 
-	return nil
+	return v, nil
 }
 
 type Mapping struct {
@@ -338,21 +326,32 @@ func ConfigureViper(v *viper.Viper, path string) error {
 
 // LoadAppConfig loads the config.toml server configuration object
 func LoadAppConfig(cfg interface{}, v *viper.Viper) error {
-	v.Unmarshal(cfg)
+	err := v.Unmarshal(cfg)
+	if err != nil {
+		return err
+	}
 
 	val := reflect.Indirect(reflect.ValueOf(cfg))
 
-	// Find *DBConfig and set object appropriately
+	// if cfg has an imbedded AppConfig then we need to unmarshal
+	// directly into that and overwrite it in the parent struct,
+	// since its another layer of indirection and viper
+	// can't handle it magically.
 	for i := 0; i < val.NumField(); i++ {
-		dbCfg, ok := val.Field(i).Interface().(*DBConfig)
+		appCfg, ok := val.Field(i).Interface().(AppConfig)
 		if !ok {
 			continue
 		}
 
-		// if dbCfg is nil it means that there was no [db] section in the toml
-		// file, and so db loading should be skipped
-		if dbCfg == nil {
-			break
+		v.Unmarshal(&appCfg)
+		val.Field(i).Set(reflect.ValueOf(appCfg))
+	}
+
+	// Find *DBConfig and set object appropriately
+	for i := 0; i < val.NumField(); i++ {
+		dbCfg, ok := val.Field(i).Interface().(DBConfig)
+		if !ok {
+			continue
 		}
 
 		if dbCfg.DB == "postgres" {
@@ -370,6 +369,8 @@ func LoadAppConfig(cfg interface{}, v *viper.Viper) error {
 				dbCfg.SSLMode = "true"
 			}
 		}
+
+		val.Field(i).Set(reflect.ValueOf(dbCfg))
 
 		// Finished working on the db cfg struct, so break out
 		break
