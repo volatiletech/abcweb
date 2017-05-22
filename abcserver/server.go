@@ -1,16 +1,17 @@
-package app
+package abcserver
 
 import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 
 	"github.com/pkg/errors"
+	"github.com/pressly/chi"
+	"github.com/volatiletech/abcweb/abcconfig"
 	"go.uber.org/zap"
 )
 
@@ -25,15 +26,17 @@ func (s serverErrLogger) Write(b []byte) (int, error) {
 	return 0, nil
 }
 
-// StartServer starts the web server on the specified port
-func (s *State) StartServer() error {
+// StartServer starts the web server on the specified port, and can be
+// gracefully shut down by sending an os.Interrupt signal to the server.
+// This is a blocking call.
+func StartServer(cfg *abcconfig.ServerConfig, router *chi.Router, log *zap.Logger) error {
 	var err error
 	server := http.Server{
-		ReadTimeout:  s.AppConfig.Server.ReadTimeout,
-		WriteTimeout: s.AppConfig.Server.WriteTimeout,
-		IdleTimeout:  s.AppConfig.Server.IdleTimeout,
-		ErrorLog:     log.New(serverErrLogger{s.Log}, "", 0),
-		Handler:      s.Router,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		IdleTimeout:  cfg.IdleTimeout,
+		ErrorLog:     log.New(serverErrLogger{log}, "", 0),
+		Handler:      router,
 	}
 
 	server.TLSConfig = &tls.Config{
@@ -60,21 +63,20 @@ func (s *State) StartServer() error {
 		}
 	}()
 
-	if len(s.AppConfig.Server.TLSBind) > 0 {
-		s.Log.Info("starting https listener", zap.String("bind", s.AppConfig.Server.TLSBind))
-		server.Addr = s.AppConfig.Server.TLSBind
-		
-		{{if not .NoHTTPRedirect -}}
+	if len(cfg.TLSBind) > 0 {
+		log.Info("starting https listener", zap.String("bind", cfg.TLSBind))
+		server.Addr = cfg.TLSBind
+
 		// Redirect http requests to https
-		go s.Redirect()
-		{{end -}}
-		if err := server.ListenAndServeTLS(s.AppConfig.Server.TLSCertFile, s.AppConfig.Server.TLSKeyFile); err != nil {
+		go s.Redirect(cfg, log)
+
+		if err := server.ListenAndServeTLS(cfg.TLSCertFile, cfg.TLSKeyFile); err != nil {
 			fmt.Printf("failed to ListenAndServeTLS: %v", err)
 			return nil
 		}
 	} else {
-		s.Log.Info("starting http listener", zap.String("bind", s.AppConfig.Server.Bind))
-		server.Addr = s.AppConfig.Server.Bind
+		log.Info("starting http listener", zap.String("bind", cfg.Bind))
+		server.Addr = cfg.Bind
 		if err := server.ListenAndServe(); err != nil {
 			fmt.Printf("failed to ListenAndServe: %v", err)
 			return nil
@@ -85,30 +87,30 @@ func (s *State) StartServer() error {
 }
 
 // Redirect listens on the non-https port, and redirects all requests to https
-func (s *State) Redirect() {
+func Redirect(cfg *abcconfig.ServerConfig, log *zap.Logger) {
 	var err error
 
 	// Get https port from TLS Bind
-	_, httpsPort, err := net.SplitHostPort(s.AppConfig.Server.TLSBind)
+	_, httpsPort, err := net.SplitHostPort(cfg.TLSBind)
 	if err != nil {
-		s.Log.Fatal("failed to get port from tls bind", zap.Error(err))
+		log.Fatal("failed to get port from tls bind", zap.Error(err))
 	}
 
-	s.Log.Info("starting http -> https redirect listener", zap.String("bind", s.AppConfig.Server.Bind))
+	log.Info("starting http -> https redirect listener", zap.String("bind", cfg.Bind))
 
 	server := http.Server{
-		Addr:         s.AppConfig.Server.Bind,
+		Addr: cfg.Bind,
 		// Do not set IdleTimeout, so Go uses ReadTimeout value.
 		// IdleTimeout config value too high for redirect listener.
-		ReadTimeout:  s.AppConfig.Server.ReadTimeout,
-		WriteTimeout: s.AppConfig.Server.WriteTimeout,
-		ErrorLog:     log.New(serverErrLogger{s.Log}, "", 0),
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		ErrorLog:     log.New(serverErrLogger{log}, "", 0),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Remove port if it exists so we can replace it with https port
 			var httpHost string
 			httpHost, _, err = net.SplitHostPort(r.Host)
 			if err != nil {
-				s.Log.Fatal("failed to get http host from request", zap.Error(err))
+				log.Fatal("failed to get http host from request", zap.Error(err))
 			}
 
 			url := fmt.Sprintf("https://%s:%s%s", httpHost, httpsPort, r.RequestURI)
@@ -118,5 +120,5 @@ func (s *State) Redirect() {
 
 	// Start permanent listener
 	err = server.ListenAndServe()
-	s.Log.Fatal("http redirect listener failed", zap.Error(err))
+	log.Fatal("http redirect listener failed", zap.Error(err))
 }

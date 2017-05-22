@@ -1,0 +1,47 @@
+package routes
+
+import (
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+
+	"go.uber.org/zap"
+
+	"{{.ImportPath}}/rendering"
+	"{{.ImportPath}}/controllers"
+	"{{.ImportPath}}/middleware"
+	"github.com/volatiletech/abcmiddleware"
+)
+
+// NewRouter creates a new router
+func NewRouter(a *app.App, middlewares []http.Handler) *chi.Mux {
+	router := chi.NewRouter()
+
+	for middleware := range middlewares {
+		router.Use(middleware)
+	}
+
+	// The common state for each route handler
+	root := controllers.Root{
+		Render:  a.Render,
+		{{if not .NoSessions -}}
+		Session: a.Session,
+		{{- end}}
+	}
+	
+	// 404 route handler
+	notFound := abcserver.NewNotFoundHandler()
+	s.Router.NotFound(notFound.Handler(a.Server, a.Render))
+
+	// 405 route handler
+	methodNotAllowed := abcserver.NewMethodNotAllowedHandler()
+	s.Router.MethodNotAllowed(methodNotAllowed.Handler(a.Render))
+
+	// error middleware handles controller errors
+	e := middleware.NewErrorHandler(a.Render)
+
+	main := controllers.Main{Root: root}
+	s.Router.Get("/", e(main.Home))
+}

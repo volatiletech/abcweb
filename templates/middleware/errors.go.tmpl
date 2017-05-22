@@ -48,12 +48,8 @@ func (m Middleware) Errors(ctrl AppHandler) http.HandlerFunc {
 			errorTemplate = "500"
 		}
 
-		{{if .NoRequestID -}}
-		log := s.Log
-		{{- else -}}
 		// Get the Request ID scoped logger
 		log := abcmiddleware.Log(r)
-		{{- end}}
 
 		fields := []zapcore.Field{
 			zap.String("method", r.Method),

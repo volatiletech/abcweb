@@ -223,6 +223,7 @@ func NewServerFlagSet() *pflag.FlagSet {
 	flags.StringP("server.tls-bind", "", "", `HTTPS bind address, eg: ":443"`)
 	flags.StringP("server.tls-cert-file", "", "", "TLS certificate file path")
 	flags.StringP("server.tls-key-file", "", "", "TLS key file path")
+	flags.StringP("server.public-path", "", "public", "The path to the public folder containing assets")
 	flags.DurationP("server.read-timeout", "", time.Second*10, "Maximum duration before timing out read of the request")
 	flags.DurationP("server.write-timeout", "", time.Second*15, "Maximum duration before timing out write of the response")
 	flags.DurationP("server.idle-timeout", "", time.Second*120, "Maximum duration before timing out idle keep-alive connection")

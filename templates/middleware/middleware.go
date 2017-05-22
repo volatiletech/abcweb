@@ -1,12 +1,8 @@
 package middleware
 
-import (
-	"github.com/volatiletech/abcrender"
-	"go.uber.org/zap"
-)
+import "github.com/volatiletech/abcrender"
 
 // Middleware defines the variables that your middleware need access to.
 type Middleware struct {
-	Log    *zap.Logger
 	Render abcrender.Renderer
 }

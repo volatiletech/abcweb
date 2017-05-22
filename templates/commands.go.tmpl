@@ -1,143 +1,68 @@
 package main
 
 import (
-	{{if not .NoDB -}}
 	"path/filepath"
 	"fmt"
 	"os"
-	{{- end}}
 
 	"github.com/volatiletech/abcweb/abcconfig"
 	"{{.ImportPath}}/app"
-	{{if not .NoDB -}}
 	"{{.ImportPath}}/db"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/mig"
-	{{- end}}
 	"{{.ImportPath}}/rendering"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
 )
 
 // rootSetup sets up the root cobra command
-func rootSetup(state *app.State) {
-	state.Root = &cobra.Command{
+func rootSetup(a *app.App) {
+	a.Root = &cobra.Command{
 		Use:   "{{.AppName}} [flags]",
 		Short: "{{.AppName}} web app server",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Start https and/or http listeners (app/server.go)
-			return state.StartServer()
+			return abcserver.StartServer(a.Config.Server, a.Router, a.Log) 
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			var err error
-
-			// Initialize the AppConfig 
-			if err := abcconfig.InitAppConfig(cmd.Flags(), state.AppConfig); err != nil {
-				return errors.Wrap(err, "cannot load app config")
-			}
-
-			// Initialize the global database handle if DB section is set
-			if state.AppConfig.DB != nil {
-				if err := db.InitDB(state.AppConfig.DB); err != nil {
-					return errors.Wrap(err, "failed to connect with global db handle")
-				}
-			}
-
-			// If the {{.AppEnvName}}_PUBLIC_PATH env var is set, set
-			// the AppConfig to that path. This will be set by the "abcweb dev"
-			// command which compiles assets to the /tmp folder.
-			state.AppConfig.Server.PublicPath = os.Getenv("{{.AppEnvName}}_PUBLIC_PATH")
-			// Set the default value if the env var is not set.
-			if state.AppConfig.Server.PublicPath == "" {
-				state.AppConfig.Server.PublicPath = "public"
-			}
-			
-			// Initialize the zap logger (app/logger.go)
-			state.InitLogger()
-
-			// Create a new router
-			state.Router = chi.NewRouter()
-
-			{{if not .NoSessions -}}
-			// Configure the sessions overseer (app/sessions.go)
-			state.InitSessions()
-			{{- end}}
-
-			// Cache the assets manifest.json file mappings (app/render.go)
-			if state.AppConfig.Server.AssetsManifest {
-				rendering.AssetsManifest, err = rendering.GetManifest(state.AppConfig.Server.PublicPath)
-				if err != nil {
-					return err
-				}
-			}
-
-			// Configure the renderer (rendering/rendering.go)
-			state.Render = rendering.InitRenderer(state.AppConfig, "templates")
-
-			// Enable middleware for the router (app/middleware.go)
-			state.InitMiddleware()
-
-			// Initialize the routes with the renderer (app/routes.go)
-			state.InitRoutes()
-
-			{{- if not .NoDB}}
-			// Check if using the latest database migration if EnforceLatestMigration
-			// is true, and if the config.toml has a database user set
-			if state.AppConfig.DB.EnforceMigration {
-				migrated, version, err := db.IsMigrated(state.AppConfig.DB)
-				if err != nil && err != db.ErrNoMigrations {
-					return errors.Wrap(err, "failed to check if using latest migration")
-				}
-				if !migrated && err != db.ErrNoMigrations {
-					return fmt.Errorf("database is out of sync with migrations, database version: %d", version)
-				}
-			}
-			{{- end}}
-
-			return nil
+			return Setup(a, cmd.Flags())
 		},
 	}
 
 	// Register the cmd-line flags for --help output
-	state.Root.Flags().AddFlagSet(abcconfig.NewFlagSet())
+	a.Root.Flags().AddFlagSet(abcconfig.NewFlagSet())
 }
 
-{{- if not .NoDB}}
-// migrateSetup sets up the migrate command and binds it to the root command
-func migrateSetup(state *app.State) { 
+// migrateSetup sets up the migrate command and binds it to the root command.
+//
+// The migrate up and down command is built into the app so that you do not
+// need to deploy abcweb to your server to run your migrations.
+func migrateSetup(a *app.App) { 
 	migrate := &cobra.Command{
 		Use:   "migrate",
 		Short: "Run your database migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// cfg := &abcconfig.AppConfig{}
-			cfg := &struct {
-				abcconfig.AppConfig
-				Down bool
-			}{
-				AppConfig: abcconfig.AppConfig{},
-			}
-
-			if err := abcconfig.InitAppConfig(cmd.Flags(), cfg); err != nil {
-				return errors.Wrap(err, "cannot load app config")
+			v, err := abcconfig.Bind(cmd.Flags(), a.Config)
+			if err != nil {
+				return errors.Wrap(err, "cannot bind app config")
 			}
 
 			if _, err := os.Stat(filepath.Join("db", "migrations")); err != nil {
 				return errors.Wrap(err, "could not find migrations folder")
 			}
 
-			connStr, err := db.GetConnStr(cfg.DB)
+			connStr, err := db.GetConnStr(a.Config.DB)
 			if err != nil {
 				return errors.Wrap(err, "could not create connection string")
 			}
 
-			if cfg.Down {
-				name, err := mig.Down(cfg.DB.DB, connStr, filepath.Join("db", "migrations"))
+			if v.Get("down") {
+				name, err := mig.Down(a.Config.DB.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig down failed")
 				}
 				fmt.Printf("rolled back migration %q\n", name)
 			} else {
-				count, err := mig.Up(cfg.DB.DB, connStr, filepath.Join("db", "migrations"))
+				count, err := mig.Up(a.Config.DB.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig up failed")
 				}
@@ -151,6 +76,5 @@ func migrateSetup(state *app.State) {
 	migrate.Flags().BoolP("down", "d", false, "Roll back the database migration version by one")
 	migrate.Flags().StringP("env", "e", "prod", "The database config file environment to load")
 	
-	state.Root.AddCommand(migrate)
+	a.Root.AddCommand(migrate)
 }
-{{- end}}

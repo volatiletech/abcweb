@@ -1,32 +1,17 @@
-package app
+package abcserver
 
 import (
 	"context"
-	"path/filepath"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/volatiletech/abcweb/abcconfig"
-	"{{.ImportPath}}/rendering"
-	"github.com/pressly/chi"
+	"github.com/nullbio/lolwtf/rendering"
 	"github.com/volatiletech/abcmiddleware"
+	"github.com/volatiletech/abcweb/abcconfig"
 )
-
-func TestInitRoutes(t *testing.T) {
-	t.Parallel()
-
-	state := &State{
-		Router: chi.NewRouter(),
-	}
-	state.InitRoutes()
-
-	routes := state.Router.Routes()
-	if len(routes) == 0 {
-		t.Error("expected at least 1 route to be initialized")
-	}
-}
 
 func TestNotFound(t *testing.T) {
 	t.Parallel()
@@ -41,7 +26,7 @@ func TestNotFound(t *testing.T) {
 	state := &State{}
 	state.AppConfig = &abcconfig.AppConfig{
 		RenderRecompile: true,
-		PublicPath: filepath.FromSlash("../public"),
+		PublicPath:      filepath.FromSlash("../public"),
 	}
 	state.InitLogger()
 	state.Render = rendering.InitRenderer(state.AppConfig, filepath.FromSlash("../templates"))
@@ -50,9 +35,7 @@ func TestNotFound(t *testing.T) {
 	r := httptest.NewRequest("GET", "/robots.txt", nil)
 	w := httptest.NewRecorder()
 
-	{{if not .NoSessions -}}
 	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, state.Log))
-	{{- end}}
 
 	// Call the handler
 	state.NotFound(w, r)
@@ -76,9 +59,7 @@ func TestNotFound(t *testing.T) {
 	r = httptest.NewRequest("GET", "/assets/css/main.css", nil)
 	w = httptest.NewRecorder()
 
-	{{if not .NoSessions -}}
 	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, state.Log))
-	{{- end}}
 
 	// Call the handler
 	state.NotFound(w, r)
@@ -95,9 +76,7 @@ func TestNotFound(t *testing.T) {
 	r = httptest.NewRequest("GET", "/assets/css/main-manifestmagic.css", nil)
 	w = httptest.NewRecorder()
 
-	{{if not .NoSessions -}}
 	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, state.Log))
-	{{- end}}
 
 	// Set asset manifest to test manifest hotpath
 	rendering.AssetsManifest = map[string]string{
