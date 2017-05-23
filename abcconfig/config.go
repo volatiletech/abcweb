@@ -12,8 +12,25 @@ import (
 	"github.com/spf13/viper"
 )
 
-// The config filename, overwritten in tests to point to a tmp file
-var filename = "config.toml"
+// Config object used to initialize configuration
+type Config struct {
+	// The config file path, overwritten in tests to point to a tmp file
+	File string
+	// Specify which environment to load, empty string means pull the
+	// env from the configuration file, cmdline and env vars.
+	LoadEnv string
+	// Prefix the environment variables with this name so that the config
+	// variables don't conflict with other abcweb apps
+	EnvPrefix string
+}
+
+// NewConfig creates a new Config object used to initialize configuration
+func NewConfig(envPrefix string) *Config {
+	return &Config{
+		File:      "config.toml",
+		EnvPrefix: envPrefix,
+	}
+}
 
 // AppConfig struct includes the necessary abcweb config components.
 // If you'd rather use your own struct so that you can add new values
@@ -90,27 +107,17 @@ type DBConfig struct {
 	EnforceMigration bool `toml:"enforce-migration" mapstructure:"enforce-migration" env:"DB_ENFORCE_MIGRATION"`
 }
 
-// envAppName is the app name uppercased to prefix environment variables
-// i.e. "my app" translates to "MY_APP". It gets the app name using a git
-// command on the project dir.
-var envAppName string
-
-// SetEnvAppName sets the envAppName variable
-func SetEnvAppName(name string) {
-	envAppName = name
-}
-
-// Bind binds your passed in config flags to a new viper
+// Bind your passed in config flags to a new viper
 // instance, retrieves the active environment section of your config file using
 // that viper instance, and then loads your server and db config into
 // the passed in cfg struct and validates the db config is set appropriately.
-func Bind(flags *pflag.FlagSet, cfg interface{}) (*viper.Viper, error) {
-	v, err := NewSubViper(flags, filename, cfg)
+func (c *Config) Bind(flags *pflag.FlagSet, cfg interface{}) (*viper.Viper, error) {
+	v, err := c.NewSubViper(flags, cfg)
 	if err != nil {
 		return v, err
 	}
 
-	if err := LoadAppConfig(cfg, v); err != nil {
+	if err := UnmarshalAppConfig(cfg, v); err != nil {
 		return v, err
 	}
 
@@ -123,7 +130,7 @@ func Bind(flags *pflag.FlagSet, cfg interface{}) (*viper.Viper, error) {
 		if !ok {
 			continue
 		}
-		if err := ValidateDBConfig(&dbCfg); err != nil {
+		if err := ValidateDBConfig(dbCfg); err != nil {
 			return v, err
 		}
 		break
@@ -132,11 +139,163 @@ func Bind(flags *pflag.FlagSet, cfg interface{}) (*viper.Viper, error) {
 	return v, nil
 }
 
+// NewSubViper returns a viper instance activated against the active environment
+// configuration subsection and initialized with the config.toml
+// configuration file and the environment variable prefix.
+// It also takes in the configuration struct so that it can generate the env
+// mappings.
+func (c *Config) NewSubViper(flags *pflag.FlagSet, cfg interface{}) (*viper.Viper, error) {
+	v := viper.New()
+
+	if flags != nil {
+		if err := v.BindPFlags(flags); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := c.ConfigureViper(v); err != nil {
+		return nil, err
+	}
+
+	// Use the env from the config if it's not explicitly set
+	env := c.LoadEnv
+	if env == "" {
+		env = v.GetString("env")
+	}
+
+	v = v.Sub(env)
+
+	mappings, err := GetTagMappings(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get tag mappings for config struct")
+	}
+
+	if c.EnvPrefix != "" {
+		for _, m := range mappings {
+			v.BindEnv(m.chain, strings.Join([]string{c.EnvPrefix, m.env}, "_"))
+		}
+	} else {
+		for _, m := range mappings {
+			v.BindEnv(m.chain, m.env)
+		}
+	}
+
+	if v == nil {
+		return nil, fmt.Errorf("unable to load environment %q from %q", env, c.File)
+	}
+
+	if flags != nil {
+		if err := v.BindPFlags(flags); err != nil {
+			return nil, err
+		}
+	}
+
+	v.Set("env", env)
+	return v, nil
+}
+
+// ConfigureViper sets the viper object to use the passed in config toml file
+// and also configures the configuration environment variables.
+func (c *Config) ConfigureViper(v *viper.Viper) error {
+	v.SetConfigType("toml")
+	v.SetConfigFile(c.File)
+	v.SetEnvPrefix(c.EnvPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	if err := v.ReadInConfig(); err != nil {
+		return err
+	}
+	v.AutomaticEnv()
+
+	return nil
+}
+
+// UnmarshalAppConfig unmarshals the viper's configured config file
+// into the passed in cfg object containing an AppConfig
+func UnmarshalAppConfig(cfg interface{}, v *viper.Viper) error {
+	err := v.Unmarshal(cfg)
+	if err != nil {
+		return err
+	}
+
+	val := reflect.Indirect(reflect.ValueOf(cfg))
+
+	// if cfg has an imbedded AppConfig then we need to unmarshal
+	// directly into that and overwrite it in the parent struct,
+	// since its another layer of indirection and viper
+	// can't handle it magically.
+	for i := 0; i < val.NumField(); i++ {
+		appCfg, ok := val.Field(i).Interface().(AppConfig)
+		if !ok {
+			continue
+		}
+
+		v.Unmarshal(&appCfg)
+		val.Field(i).Set(reflect.ValueOf(appCfg))
+	}
+
+	// Find *DBConfig and set object appropriately
+	for i := 0; i < val.NumField(); i++ {
+		dbCfg, ok := val.Field(i).Interface().(DBConfig)
+		if !ok {
+			continue
+		}
+
+		if dbCfg.DB == "postgres" {
+			if dbCfg.Port == 0 {
+				dbCfg.Port = 5432
+			}
+			if dbCfg.SSLMode == "" {
+				dbCfg.SSLMode = "require"
+			}
+		} else if dbCfg.DB == "mysql" {
+			if dbCfg.Port == 0 {
+				dbCfg.Port = 3306
+			}
+			if dbCfg.SSLMode == "" {
+				dbCfg.SSLMode = "true"
+			}
+		}
+
+		val.Field(i).Set(reflect.ValueOf(dbCfg))
+
+		// Finished working on the db cfg struct, so break out
+		break
+	}
+
+	return nil
+}
+
+// ValidateDBConfig returns an error if any of the required db config
+// fields are not set to their appropriate values.
+func ValidateDBConfig(cfg DBConfig) error {
+	err := vala.BeginValidation().Validate(
+		vala.StringNotEmpty(cfg.DB, "db"),
+		vala.StringNotEmpty(cfg.User, "user"),
+		vala.StringNotEmpty(cfg.Host, "host"),
+		vala.Not(vala.Equals(cfg.Port, 0, "port")),
+		vala.StringNotEmpty(cfg.DBName, "dbname"),
+		vala.StringNotEmpty(cfg.SSLMode, "sslmode"),
+	).Check()
+	if err != nil {
+		return err
+	}
+
+	if cfg.DB != "postgres" && cfg.DB != "mysql" {
+		return errors.New("not a valid driver name")
+	}
+
+	return nil
+}
+
+// Mapping represents a chain which is a list of nested object mapstructures
+// joined together and seperated by dots (i.e. one.two.three), and the
+// accompanying environment variable tag value for the last item in the chain
 type Mapping struct {
 	chain string
 	env   string
 }
 
+// Mappings is a slice of mapping
 type Mappings []Mapping
 
 func getTagMappingsRecursive(chain string, v reflect.Value) (Mappings, error) {
@@ -203,6 +362,8 @@ func NewFlagSet() *pflag.FlagSet {
 	return flags
 }
 
+// NewRootFlagSet returns a list of top level flags (flags that arent contained
+// inside an environment section in the config)
 func NewRootFlagSet() *pflag.FlagSet {
 	flags := &pflag.FlagSet{}
 
@@ -213,6 +374,8 @@ func NewRootFlagSet() *pflag.FlagSet {
 	return flags
 }
 
+// NewServerFlagSet returns a list of flags contained within the [server]
+// section of a config
 func NewServerFlagSet() *pflag.FlagSet {
 	flags := &pflag.FlagSet{}
 
@@ -243,6 +406,8 @@ func NewServerFlagSet() *pflag.FlagSet {
 	return flags
 }
 
+// NewDBFlagSet returns a list of flags contained within the [db] section
+// of a config
 func NewDBFlagSet() *pflag.FlagSet {
 	flags := &pflag.FlagSet{}
 
@@ -257,148 +422,4 @@ func NewDBFlagSet() *pflag.FlagSet {
 	flags.BoolP("db.enforce-migrations", "", true, "Throw error on app start if database is not using latest migration")
 
 	return flags
-}
-
-// NewSubViper returns a viper instance activated against the active environment
-// configuration subsection and initialized with the config.toml
-// configuration file and the environment variable prefix.
-// It also takes in the configuration struct so that it can generate the env
-// mappings.
-func NewSubViper(flags *pflag.FlagSet, path string, cfg interface{}) (*viper.Viper, error) {
-	v := viper.New()
-
-	if flags != nil {
-		if err := v.BindPFlags(flags); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := ConfigureViper(v, path); err != nil {
-		return nil, err
-	}
-
-	env := v.GetString("env")
-
-	v = v.Sub(env)
-
-	mappings, err := GetTagMappings(cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get tag mappings for config struct")
-	}
-
-	if envAppName != "" {
-		for _, m := range mappings {
-			v.BindEnv(m.chain, strings.Join([]string{envAppName, m.env}, "_"))
-		}
-	} else {
-		for _, m := range mappings {
-			v.BindEnv(m.chain, m.env)
-		}
-	}
-
-	if v == nil {
-		return nil, fmt.Errorf("unable to load environment %q from %q", env, path)
-	}
-
-	if flags != nil {
-		if err := v.BindPFlags(flags); err != nil {
-			return nil, err
-		}
-	}
-
-	v.Set("env", env)
-	return v, nil
-}
-
-// ConfigureViper sets the viper object to use the passed in config toml file
-// and also configures the configuration environment variables.
-func ConfigureViper(v *viper.Viper, path string) error {
-	v.SetConfigType("toml")
-	v.SetConfigFile(path)
-	v.SetEnvPrefix(envAppName)
-	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	if err := v.ReadInConfig(); err != nil {
-		return err
-	}
-	v.AutomaticEnv()
-
-	return nil
-}
-
-// LoadAppConfig loads the config.toml server configuration object
-func LoadAppConfig(cfg interface{}, v *viper.Viper) error {
-	err := v.Unmarshal(cfg)
-	if err != nil {
-		return err
-	}
-
-	val := reflect.Indirect(reflect.ValueOf(cfg))
-
-	// if cfg has an imbedded AppConfig then we need to unmarshal
-	// directly into that and overwrite it in the parent struct,
-	// since its another layer of indirection and viper
-	// can't handle it magically.
-	for i := 0; i < val.NumField(); i++ {
-		appCfg, ok := val.Field(i).Interface().(AppConfig)
-		if !ok {
-			continue
-		}
-
-		v.Unmarshal(&appCfg)
-		val.Field(i).Set(reflect.ValueOf(appCfg))
-	}
-
-	// Find *DBConfig and set object appropriately
-	for i := 0; i < val.NumField(); i++ {
-		dbCfg, ok := val.Field(i).Interface().(DBConfig)
-		if !ok {
-			continue
-		}
-
-		if dbCfg.DB == "postgres" {
-			if dbCfg.Port == 0 {
-				dbCfg.Port = 5432
-			}
-			if dbCfg.SSLMode == "" {
-				dbCfg.SSLMode = "require"
-			}
-		} else if dbCfg.DB == "mysql" {
-			if dbCfg.Port == 0 {
-				dbCfg.Port = 3306
-			}
-			if dbCfg.SSLMode == "" {
-				dbCfg.SSLMode = "true"
-			}
-		}
-
-		val.Field(i).Set(reflect.ValueOf(dbCfg))
-
-		// Finished working on the db cfg struct, so break out
-		break
-	}
-
-	return nil
-}
-
-// ValidateDBConfig returns an error if any of the required db config
-// fields are not set to their appropriate values.
-func ValidateDBConfig(cfg *DBConfig) error {
-
-	err := vala.BeginValidation().Validate(
-		vala.StringNotEmpty(cfg.DB, "db"),
-		vala.StringNotEmpty(cfg.User, "user"),
-		vala.StringNotEmpty(cfg.Host, "host"),
-		vala.Not(vala.Equals(cfg.Port, 0, "port")),
-		vala.StringNotEmpty(cfg.DBName, "dbname"),
-		vala.StringNotEmpty(cfg.SSLMode, "sslmode"),
-	).Check()
-	if err != nil {
-		return err
-	}
-
-	if cfg.DB != "postgres" && cfg.DB != "mysql" {
-		return errors.New("not a valid driver name")
-	}
-
-	return nil
 }

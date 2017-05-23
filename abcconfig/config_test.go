@@ -104,10 +104,6 @@ func TestBind(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// overwrite filename over in config.go
-	filename = file.Name()
-	SetEnvAppName("ABCWEB")
-
 	err = os.Setenv("ABCWEB_SERVER_TLS_CERT_FILE", "bananas")
 	if err != nil {
 		t.Error(err)
@@ -119,7 +115,10 @@ func TestBind(t *testing.T) {
 
 	cfg := &AppConfig{}
 	flags := NewFlagSet()
-	if _, err := Bind(flags, cfg); err != nil {
+	c := NewConfig("ABCWEB")
+	c.File = file.Name()
+
+	if _, err := c.Bind(flags, cfg); err != nil {
 		t.Error(err)
 	}
 
@@ -151,7 +150,7 @@ func TestBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := Bind(flags, cfg); err != nil {
+	if _, err := c.Bind(flags, cfg); err != nil {
 		t.Error(err)
 	}
 
@@ -171,7 +170,7 @@ func TestBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := Bind(flags, cfg); err != nil {
+	if _, err := c.Bind(flags, cfg); err != nil {
 		t.Error(err)
 	}
 	if cfg.Env != "cool" {
@@ -199,7 +198,7 @@ func TestBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := Bind(flags, custom); err != nil {
+	if _, err := c.Bind(flags, custom); err != nil {
 		t.Error(err)
 	}
 
@@ -258,7 +257,7 @@ func TestBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := Bind(flags, imbedded); err != nil {
+	if _, err := c.Bind(flags, imbedded); err != nil {
 		t.Error(err)
 	}
 
@@ -393,16 +392,14 @@ func TestCustomCommandExample(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// overwrite filename over in config.go
-	filename = file.Name()
-	SetEnvAppName("ABCWEB")
-
 	err = os.Setenv("ABCWEB_DB_DB", "postgres")
 	if err != nil {
 		t.Error(err)
 	}
 
 	cfg := &AppConfig{}
+	c := NewConfig("ABCWEB")
+	c.File = file.Name()
 
 	flags := &pflag.FlagSet{}
 	flags.BoolP("down", "d", false, "Roll back the database migration version by one")
@@ -413,7 +410,7 @@ func TestCustomCommandExample(t *testing.T) {
 	// Not compulsory, but allows users to pass in db settings to command
 	flags.AddFlagSet(NewDBFlagSet())
 
-	v, err := Bind(flags, cfg)
+	v, err := c.Bind(flags, cfg)
 	if err != nil {
 		t.Error(err)
 	}
