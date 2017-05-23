@@ -17,8 +17,9 @@ import (
 )
 
 var (
-	rgxMigrationVersion = regexp.MustCompile(`([0-9]+)_.+\.sql`)
-	ErrNoMigrations     = errors.New("no migrations found")
+	rgxMigrationVersion = regexp.MustCompile(`([0-9]+).*\.sql`)
+	// ErrNoMigrations occurs if no migration files can be found on disk
+	ErrNoMigrations = errors.New("no migrations found")
 )
 
 // GetConnStr returns a connection string for the database software used
@@ -40,8 +41,6 @@ func GetConnStr(cfg *abcconfig.DBConfig) (string, error) {
 // latest migration in the db/migrations folder. It also
 // returns the current database migration version number.
 func IsMigrated(cfg *abcconfig.DBConfig) (bool, int64, error) {
-	// Mimic success if there are no migrations
-	// because not every user will use migrations.
 	files, err := ioutil.ReadDir(filepath.Join("db", "migrations"))
 	if err != nil || len(files) == 0 {
 		return false, 0, ErrNoMigrations
@@ -57,6 +56,12 @@ func IsMigrated(cfg *abcconfig.DBConfig) (bool, int64, error) {
 		return false, version, err
 	}
 
+	return isLatestVersion(version, files), version, nil
+}
+
+// isLatestVersion loops over all passed in files and determines whether
+// dbVersion is the latest migration file version by checking filenames
+func isLatestVersion(dbVersion int64, files []os.FileInfo) bool {
 	highestVersion := int64(0)
 	for _, file := range files {
 		a := rgxMigrationVersion.FindStringSubmatch(file.Name())
@@ -75,11 +80,7 @@ func IsMigrated(cfg *abcconfig.DBConfig) (bool, int64, error) {
 		}
 	}
 
-	if highestVersion != version {
-		return false, version, nil
-	}
-
-	return true, version, nil
+	return highestVersion == dbVersion
 }
 
 // pgEnv returns a slice of the connection related environment variables
@@ -140,8 +141,8 @@ func mysqlPassFile(cfg *abcconfig.DBConfig) (string, error) {
 	return tmp.Name(), nil
 }
 
-// sqlTestdata executes the testdata.sql file SQL against the passed in test db.
-func sqlTestdata(cfg *abcconfig.DBConfig) error {
+// SQLTestdata executes the testdata.sql file SQL against the passed in test db.
+func SQLTestdata(cfg *abcconfig.DBConfig) error {
 	appPath, err := git.GetAppPath()
 	if err != nil {
 		return err
