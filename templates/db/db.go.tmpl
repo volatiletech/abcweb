@@ -3,11 +3,12 @@ package db
 import (
 	"database/sql"
 	
-	// mysql driver
-	_ "github.com/go-sql-driver/mysql"
-	// postgres driver
-	_ "github.com/lib/pq"
 	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/volatiletech/abcweb/abcdatabase"
+
+	// Import your database drivers below by uncommenting your relevant driver.
+	// _ "github.com/go-sql-driver/mysql"
+	// _ "github.com/lib/pq"
 )
 
 // DB is the global database handle to your config defined db
@@ -20,7 +21,7 @@ func InitDB(cfg *abcconfig.DBConfig) error {
 		return nil
 	}
 
-	connStr, err := GetConnStr(cfg)
+	connStr, err := abcdatabase.GetConnStr(cfg)
 	if err != nil {
 		return err
 	}
@@ -38,3 +39,23 @@ func InitDB(cfg *abcconfig.DBConfig) error {
 	return nil
 }
 
+// GoTestdata is a function that can be edited and used to insert testdata
+// into your test database after the migrations have finished executing
+// when running unit tests.
+//
+// This can be used as an alternative or addition to testdata.sql if you 
+// require go logic or would prefer to use your generated SQLBoiler 
+// model to perform db operations.
+//
+// To use this function just uncomment the code and perform your db operations
+// using the uncommented db handle which will be connected to the test database.
+func GoTestdata(driver string, conn string) error {
+	// db, err := sql.Open(driver, conn)
+	// if err != nil {
+	//	return err
+	// }
+	// defer db.Close()
+
+	// database operations here to insert testdata using above db handle
+	return nil
+}

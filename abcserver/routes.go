@@ -13,25 +13,30 @@ import (
 	"go.uber.org/zap"
 )
 
+// NotFound holds the state for the NotFound handler
 type NotFound struct {
 	Templates NotFoundTemplates
 	// The manifest file mappings
 	AssetsManifest map[string]string
 }
 
+// MethodNotAllowed holds the state for the MethodNotAllowed handler
 type MethodNotAllowed struct {
 	Templates MethodNotAllowedTemplates
 }
 
+// NotFoundTemplates for specific errors
 type NotFoundTemplates struct {
 	NotFound            string
 	InternalServerError string
 }
 
+// MethodNotAllowedTemplates for specific errors
 type MethodNotAllowedTemplates struct {
 	MethodNotAllowed string
 }
 
+// NewMethodNotAllowedHandler creates a new handler
 func NewMethodNotAllowedHandler() *MethodNotAllowed {
 	return &MethodNotAllowed{
 		Templates: MethodNotAllowedTemplates{
@@ -40,6 +45,7 @@ func NewMethodNotAllowedHandler() *MethodNotAllowed {
 	}
 }
 
+// NewNotFoundHandler creates a new handler
 func NewNotFoundHandler(manifest map[string]string) *NotFound {
 	return &NotFound{
 		Templates: NotFoundTemplates{
@@ -50,7 +56,8 @@ func NewNotFoundHandler(manifest map[string]string) *NotFound {
 	}
 }
 
-// NotFound handler is called if the requested route or asset cannot be found.
+// Handler is a wrapper that creates a new NotFound handler. The NotFound
+// handler is called if the requested route or asset cannot be found.
 // Since we cannot use Chi's FileServer because it does directory listings
 // we have to serve static assets (public folder) from the NotFound handler.
 //
@@ -152,10 +159,11 @@ func (n *NotFound) Handler(cfg abcconfig.ServerConfig, render abcrender.Renderer
 	}
 }
 
-// MethodNotAllowed handler is called when someone attempts an operation
+// Handler is a wrapper around the MethodNotAllowed handler.
+// The MethodNotAllowed handler is called when someone attempts an operation
 // against a route that does not support that operation, for example
 // attempting a POST against a route that only supports a GET.
-func (m *MethodNotAllowed) NewMethodNotAllowedHandler(render abcrender.Renderer) http.HandlerFunc {
+func (m *MethodNotAllowed) Handler(render abcrender.Renderer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the Request ID scoped logger
 		log := abcmiddleware.Log(r)

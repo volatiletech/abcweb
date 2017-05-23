@@ -57,7 +57,7 @@ func testMainMigrations(m *testing.M) int {
 		}
 
 		// Execute database migrations
-		count, err := db.Setup(cfg.DB)
+		count, err := abcdatabase.SetupTestSuite(cfg.DB, GoTestdata)
 		if err != nil {
 			fmt.Printf("TestMain Setup error: %s\n", err)
 			return 3

@@ -30,7 +30,7 @@ func (s serverErrLogger) Write(b []byte) (int, error) {
 // StartServer starts the web server on the specified port, and can be
 // gracefully shut down by sending an os.Interrupt signal to the server.
 // This is a blocking call.
-func StartServer(cfg *abcconfig.ServerConfig, router *chi.Mux, logger *zap.Logger) error {
+func StartServer(cfg abcconfig.ServerConfig, router *chi.Mux, logger *zap.Logger) error {
 	var err error
 	server := http.Server{
 		ReadTimeout:  cfg.ReadTimeout,
@@ -88,7 +88,7 @@ func StartServer(cfg *abcconfig.ServerConfig, router *chi.Mux, logger *zap.Logge
 }
 
 // Redirect listens on the non-https port, and redirects all requests to https
-func Redirect(cfg *abcconfig.ServerConfig, logger *zap.Logger) {
+func Redirect(cfg abcconfig.ServerConfig, logger *zap.Logger) {
 	var err error
 
 	// Get https port from TLS Bind

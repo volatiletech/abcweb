@@ -1,6 +1,8 @@
 package abcdatabase
 
 import (
+	"bytes"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,8 +24,13 @@ var (
 	ErrNoMigrations = errors.New("no migrations found")
 )
 
+// TestdataFunc is the function signature for the sql testdata function
+// that performs database operations once the test suite is initialized
+// with migrations and the sql testdata file.
+type TestdataFunc func(driver, conn string) error
+
 // GetConnStr returns a connection string for the database software used
-func GetConnStr(cfg *abcconfig.DBConfig) (string, error) {
+func GetConnStr(cfg abcconfig.DBConfig) (string, error) {
 	if len(cfg.DB) == 0 {
 		return "", errors.New("db field in config.toml must be provided")
 	}
@@ -37,10 +44,108 @@ func GetConnStr(cfg *abcconfig.DBConfig) (string, error) {
 	return "", fmt.Errorf("cannot get connection string for unknown database %q", cfg.DB)
 }
 
+// SetupTestSuite executes the migrations "up" against the passed in database
+// and also inserts the test data defined in testdata.sql and returns the
+// number of migrations run.
+//
+// SetupTestSuite is used primarily as a testing helper, and is called in
+// controllers_test.go to set up the database state for the controller tests.
+func SetupTestSuite(cfg abcconfig.DBConfig, testdata TestdataFunc) (int, error) {
+	var err error
+
+	appPath, err := git.GetAppPath()
+	if err != nil {
+		return 0, err
+	}
+
+	// copy cfg into cfgNew
+	cfgNew := *cfg
+
+	// Drop and create the database if it exists so each test run starts
+	// on a clean slate
+	if cfg.DB == "postgres" {
+		// Set the db to the default postgres db so we have something to connect to
+		// to create a new database or drop old databases
+		cfgNew.DBName = "postgres"
+
+		connStr, err := GetConnStr(cfgNew)
+		if err != nil {
+			return 0, err
+		}
+
+		db, err := sql.Open(cfgNew.DB, connStr)
+		if err != nil {
+			return 0, err
+		}
+
+		_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", cfg.DBName))
+		if err != nil {
+			return 0, errors.Wrap(err, "drop if exists failed")
+		}
+
+		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", cfg.DBName))
+		if err != nil {
+			return 0, errors.Wrap(err, "create database failed")
+		}
+
+		db.Close()
+	} else if cfg.DB == "mysql" {
+		cfgNew.DBName = ""
+
+		connStr, err := GetConnStr(cfgNew)
+		if err != nil {
+			return 0, err
+		}
+
+		db, err := sql.Open(cfgNew.DB, connStr)
+		if err != nil {
+			return 0, err
+		}
+
+		_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", cfg.DBName))
+		if err != nil {
+			return 0, errors.Wrap(err, "drop if exists failed")
+		}
+
+		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", cfg.DBName))
+		if err != nil {
+			return 0, errors.Wrap(err, "create database failed")
+		}
+
+		db.Close()
+	}
+
+	connStr, err := GetConnStr(cfg)
+	if err != nil {
+		return 0, err
+	}
+
+	count, err := mig.Up(cfg.DB, connStr, filepath.Join(appPath, "db", "migrations"))
+	if err != nil {
+		return count, err
+	}
+
+	testdataFile := filepath.Join(appPath, "db", "testdata.sql")
+
+	contents, err := ioutil.ReadFile(testdataFile)
+	if err == nil && len(contents) > 0 {
+		if err := ExecuteScript(cfg, contents); err != nil {
+			return count, err
+		}
+	}
+
+	// call the users testdata handler func if provided
+	if testdata != nil {
+		err = testdata(cfg.DB, connStr)
+	}
+
+	return count, err
+}
+
 // IsMigrated returns true if the database is migrated to the
 // latest migration in the db/migrations folder. It also
 // returns the current database migration version number.
-func IsMigrated(cfg *abcconfig.DBConfig) (bool, int64, error) {
+func IsMigrated(cfg abcconfig.DBConfig) (bool, int64, error) {
 	files, err := ioutil.ReadDir(filepath.Join("db", "migrations"))
 	if err != nil || len(files) == 0 {
 		return false, 0, ErrNoMigrations
@@ -84,7 +189,7 @@ func isLatestVersion(dbVersion int64, files []os.FileInfo) bool {
 }
 
 // pgEnv returns a slice of the connection related environment variables
-func pgEnv(cfg *abcconfig.DBConfig, passFilePath string) []string {
+func pgEnv(cfg abcconfig.DBConfig, passFilePath string) []string {
 	return []string{
 		fmt.Sprintf("PGHOST=%s", cfg.Host),
 		fmt.Sprintf("PGPORT=%d", cfg.Port),
@@ -95,7 +200,7 @@ func pgEnv(cfg *abcconfig.DBConfig, passFilePath string) []string {
 
 // pgPassFile creates a file in the temp directory containing the connection
 // details and password for the database to be passed into the mysql cmdline cmd
-func pgPassFile(cfg *abcconfig.DBConfig) (string, error) {
+func pgPassFile(cfg abcconfig.DBConfig) (string, error) {
 	tmp, err := ioutil.TempFile("", "pgpass")
 	if err != nil {
 		return "", errors.New("failed to create postgres pass file")
@@ -113,7 +218,7 @@ func pgPassFile(cfg *abcconfig.DBConfig) (string, error) {
 
 // mysqlPassFile creates a file in the temp directory containing the connection
 // details and password for the database to be passed into the mysql cmdline cmd
-func mysqlPassFile(cfg *abcconfig.DBConfig) (string, error) {
+func mysqlPassFile(cfg abcconfig.DBConfig) (string, error) {
 	tmp, err := ioutil.TempFile("", "mysqlpass")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create mysql pass file")
@@ -141,18 +246,14 @@ func mysqlPassFile(cfg *abcconfig.DBConfig) (string, error) {
 	return tmp.Name(), nil
 }
 
-// SQLTestdata executes the testdata.sql file SQL against the passed in test db.
-func SQLTestdata(cfg *abcconfig.DBConfig) error {
+// ExecuteScript executes the passed in SQL script against the passed in db
+func ExecuteScript(cfg abcconfig.DBConfig, script []byte) error {
 	appPath, err := git.GetAppPath()
 	if err != nil {
 		return err
 	}
 
-	fh, err := os.Open(filepath.Join(appPath, "db", "testdata.sql"))
-	if err != nil {
-		return fmt.Errorf("cannot open testdata.sql file: %v", err)
-	}
-	defer fh.Close()
+	rdr := bytes.NewReader(script)
 
 	if cfg.DB == "postgres" {
 		passFilePath, err := pgPassFile(cfg)
@@ -162,7 +263,7 @@ func SQLTestdata(cfg *abcconfig.DBConfig) error {
 		defer os.Remove(passFilePath)
 
 		cmd := exec.Command("psql", cfg.DBName, "-v", "ON_ERROR_STOP=1")
-		cmd.Stdin = fh
+		cmd.Stdin = rdr
 		cmd.Env = append(os.Environ(), pgEnv(cfg, passFilePath)...)
 
 		res, err := cmd.CombinedOutput()
@@ -179,7 +280,7 @@ func SQLTestdata(cfg *abcconfig.DBConfig) error {
 		defer os.Remove(passFile)
 
 		cmd := exec.Command("mysql", fmt.Sprintf("--defaults-file=%s", passFile), "--database", cfg.DBName)
-		cmd.Stdin = fh
+		cmd.Stdin = rdr
 
 		res, err := cmd.CombinedOutput()
 		if err != nil {
@@ -189,5 +290,5 @@ func SQLTestdata(cfg *abcconfig.DBConfig) error {
 		return err
 	}
 
-	return fmt.Errorf("cannot import sql testdata, incompatible database %q", cfg.DB)
+	return fmt.Errorf("cannot execute sql script, incompatible database %q", cfg.DB)
 }
