@@ -2,43 +2,130 @@ package abcserver
 
 import (
 	"context"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/nullbio/lolwtf/rendering"
+	"go.uber.org/zap"
+
+	"github.com/unrolled/render"
 	"github.com/volatiletech/abcmiddleware"
+	"github.com/volatiletech/abcrender"
 	"github.com/volatiletech/abcweb/abcconfig"
 )
+
+// setup the temp dir public folder to give the NotFound handler files
+// to work with
+func testSetupAssets() (string, error) {
+	// this is the testing public dir
+	dir, err := ioutil.TempDir("", "handlertestspublic")
+	if err != nil {
+		return dir, err
+	}
+
+	// make robots.txt non-compiled asset file
+	err = ioutil.WriteFile(filepath.Join(dir, "robots.txt"), []byte{}, 0755)
+	if err != nil {
+		return dir, err
+	}
+
+	err = os.MkdirAll(filepath.Join(dir, "assets", "css"), 0755)
+	if err != nil {
+		return dir, err
+	}
+
+	// make main.css compiled asset file
+	err = ioutil.WriteFile(filepath.Join(dir, filepath.FromSlash("assets/css"), "main.css"), []byte{}, 0755)
+	if err != nil {
+		return dir, err
+	}
+
+	return dir, nil
+}
+
+// setup the temp dir templates folder to give the NotFound handler files
+// to work with
+func testSetupTemplates() (string, error) {
+	// this is the testing public dir
+	dir, err := ioutil.TempDir("", "handlerteststemplates")
+	if err != nil {
+		return dir, err
+	}
+
+	err = os.MkdirAll(filepath.Join(dir, "errors"), 0755)
+	if err != nil {
+		return dir, err
+	}
+
+	err = ioutil.WriteFile(filepath.Join(dir, "errors", "404.tmpl"), []byte{}, 0755)
+	if err != nil {
+		return dir, err
+	}
+
+	err = ioutil.WriteFile(filepath.Join(dir, "errors", "405.tmpl"), []byte{}, 0755)
+	if err != nil {
+		return dir, err
+	}
+
+	err = ioutil.WriteFile(filepath.Join(dir, "errors", "500.tmpl"), []byte{}, 0755)
+	if err != nil {
+		return dir, err
+	}
+
+	return dir, nil
+}
 
 func TestNotFound(t *testing.T) {
 	t.Parallel()
 
-	// Only run the non-compiled assets hotpath test if it can
-	// find the robots.txt asset file to run against
-	_, err := os.Stat(filepath.FromSlash("../public/robots.txt"))
+	assetsDir, err := testSetupAssets()
 	if err != nil {
-		t.Skip("cannot find robots.txt asset to run against, so skipping NotFound test")
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(assetsDir)
+
+	templatesDir, err := testSetupTemplates()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(templatesDir)
+
+	// create config
+	serverCfg := abcconfig.ServerConfig{
+		PublicPath: assetsDir,
 	}
 
-	state := &State{}
-	state.AppConfig = &abcconfig.AppConfig{
-		RenderRecompile: true,
-		PublicPath:      filepath.FromSlash("../public"),
+	// creater render
+	render := &abcrender.Render{
+		Render: render.New(render.Options{
+			Directory:                 templatesDir,
+			Extensions:                []string{".tmpl"},
+			IsDevelopment:             true,
+			DisableHTTPErrorRendering: true,
+		}),
 	}
-	state.InitLogger()
-	state.Render = rendering.InitRenderer(state.AppConfig, filepath.FromSlash("../templates"))
+
+	// create logger
+	log, err := zap.NewDevelopment()
+	if err != nil {
+		t.Error(err)
+	}
 
 	// test the non-compiled assets hotpath first
 	r := httptest.NewRequest("GET", "/robots.txt", nil)
 	w := httptest.NewRecorder()
 
-	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, state.Log))
+	n := NewNotFoundHandler(nil)
+	notFound := n.Handler(serverCfg, render)
+
+	// set the logger on the context so calls to abcmiddleware.Log don't fail
+	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, log))
 
 	// Call the handler
-	state.NotFound(w, r)
+	notFound(w, r)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("expected http 200, but got http %d", w.Code)
@@ -48,21 +135,15 @@ func TestNotFound(t *testing.T) {
 		t.Error("did not expect a redirect, but got one to:", loc.String())
 	}
 
-	// Only run the compiled assets hotpath test if it can
-	// find the assets/main.css asset file to run against
-	_, err = os.Stat(filepath.FromSlash("../public/assets/css/main.css"))
-	if err != nil {
-		t.Skip("cannot find main.css asset to run against, so skipping NotFound test")
-	}
-
 	// test the compiled assets hotpath with non-manifest
 	r = httptest.NewRequest("GET", "/assets/css/main.css", nil)
 	w = httptest.NewRecorder()
 
-	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, state.Log))
+	// set the logger on the context so calls to abcmiddleware.Log don't fail
+	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, log))
 
 	// Call the handler
-	state.NotFound(w, r)
+	notFound(w, r)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("expected http 200, but got http %d", w.Code)
@@ -76,15 +157,18 @@ func TestNotFound(t *testing.T) {
 	r = httptest.NewRequest("GET", "/assets/css/main-manifestmagic.css", nil)
 	w = httptest.NewRecorder()
 
-	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, state.Log))
+	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, log))
 
 	// Set asset manifest to test manifest hotpath
-	rendering.AssetsManifest = map[string]string{
+	manifest := map[string]string{
 		"css/main-manifestmagic.css": "css/main.css",
 	}
 
+	n = NewNotFoundHandler(manifest)
+	notFound = n.Handler(serverCfg, render)
+
 	// Call the handler
-	state.NotFound(w, r)
+	notFound(w, r)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("expected http 200, but got http %d", w.Code)

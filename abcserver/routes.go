@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nullbio/lolwtf/rendering"
 	"github.com/volatiletech/abcmiddleware"
 	"github.com/volatiletech/abcrender"
 	"github.com/volatiletech/abcweb/abcconfig"
@@ -16,6 +15,8 @@ import (
 
 type NotFound struct {
 	Templates NotFoundTemplates
+	// The manifest file mappings
+	AssetsManifest map[string]string
 }
 
 type MethodNotAllowed struct {
@@ -39,12 +40,13 @@ func NewMethodNotAllowedHandler() *MethodNotAllowed {
 	}
 }
 
-func NewNotFoundHandler() *NotFound {
+func NewNotFoundHandler(manifest map[string]string) *NotFound {
 	return &NotFound{
 		Templates: NotFoundTemplates{
 			NotFound:            "errors/404",
 			InternalServerError: "errors/500",
 		},
+		AssetsManifest: manifest,
 	}
 }
 
@@ -88,7 +90,7 @@ func (n *NotFound) Handler(cfg abcconfig.ServerConfig, render abcrender.Renderer
 			// Look up the gzip version of the asset in the manifest
 			// if the browser accepts gzip encoding
 			if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-				fpath, ok = rendering.AssetsManifest[fname+".gz"]
+				fpath, ok = n.AssetsManifest[fname+".gz"]
 				if ok {
 					w.Header().Set("Content-Encoding", "gzip")
 				}
@@ -96,7 +98,7 @@ func (n *NotFound) Handler(cfg abcconfig.ServerConfig, render abcrender.Renderer
 
 			// If cannot find gzip version, attempt to serve regular version
 			if !ok {
-				fpath, ok = rendering.AssetsManifest[fname]
+				fpath, ok = n.AssetsManifest[fname]
 			}
 
 			// If cannot find regular version in manifest, attempt to serve
