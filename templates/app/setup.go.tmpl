@@ -36,8 +36,14 @@ type App struct {
 // them as individual members opposed to imbedding AppConfig, 
 // i.e: Server abcconfig.ServerConfig `toml:"server" mapstructure:"server"`
 type AppConfig struct {
+	{{if not .NoDB -}}
 	// imbed AppConfig
 	abcconfig.AppConfig
+	{{- else -}}
+	// The active environment section
+	Env string `toml:"env" mapstructure:"env" env:"ENV"`
+	Server abcconfig.ServerConfig `toml:"server" mapstructure:"server"`
+	{{- end}}
 
 	// Custom configuration can be added here.
 }

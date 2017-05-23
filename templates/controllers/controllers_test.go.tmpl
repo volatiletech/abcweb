@@ -35,36 +35,28 @@ func TestMain(m *testing.M) {
 // defined in config.toml and executes testdata.sql, then runs the unit tests.
 // It returns a status code to be used with os.Exit(). Codes > 0 indicate error.
 func testMainMigrations(m *testing.M) int {
-	// Load the database config from test env
-	v := viper.New()
-	abcconfig.ConfigureViper(v, filepath.FromSlash("../config.toml"))
- 
-	v = v.Sub("test")
-	if v == nil {
-		fmt.Println("TestMain cannot load environment \"test\" from config.toml")
+	c := &abcconfig.Config{
+		File: filepath.FromSlash("../config.toml"),
+		LoadEnv: "test",
+	}
+
+	cfg := &AppConfig{}
+
+	// Load the database config from test env into cfg
+	v, err := c.Bind(nil, cfg)
+	if err != nil {
+		fmt.Printf("TestMain cannot load environment \"test\" from config.toml: %s\n", err)
 		return 1
 	}
 
-	cfg := abcconfig.LoadAppConfig(v)
-
-	if len(cfg.DB.User) == 0 {
-		fmt.Println("No user defined in config.toml, skipping database migrations.")
-	} else {
-		err := abcconfig.ValidateDBConfig(cfg.DB)
-		if err != nil {
-			fmt.Printf("Invalid DB Configuration: %s\n", err)
-			return 2
-		}
-
-		// Execute database migrations
-		count, err := abcdatabase.SetupTestSuite(cfg.DB, GoTestdata)
-		if err != nil {
-			fmt.Printf("TestMain Setup error: %s\n", err)
-			return 3
-		}
-
-		fmt.Printf("TestMain Setup ran %d migrations.\n", count)
+	// Execute database migrations
+	count, err := abcdatabase.SetupTestSuite(cfg.DB, db.GoTestdata)
+	if err != nil {
+		fmt.Printf("TestMain Setup error: %s\n", err)
+		return 2
 	}
+
+	fmt.Printf("TestMain Setup ran %d migrations.\n", count)
 
 	// Run the package tests
 	return m.Run()
