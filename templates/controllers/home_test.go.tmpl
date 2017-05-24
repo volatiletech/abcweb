@@ -11,15 +11,15 @@ func TestMainHome(t *testing.T) {
 
 	// Initialize the Main controller struct with a Root struct mock
 	m := Main{
-		Root: NewRootMock("../templates"),
+		Root: newRootMock("../templates"),
 	}
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", nil)
 
 	// Set the logger on the request context so calls to Log() don't panic.
-	// This is only required if our controller calls Log() directly.
-	// Usually the Errors middleware will handle the logging calls.
+	// This is only required if our controller calls Log().
+	// In lots of cases the Errors middleware will handle the logging calls instead.
 	// r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, m.Log))
 
 	// Call the controller with the httptest recorder and httptest request

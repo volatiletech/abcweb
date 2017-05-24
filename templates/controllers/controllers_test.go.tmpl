@@ -16,9 +16,9 @@ import (
 	{{- end}}
 )
 
-// NewRootMock returns a Root struct with all members initialized to
+// newRootMock returns a Root struct with all members initialized to
 // test compatible mock values
-func NewRootMock(templatesDir string) Root {
+func newRootMock(templatesDir string) Root {
 	{{if not .NoSessions -}}
 	// Set up the sessions overseer
 	opts := abcsessions.NewCookieOptions()
@@ -97,19 +97,3 @@ func testMainMigrations(m *testing.M) int {
 	return m.Run()
 }
 {{- end}}
-
-func TestNewRootMock(t *testing.T) {
-	t.Parallel()
-
-	root := NewRootMock("test")
-
-	if root.Log == nil {
-		t.Error("expected logger to be set")
-	}
-	if root.Render == nil {
-		t.Error("expected renderer to be set")
-	}
-	if root.Session == nil {
-		t.Error("expected sessions overseer to be set")
-	}
-}
