@@ -57,7 +57,6 @@ func init() {
 	newCmd.Flags().BoolP("no-sessions", "s", false, "Skip support for http sessions")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("no-http-redirect", "", false, "Disable the http -> https redirect when using TLS")
-	newCmd.Flags().BoolP("no-request-id", "", false, "Disable the Request ID middleware and Request ID logging")
 	newCmd.Flags().BoolP("skip-npm-install", "", false, "Skip running npm install command")
 	newCmd.Flags().BoolP("skip-govendor-sync", "", false, "Skip running govendor sync command")
 	newCmd.Flags().BoolP("skip-git-init", "", false, "Skip running git init command")
@@ -81,7 +80,6 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		NoTLSCerts:       viper.GetBool("no-tls-certs"),
 		NoReadme:         viper.GetBool("no-readme"),
 		NoConfig:         viper.GetBool("no-config"),
-		NoRequestID:      viper.GetBool("no-request-id"),
 		ForceOverwrite:   viper.GetBool("force-overwrite"),
 		NoHTTPRedirect:   viper.GetBool("no-http-redirect"),
 		SkipNPMInstall:   viper.GetBool("skip-npm-install"),

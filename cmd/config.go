@@ -42,7 +42,6 @@ type newConfig struct {
 	NoReadme         bool   `toml:"no-readme"`
 	NoConfig         bool   `toml:"no-config"`
 	NoSessions       bool   `toml:"no-sessions"`
-	NoRequestID      bool   `toml:"no-request-id"`
 	ForceOverwrite   bool   `toml:"force-overwrite"`
 	NoHTTPRedirect   bool   `toml:"no-http-redirect"`
 	SkipNPMInstall   bool   `toml:"skip-npm-install"`

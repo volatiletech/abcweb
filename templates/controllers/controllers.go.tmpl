@@ -14,6 +14,14 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// The list of error types that can be returned by your controllers.
+// These can be bound in routes/routes.go to custom error handlers.
+// These error types trigger actions in the errors middleware (routes/routes.go)
+var (
+	ErrUnauthorized = errors.New("not authorized")
+	ErrForbidden    = errors.New("access is forbidden")
+)
+
 // Root struct exposes useful variables to every controller route handler.
 // If you wanted to pass additional objects to each controller route handler
 // you can add them here, and then assign them in app/routes.go where the
@@ -33,46 +41,9 @@ type Main struct {
 	Root
 }
 
-{{if not .NoRequestID -}}
 // Log returns the Request ID scoped logger from the request Context
 // and panics if it cannot be found.
 // This is a convenience wrapper -- Log() is nicer than abcmiddleware.Log()
 func Log(r *http.Request) *zap.Logger {
 	return abcmiddleware.Log(r)
-}
-{{- end}}
-
-// NewRootMock returns a Root struct with all members initialized to
-// test compatible mock values
-func NewRootMock(templatesDir string) Root {
-	{{if not .NoSessions -}}
-	// Set up the sessions overseer
-	opts := abcsessions.NewCookieOptions()
-	opts.Secure = false
-	mem, err := abcsessions.NewDefaultMemoryStorer()
-	if err != nil {
-		panic(err)
-	}
-	{{- end}}
-
-	// Set up zap logger. Use zap.NewNop() if you wish to disable logging.
-	zapCfg := zap.NewDevelopmentConfig()
-	zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	zapCfg.OutputPaths = []string{"stdout"}
-	log, err := zapCfg.Build()
-	if err != nil {
-		panic(err)
-	}
-
-	// Set up the template renderer
-	appCfg := &abcconfig.AppConfig{}
-	appCfg.Server.RenderRecompile = true
-
-	return Root{
-		{{if not .NoSessions -}}
-		Session: abcsessions.NewStorageOverseer(opts, mem),
-		{{- end}}
-		Log:     log,
-		Render:  rendering.InitRenderer(appCfg, templatesDir),
-	}
 }

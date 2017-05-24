@@ -40,7 +40,13 @@ func NewRouter(a *app.App, middlewares []http.Handler) *chi.Mux {
 	s.Router.MethodNotAllowed(methodNotAllowed.Handler(a.Render))
 
 	// error middleware handles controller errors
-	e := middleware.NewErrorHandler(a.Render)
+	errMgr := abcmiddleware.NewErrorManager(a.Render)
+	
+	errMgr.Add(NewError(controllers.ErrUnauthorized, http.StatusUnauthorized, "errors/401", nil))
+	errMgr.Add(NewError(controllers.ErrForbidden, http.StatusForbidden, "errors/403", nil))
+
+	// Make a pointer to the errMgr.Errors function so it's easier to call
+	e := errMgr.Errors
 
 	main := controllers.Main{Root: root}
 	s.Router.Get("/", e(main.Home))

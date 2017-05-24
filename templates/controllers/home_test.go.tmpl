@@ -17,12 +17,10 @@ func TestMainHome(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/", nil)
 
-	{{if not .NoRequestID -}}
 	// Set the logger on the request context so calls to Log() don't panic.
 	// This is only required if our controller calls Log() directly.
 	// Usually the Errors middleware will handle the logging calls.
 	// r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, m.Log))
-	{{- end}}
 
 	// Call the controller with the httptest recorder and httptest request
 	err := m.Home(w, r)
