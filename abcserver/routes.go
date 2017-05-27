@@ -94,18 +94,20 @@ func (n *NotFound) Handler(cfg abcconfig.ServerConfig, render abcrender.Renderer
 			fname := strings.TrimPrefix(reqPath, "/assets/")
 
 			ok := false
-			// Look up the gzip version of the asset in the manifest
-			// if the browser accepts gzip encoding
-			if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-				fpath, ok = n.AssetsManifest[fname+".gz"]
-				if ok {
-					w.Header().Set("Content-Encoding", "gzip")
+			if cfg.AssetsManifest {
+				// Look up the gzip version of the asset in the manifest
+				// if the browser accepts gzip encoding
+				if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+					fpath, ok = n.AssetsManifest[fname+".gz"]
+					if ok {
+						w.Header().Set("Content-Encoding", "gzip")
+					}
 				}
-			}
 
-			// If cannot find gzip version, attempt to serve regular version
-			if !ok {
-				fpath, ok = n.AssetsManifest[fname]
+				// If cannot find gzip version, attempt to serve regular version
+				if !ok {
+					fpath, ok = n.AssetsManifest[fname]
+				}
 			}
 
 			// If cannot find regular version in manifest, attempt to serve

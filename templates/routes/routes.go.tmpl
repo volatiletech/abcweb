@@ -32,7 +32,7 @@ func NewRouter(a *app.App, middlewares []http.Handler) *chi.Mux {
 	}
 	
 	// 404 route handler
-	notFound := abcserver.NewNotFoundHandler()
+	notFound := abcserver.NewNotFoundHandler(a.AssetsManifest)
 	s.Router.NotFound(notFound.Handler(a.Server, a.Render))
 
 	// 405 route handler

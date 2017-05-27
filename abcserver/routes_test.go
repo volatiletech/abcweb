@@ -163,6 +163,7 @@ func TestNotFound(t *testing.T) {
 	manifest := map[string]string{
 		"css/main-manifestmagic.css": "css/main.css",
 	}
+	serverCfg.AssetsManifest = true
 
 	n = NewNotFoundHandler(manifest)
 	notFound = n.Handler(serverCfg, render)

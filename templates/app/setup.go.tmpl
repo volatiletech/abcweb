@@ -26,6 +26,7 @@ type App struct {
 	{{if not .NoSessions -}}
 	Session abcsessions.Overseer
 	{{- end}}
+	AssetsManifest map[string]string
 }
 
 // AppConfig holds the configuration for the app.

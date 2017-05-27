@@ -18,6 +18,15 @@ func Setup(a *app.App, flags *pflag.FlagSet) error {
 	if _, err := abcconfig.Bind(flags, a.Config); err != nil {
 		return errors.Wrap(err, "cannot bind app config")
 	}
+
+	// Set the AssetsManifest cache to the contents of the assets 
+	// manifest in the public directory
+	if a.Config.Server.AssetsManifest {
+		a.AssetsManifest, err := abcrender.GetManifest(a.Config.Server.PublicPath)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("cannot get assets manifest cache at path %q", a.Config.Server.PublicPath))
+		}
+	}
 	
 	if a.Log, err := app.NewLogger(a.Config); err != nil {
 		return errors.Wrap(err, "cannot create new logger")
@@ -29,16 +38,21 @@ func Setup(a *app.App, flags *pflag.FlagSet) error {
 	}
 	{{- end}}
 
-	// Set the AssetsManifest global variable cache to the contents of the
-	// assets manifest in the public directory
-	if a.Config.Server.AssetsManifest {
-		rendering.AssetsManifest, err = rendering.GetManifest(a.Config.Server.PublicPath)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("cannot get assets manifest cache at path %q", a.Config.Server.PublicPath))
-		}
+	// Get the default render template helpers
+	appHelpers := abcrender.AppHelpers(a.AssetsManifest)
+	// Append the custom render template helpers
+	appHelpers = append(appHelpers, rendering.CustomHelpers(a)...)
+
+	renderOpts := render.Options{
+		Directory:     "templates",
+		Layout:        "layouts/main",
+		Extensions:    []string{".tmpl", ".html"},
+		IsDevelopment: a.Config.Server.RenderRecompile,
+		Funcs:			appHelpers,
+		DisableHTTPErrorRendering: true,
 	}
 
-	a.Render = rendering.InitRenderer(a.Config, "templates")
+	a.Render = abcrender.New(renderOpts, a.AssetsManifest) 
 	a.Router = NewRouter(a, app.NewMiddlewares(a.Config, a.Log))
 
 	if err := db.InitDB(a.Config.DB); err != nil {
