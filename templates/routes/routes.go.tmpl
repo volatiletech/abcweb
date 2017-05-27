@@ -2,24 +2,19 @@ package routes
 
 import (
 	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 
-	"go.uber.org/zap"
-
-	"{{.ImportPath}}/rendering"
 	"{{.ImportPath}}/controllers"
-	"{{.ImportPath}}/middleware"
-	"github.com/volatiletech/abcmiddleware"
+	"{{.ImportPath}}/app"
+	"github.com/pressly/chi"
+	"github.com/volatiletech/abcweb/abcmiddleware"
+	"github.com/volatiletech/abcweb/abcserver"
 )
 
 // NewRouter creates a new router
-func NewRouter(a *app.App, middlewares []http.Handler) *chi.Mux {
+func NewRouter(a *app.App, middlewares []abcmiddleware.MiddlewareFunc) *chi.Mux {
 	router := chi.NewRouter()
 
-	for middleware := range middlewares {
+	for _, middleware := range middlewares {
 		router.Use(middleware)
 	}
 
@@ -33,21 +28,23 @@ func NewRouter(a *app.App, middlewares []http.Handler) *chi.Mux {
 	
 	// 404 route handler
 	notFound := abcserver.NewNotFoundHandler(a.AssetsManifest)
-	s.Router.NotFound(notFound.Handler(a.Server, a.Render))
+	router.NotFound(notFound.Handler(a.Config.Server, a.Render))
 
 	// 405 route handler
 	methodNotAllowed := abcserver.NewMethodNotAllowedHandler()
-	s.Router.MethodNotAllowed(methodNotAllowed.Handler(a.Render))
+	router.MethodNotAllowed(methodNotAllowed.Handler(a.Render))
 
 	// error middleware handles controller errors
 	errMgr := abcmiddleware.NewErrorManager(a.Render)
 	
-	errMgr.Add(NewError(controllers.ErrUnauthorized, http.StatusUnauthorized, "errors/401", nil))
-	errMgr.Add(NewError(controllers.ErrForbidden, http.StatusForbidden, "errors/403", nil))
+	errMgr.Add(abcmiddleware.NewError(controllers.ErrUnauthorized, http.StatusUnauthorized, "errors/401", nil))
+	errMgr.Add(abcmiddleware.NewError(controllers.ErrForbidden, http.StatusForbidden, "errors/403", nil))
 
 	// Make a pointer to the errMgr.Errors function so it's easier to call
 	e := errMgr.Errors
 
 	main := controllers.Main{Root: root}
-	s.Router.Get("/", e(main.Home))
+	router.Get("/", e(main.Home))
+
+	return router
 }

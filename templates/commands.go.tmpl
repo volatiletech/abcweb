@@ -6,12 +6,12 @@ import (
 	"os"
 
 	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/volatiletech/abcweb/abcserver"
+	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/volatiletech/abcweb/abcdatabase"
 	"{{.ImportPath}}/app"
-	"{{.ImportPath}}/db"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/mig"
-	"{{.ImportPath}}/rendering"
-	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +41,9 @@ func migrateSetup(a *app.App) {
 		Use:   "migrate",
 		Short: "Run your database migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			v, err := abcconfig.Bind(cmd.Flags(), a.Config)
+			c := abcconfig.NewConfig("")
+
+			v, err := c.Bind(cmd.Flags(), a.Config)
 			if err != nil {
 				return errors.Wrap(err, "cannot bind app config")
 			}
@@ -50,12 +52,12 @@ func migrateSetup(a *app.App) {
 				return errors.Wrap(err, "could not find migrations folder")
 			}
 
-			connStr, err := db.GetConnStr(a.Config.DB)
+			connStr, err := abcdatabase.GetConnStr(a.Config.DB)
 			if err != nil {
 				return errors.Wrap(err, "could not create connection string")
 			}
 
-			if v.Get("down") {
+			if v.GetBool("down") {
 				name, err := mig.Down(a.Config.DB.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig down failed")

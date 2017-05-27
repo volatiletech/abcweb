@@ -1,12 +1,12 @@
 package app
 
 import (
-	"github.com/volatiletech/abcweb/abcconfig"
 	{{if not .NoSessions -}}
-	"github.com/volatiletech/abcsessions"
+	"github.com/volatiletech/abcweb/abcsessions"
 	{{- end}}
-	"github.com/volatiletech/abcmiddleware"
-	"github.com/volatiletech/abcrender"
+	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/volatiletech/abcweb/abcmiddleware"
+	"github.com/volatiletech/abcweb/abcrender"
 	"github.com/pressly/chi"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -52,13 +52,12 @@ type AppConfig struct {
 // NewApp returns an initialized App object
 func NewApp() *App {
 	return &App{
-		AppConfig: abcconfig.AppConfig{},
+		Config: &AppConfig{},
 	}
 }
 
 // NewLogger returns a new zap logger
 func NewLogger(cfg *AppConfig) (*zap.Logger, error) {
-	var err error
 	var zapCfg zap.Config
 
 	// JSON logging for production. Should be coupled with a log analyzer
@@ -79,7 +78,7 @@ func NewLogger(cfg *AppConfig) (*zap.Logger, error) {
 
 {{if not .NoSessions -}}
 // NewSessions returns a new abcsessions overseer
-func NewSessions(cfg *AppConfig) abcsessions.Overseer {
+func NewSessions(cfg *AppConfig) (abcsessions.Overseer, error) {
 	// Configure cookie options
 	opts := abcsessions.NewCookieOptions()
 	// If not using HTTPS, disable cookie secure flag
@@ -94,13 +93,13 @@ func NewSessions(cfg *AppConfig) abcsessions.Overseer {
 		{{- else if eq .DevStorer "memory" -}}
 		storer, err := abcsessions.NewDefaultMemoryStorer()
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		overseer = abcsessions.NewStorageOverseer(opts, storer)
 		{{- else if eq .DevStorer "disk" -}}
 		storer, err := abcsessions.NewDefaultDiskStorer("{{randString 8}}")
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		storer.StartCleaner()
 		overseer = abcsessions.NewStorageOverseer(opts, storer)
@@ -108,7 +107,7 @@ func NewSessions(cfg *AppConfig) abcsessions.Overseer {
 		// localhost:6379, no password, 0th indexed database.
 		storer, err := abcsessions.NewDefaultRedisStorer("", "", 0)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		overseer = abcsessions.NewStorageOverseer(opts, storer)
 		{{- end}}
@@ -118,13 +117,13 @@ func NewSessions(cfg *AppConfig) abcsessions.Overseer {
 		{{- else if eq .ProdStorer "memory" -}}
 		storer, err := abcsessions.NewDefaultMemoryStorer()
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		overseer = abcsessions.NewStorageOverseer(opts, storer)
 		{{- else if eq .ProdStorer "disk" -}}
 		storer, err := abcsessions.NewDefaultDiskStorer("{{randString 8}}")
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		storer.StartCleaner()
 		overseer = abcsessions.NewStorageOverseer(opts, storer)
@@ -132,27 +131,27 @@ func NewSessions(cfg *AppConfig) abcsessions.Overseer {
 		// localhost:6379, no password, 0th indexed database.
 		storer, err := abcsessions.NewDefaultRedisStorer("", "", 0)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		overseer = abcsessions.NewStorageOverseer(opts, storer)
 		{{- end}}
 	}
 
-	return overseer
+	return overseer, nil
 }
 {{- end}}
 
 // NewMiddlewares returns a list of middleware to be used by the router.
 // See https://github.com/pressly/chi#middlewares and abcweb readme for extras.
-func NewMiddlewares(cfg *AppConfig, log *zap.Logger) []http.Handler {
+func NewMiddlewares(cfg *AppConfig, sessions abcsessions.Overseer, log *zap.Logger) []abcmiddleware.MiddlewareFunc {
 	m := abcmiddleware.Middleware{
 		Log: log,
 	}
 
-	middlewares := []http.Handler{}
+	middlewares := []abcmiddleware.MiddlewareFunc{}
 	
 	// Display "abcweb dev" build errors in the browser.
-	if !s.AppConfig.Server.ProdLogger {
+	if !cfg.Server.ProdLogger {
 		middlewares = append(middlewares, web.ErrorChecker)
 	}
 
@@ -171,7 +170,7 @@ func NewMiddlewares(cfg *AppConfig, log *zap.Logger) []http.Handler {
 	middlewares = append(middlewares, m.Zap)
 
 	// Sets response headers to prevent clients from caching
-	if s.AppConfig.Server.AssetsNoCache {
+	if cfg.Server.AssetsNoCache {
 		middlewares = append(middlewares, chimiddleware.NoCache)
 	}
 
@@ -185,7 +184,7 @@ func NewMiddlewares(cfg *AppConfig, log *zap.Logger) []http.Handler {
 	// Note: This (or abcsessions.Middleware instead) is a mandatory middleware
 	// when using the abcsessions library. If you do not want the refresh
 	// component you can replace this call with abcsessions.Middleware.
-	middlewares = append(middlewares, s.Session.MiddlewareWithReset)
+	middlewares = append(middlewares, sessions.MiddlewareWithReset)
 	{{- end}}
 
 	return middlewares

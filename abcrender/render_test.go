@@ -17,7 +17,7 @@ func TestNew(t *testing.T) {
 		t.Error("did not expect nil")
 	}
 
-	if o.AssetsManifest["test"] != "test" {
+	if o.(*Render).assetsManifest["test"] != "test" {
 		t.Error("expected test key to have value test")
 	}
 }

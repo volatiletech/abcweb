@@ -40,7 +40,7 @@ type Renderer interface {
 // It's also required to wrap the AssetsManifest for the template function helpers.
 type Render struct {
 	*render.Render
-	AssetsManifest map[string]string
+	assetsManifest map[string]string
 }
 
 // HTML renders a HTML template by calling unrolled Render package's HTML function
@@ -55,10 +55,10 @@ func (r *Render) HTMLWithLayout(w io.Writer, status int, name string, binding in
 }
 
 // New returns a new Render with AssetsManifest and Render set
-func New(opts render.Options, manifest map[string]string) *Render {
+func New(opts render.Options, manifest map[string]string) Renderer {
 	return &Render{
 		Render:         render.New(opts),
-		AssetsManifest: manifest,
+		assetsManifest: manifest,
 	}
 }
 

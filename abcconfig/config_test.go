@@ -61,6 +61,104 @@ type MyThing struct {
 	Angry  string `toml:"angry" mapstructure:"angry" env:"CUSTOM_THING_ANGRY"`
 }
 
+type RealConfig struct {
+	AppConfig
+}
+
+func TestBindLoadEnv(t *testing.T) {
+	// replicate real config file
+	contents := []byte(`
+[dev]
+	[dev.server]
+		bind = ":4000"
+		tls-cert-file = "cert.pem"
+		tls-key-file = "private.key"
+		live-reload = true
+		prod-logger = false
+		assets-manifest = false
+		assets-no-cache = true
+		render-recompile = true
+		sessions-dev-storer = true
+	[dev.db]
+		db = "postgres"
+		user = "username"
+		pass = "password"
+		dbname = "lolwtf_dev"
+		host = "localhost"
+		sslmode = "require"
+		enforce-migration = false
+		blacklist = ["mig_migrations"]
+[prod]
+	[prod.server]
+		bind = ":80"
+		tls-bind = ":443"
+		tls-cert-file = "cert.pem"
+		tls-key-file = "private.key"
+	[prod.db]
+		pass = "password"
+		dbname = "lolwtf_prod"
+		host = "localhost"
+		sslmode = "require"
+		blacklist = ["mig_migrations"]
+[test]
+	[test.db]
+		db = "postgres"
+		user = "cooluser"
+		pass = "coolpass"
+		dbname = "lolwtf_test"
+		host = "localhost"
+		sslmode = "require"
+`)
+
+	file, err := ioutil.TempFile("", "abcconfig")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		n := file.Name()
+		file.Close()
+		os.Remove(n)
+	}()
+
+	if _, err := file.Write(contents); err != nil {
+		t.Fatal(err)
+	}
+
+	c := &Config{
+		File:    file.Name(),
+		LoadEnv: "test",
+	}
+
+	cfg := &RealConfig{}
+	flags := NewFlagSet()
+
+	if _, err := c.Bind(flags, cfg); err != nil {
+		t.Error(err)
+	}
+
+	if cfg.DB.DB != "postgres" {
+		t.Errorf("expected postgres, got %s", cfg.DB.DB)
+	}
+	if cfg.DB.DBName != "lolwtf_test" {
+		t.Errorf("expected lolwtf_test, got %s", cfg.DB.DBName)
+	}
+	if cfg.DB.User != "cooluser" {
+		t.Errorf("expected cooluser, got %s", cfg.DB.User)
+	}
+	if cfg.DB.Pass != "coolpass" {
+		t.Errorf("expected coolpass, got %s", cfg.DB.Pass)
+	}
+	if cfg.DB.Host != "localhost" {
+		t.Errorf("expected localhost, got %s", cfg.DB.Host)
+	}
+	if cfg.DB.SSLMode != "require" {
+		t.Errorf("expected require, got %s", cfg.DB.SSLMode)
+	}
+	if cfg.DB.Port != 5432 {
+		t.Errorf("expected 5432, got %d", cfg.DB.Port)
+	}
+}
+
 func TestBind(t *testing.T) {
 	contents := []byte(`
 [prod]
@@ -98,7 +196,11 @@ func TestBind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
+	defer func() {
+		n := file.Name()
+		file.Close()
+		os.Remove(n)
+	}()
 
 	if _, err := file.Write(contents); err != nil {
 		t.Fatal(err)
@@ -160,6 +262,12 @@ func TestBind(t *testing.T) {
 	}
 	if cfg.Env != "cool" {
 		t.Errorf("expected env to be cool, got %s", cfg.Env)
+	}
+	if cfg.DB.DB != "postgres" {
+		t.Errorf("expected postgres, got %s", cfg.DB.DB)
+	}
+	if cfg.DB.Port != 5432 {
+		t.Errorf("expected port 5432, got %d", cfg.DB.Port)
 	}
 
 	cfg = &AppConfig{}
@@ -386,7 +494,11 @@ func TestCustomCommandExample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
+	defer func() {
+		n := file.Name()
+		file.Close()
+		os.Remove(n)
+	}()
 
 	if _, err := file.Write(contents); err != nil {
 		t.Fatal(err)
@@ -436,5 +548,8 @@ func TestCustomCommandExample(t *testing.T) {
 	}
 	if cfg.DB.DBName != "c" {
 		t.Errorf("expected db.dbname c, got %s", cfg.DB.DBName)
+	}
+	if cfg.DB.Port != 5432 {
+		t.Errorf("expected db.port 5432, got %d", cfg.DB.Port)
 	}
 }

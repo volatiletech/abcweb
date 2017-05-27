@@ -1,9 +1,16 @@
 package abcmiddleware
 
-import "go.uber.org/zap"
+import (
+	"net/http"
+
+	"go.uber.org/zap"
+)
 
 // CtxLoggerKey is the http.Request Context lookup key for the request ID logger
 const CtxLoggerKey = "request_id_logger"
+
+// MiddlewareFunc is the function signature for Chi's Use() middleware
+type MiddlewareFunc func(http.Handler) http.Handler
 
 // Middleware exposes useful variables to every abcmiddleware handler
 type Middleware struct {

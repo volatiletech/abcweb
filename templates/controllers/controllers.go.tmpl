@@ -2,16 +2,14 @@ package controllers
 
 import (
 	"net/http"
+	"errors"
 
-	"github.com/volatiletech/abcweb/abcconfig"
-	"{{.ImportPath}}/rendering"
 	{{if not .NoSessions -}}
-	"github.com/volatiletech/abcsessions"
+	"github.com/volatiletech/abcweb/abcsessions"
 	{{- end}}
-	"github.com/volatiletech/abcrender"
-	"github.com/volatiletech/abcmiddleware"
+	"github.com/volatiletech/abcweb/abcrender"
+	"github.com/volatiletech/abcweb/abcmiddleware"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // The list of error types that can be returned by your controllers.

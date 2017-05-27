@@ -4,6 +4,8 @@ import (
 	"html/template"
 
 	"{{.ImportPath}}/app"
+	"github.com/volatiletech/abcweb/abcrender"
+	"github.com/unrolled/render"
 )
 
 func CustomHelpers(a *app.App) template.FuncMap {
@@ -11,3 +13,21 @@ func CustomHelpers(a *app.App) template.FuncMap {
 		"config": func() interface{} { return a.Config },
 	}
 }
+
+func New(a *app.App, templatesDir string, manifest map[string]string) abcrender.Renderer {
+	appHelpers := []template.FuncMap{
+		abcrender.AppHelpers(manifest),
+		CustomHelpers(a),
+	}
+
+	renderOpts := render.Options{
+		Directory:     templatesDir,
+		Layout:        "layouts/main",
+		Extensions:    []string{".tmpl", ".html"},
+		IsDevelopment: a.Config.Server.RenderRecompile,
+		Funcs:			appHelpers,
+		DisableHTTPErrorRendering: true,
+	}
+
+	return abcrender.New(renderOpts, manifest)
+} 

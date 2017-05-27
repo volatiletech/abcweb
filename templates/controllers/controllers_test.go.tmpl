@@ -6,14 +6,16 @@ import (
 	"testing"
 
 	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/volatiletech/abcweb/abcsessions"
+	"github.com/volatiletech/abcweb/abcdatabase"
+	"{{.ImportPath}}/app"
+	"{{.ImportPath}}/rendering"
 	{{if not .NoDB -}}
 	"path/filepath"
 	"{{.ImportPath}}/db"
 	{{- end}}
-
-	{{if not .NoDB -}}
-	"github.com/spf13/viper"
-	{{- end}}
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // newRootMock returns a Root struct with all members initialized to
@@ -39,15 +41,15 @@ func newRootMock(templatesDir string) Root {
 	}
 
 	// Set up the template renderer
-	appCfg := &abcconfig.AppConfig{}
-	appCfg.Server.RenderRecompile = true
+	a := &app.App{}
+	a.Config.Server.RenderRecompile = true
 
 	return Root{
 		{{if not .NoSessions -}}
 		Session: abcsessions.NewStorageOverseer(opts, mem),
 		{{- end}}
 		Log:     log,
-		Render:  rendering.InitRenderer(appCfg, templatesDir),
+		Render:  rendering.New(a, templatesDir, nil),
 	}
 }
 
@@ -75,10 +77,10 @@ func testMainMigrations(m *testing.M) int {
 		LoadEnv: "test",
 	}
 
-	cfg := &AppConfig{}
+	cfg := &app.AppConfig{}
 
 	// Load the database config from test env into cfg
-	v, err := c.Bind(nil, cfg)
+	_, err := c.Bind(nil, cfg)
 	if err != nil {
 		fmt.Printf("TestMain cannot load environment \"test\" from config.toml: %s\n", err)
 		return 1

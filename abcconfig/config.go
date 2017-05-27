@@ -231,6 +231,9 @@ func UnmarshalAppConfig(cfg interface{}, v *viper.Viper) error {
 
 		v.Unmarshal(&appCfg)
 		val.Field(i).Set(reflect.ValueOf(appCfg))
+		// overwrite val to point to the AppConfig so DBConfig can be set below.
+		val = val.Field(i)
+		break
 	}
 
 	// Find *DBConfig and set object appropriately

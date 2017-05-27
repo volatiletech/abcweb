@@ -15,7 +15,7 @@ import (
 var DB *sql.DB
 
 // InitDB initializes the DB global database handle
-func InitDB(cfg *abcconfig.DBConfig) error {
+func InitDB(cfg abcconfig.DBConfig) error {
 	// No username provided is a signal to skip database usage
 	if len(cfg.User) == 0 {
 		return nil

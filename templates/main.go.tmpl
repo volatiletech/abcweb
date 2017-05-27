@@ -5,55 +5,69 @@ import (
 	"os"
 
 	"{{.ImportPath}}/app"
+	"{{.ImportPath}}/db"
 	"{{.ImportPath}}/routes"
+	"{{.ImportPath}}/rendering"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/volatiletech/abcweb/abcdatabase"
+	"github.com/volatiletech/abcweb/abcrender"
+	"github.com/volatiletech/helpers/git"
+	"github.com/spf13/pflag"
 )
+
+// AppName is the name of the app
+var AppName string
+// AppEnvName is the name of the app in env var format 
+var AppEnvName string
 
 // These are set by the linker when running the "abcweb build" command.
 var version = "unknown"
 var buildTime = "unknown"
 
+func init() {
+	var err error
+	AppName, err = git.GetAppName()
+	if err != nil {
+		panic(err)
+	}
+
+	AppEnvName, err = git.GetAppEnvName()
+	if err != nil {
+		panic(err)
+	}
+}
+
 // Setup initializes the App object and calls all setup on its members
 func Setup(a *app.App, flags *pflag.FlagSet) error {
-	if _, err := abcconfig.Bind(flags, a.Config); err != nil {
+	var err error
+	c := abcconfig.NewConfig(AppEnvName)
+	if _, err := c.Bind(flags, a.Config); err != nil {
 		return errors.Wrap(err, "cannot bind app config")
 	}
 
 	// Set the AssetsManifest cache to the contents of the assets 
 	// manifest in the public directory
 	if a.Config.Server.AssetsManifest {
-		a.AssetsManifest, err := abcrender.GetManifest(a.Config.Server.PublicPath)
+		a.AssetsManifest, err = abcrender.GetManifest(a.Config.Server.PublicPath)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("cannot get assets manifest cache at path %q", a.Config.Server.PublicPath))
 		}
 	}
 	
-	if a.Log, err := app.NewLogger(a.Config); err != nil {
+	if a.Log, err = app.NewLogger(a.Config); err != nil {
 		return errors.Wrap(err, "cannot create new logger")
 	}
 	
 	{{- if not .NoSessions}}
-	if a.Session, err := app.NewSessions(a.Config); err != nil {
+	if a.Session, err = app.NewSessions(a.Config); err != nil {
 		return errors.Wrap(err, "cannot create new sessions overseer")
 	}
 	{{- end}}
 
-	// Get the default render template helpers
-	appHelpers := abcrender.AppHelpers(a.AssetsManifest)
-	// Append the custom render template helpers
-	appHelpers = append(appHelpers, rendering.CustomHelpers(a)...)
-
-	renderOpts := render.Options{
-		Directory:     "templates",
-		Layout:        "layouts/main",
-		Extensions:    []string{".tmpl", ".html"},
-		IsDevelopment: a.Config.Server.RenderRecompile,
-		Funcs:			appHelpers,
-		DisableHTTPErrorRendering: true,
-	}
-
-	a.Render = abcrender.New(renderOpts, a.AssetsManifest) 
-	a.Router = NewRouter(a, app.NewMiddlewares(a.Config, a.Log))
+	a.Render = rendering.New(a, "templates", a.AssetsManifest) 
+	a.Router = routes.NewRouter(a, app.NewMiddlewares(a.Config, a.Session, a.Log))
 
 	if err := db.InitDB(a.Config.DB); err != nil {
 		return errors.Wrap(err, "failed to create global db connection")
@@ -61,11 +75,11 @@ func Setup(a *app.App, flags *pflag.FlagSet) error {
 
 	// Check if using the latest database migration if EnforceLatestMigration
 	if a.Config.DB.EnforceMigration {
-		migrated, version, err := db.IsMigrated(a.Config.DB)
-		if err != nil && err != db.ErrNoMigrations {
+		migrated, version, err := abcdatabase.IsMigrated(a.Config.DB)
+		if err != nil && err != abcdatabase.ErrNoMigrations {
 			return errors.Wrap(err, "failed to check if using latest migration")
 		}
-		if !migrated && err != db.ErrNoMigrations {
+		if !migrated && err != abcdatabase.ErrNoMigrations {
 			return fmt.Errorf("database is out of sync with migrations, database version: %d", version)
 		}
 	}
@@ -88,11 +102,11 @@ func main() {
 
 	{{- if not .NoDB}}
 	// Setup and bind the migrate command
-	migrateSetup(state)
+	migrateSetup(a)
 	{{- end}}
 
-	if err := state.Root.Execute(); err != nil {
-		state.Log.Fatal("root command execution failed", zap.Error(err))
+	if err := a.Root.Execute(); err != nil {
+		a.Log.Fatal("root command execution failed", zap.Error(err))
 	}
 }
 
