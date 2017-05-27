@@ -41,7 +41,7 @@ func newRootMock(templatesDir string) Root {
 	}
 
 	// Set up the template renderer
-	a := &app.App{}
+	a := app.NewApp()
 	a.Config.Server.RenderRecompile = true
 
 	return Root{

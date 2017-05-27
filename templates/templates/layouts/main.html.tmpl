@@ -27,7 +27,7 @@
 		{{- end}}
 		{{"{"}}{ cssPath "main.css" | cssTag }{{"}"}}
 		{{if not .NoLiveReload -}}
-      {{"{"}}{if appConfig.LiveReload -}{{"}"}}
+      {{"{"}}{if config.Server.LiveReload -}{{"}"}}
          {{"{"}}{liveReload "livereload.js" "localhost" | jsTag }{{"}"}}
       {{"{"}}{- end}{{"}"}}
 		{{- end}}
