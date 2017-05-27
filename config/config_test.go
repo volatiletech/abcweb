@@ -19,6 +19,7 @@ func init() {
 }
 
 const fileOut = `[dev]
+[dev.db]
 	db = "db1"
 	host = "host1"
 	port = 1
@@ -38,10 +39,8 @@ const fileOut = `[dev]
 	debug=true
 	no-hooks=true
 	no-tests=true
-
-	[dev.migrations]
-		sql=true
 [prod]
+[prod.db]
 	db = "db2"
 	host = "host2"
 	port = 2
@@ -61,10 +60,6 @@ const fileOut = `[dev]
 	debug=true
 	no-hooks=true
 	no-tests=true
-
-	[prod.migrations]
-		sql=true	
-		dir="dir2"
 `
 
 func TestNewModeViper(t *testing.T) {
@@ -83,16 +78,8 @@ func TestNewModeViper(t *testing.T) {
 	if val != "basedir2" {
 		t.Errorf("expected %q, got %q", "basedir2", val)
 	}
-	val = modeViper.GetString("migrations.dir")
-	if val != "dir2" {
-		t.Errorf("expected %q, got %q", "dir2", val)
-	}
 
 	b := modeViper.GetBool("tinyint-not-bool")
-	if !b {
-		t.Error("expected true, got false")
-	}
-	b = modeViper.GetBool("sql")
 	if !b {
 		t.Error("expected true, got false")
 	}

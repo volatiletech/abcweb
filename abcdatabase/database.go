@@ -59,7 +59,7 @@ func SetupTestSuite(cfg abcconfig.DBConfig, testdata TestdataFunc) (int, error) 
 	}
 
 	// copy cfg into cfgNew
-	cfgNew := *cfg
+	cfgNew := cfg
 
 	// Drop and create the database if it exists so each test run starts
 	// on a clean slate
@@ -248,11 +248,6 @@ func mysqlPassFile(cfg abcconfig.DBConfig) (string, error) {
 
 // ExecuteScript executes the passed in SQL script against the passed in db
 func ExecuteScript(cfg abcconfig.DBConfig, script []byte) error {
-	appPath, err := git.GetAppPath()
-	if err != nil {
-		return err
-	}
-
 	rdr := bytes.NewReader(script)
 
 	if cfg.DB == "postgres" {

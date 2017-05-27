@@ -18,17 +18,17 @@ func TestGetAppPath(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", "testpath/test")
 
-	appPath, importPath, appName, err := getAppPath([]string{"."})
+	appPath, importPath, appName, appEnvName, err := getAppPath([]string{"."})
 	if err == nil {
 		t.Errorf("expected error, but got none: %s - %s", appPath, appName)
 	}
 
-	appPath, importPath, appName, err = getAppPath([]string{"/"})
+	appPath, importPath, appName, appEnvName, err = getAppPath([]string{"/"})
 	if err == nil {
 		t.Errorf("expected error, but got none: %s - %s", appPath, appName)
 	}
 
-	appPath, importPath, appName, err = getAppPath([]string{"/test"})
+	appPath, importPath, appName, appEnvName, err = getAppPath([]string{"/test"})
 	if err != nil {
 		t.Error(err)
 	}
@@ -38,11 +38,14 @@ func TestGetAppPath(t *testing.T) {
 	if appName != "test" {
 		t.Errorf("mismatch, got %s", appName)
 	}
+	if appEnvName != "TEST" {
+		t.Errorf("mismatch, got %s", appEnvName)
+	}
 	if importPath != "/test" {
 		t.Errorf("mismatch, got %s", importPath)
 	}
 
-	appPath, importPath, appName, err = getAppPath([]string{"./stuff/test"})
+	appPath, importPath, appName, appEnvName, err = getAppPath([]string{"./stuff/test"})
 	if err != nil {
 		t.Error(err)
 	}
@@ -51,6 +54,9 @@ func TestGetAppPath(t *testing.T) {
 	}
 	if appName != "test" {
 		t.Errorf("mismatch, got %s", appName)
+	}
+	if appEnvName != "TEST" {
+		t.Errorf("mismatch, got %s", appEnvName)
 	}
 	if importPath != "stuff/test" {
 		t.Errorf("mismatch, got %s", importPath)
@@ -326,10 +332,7 @@ func TestGenerateTLSCerts(t *testing.T) {
 		AppPath:       "/out/spiders",
 		AppName:       "spiders",
 		TLSCommonName: "dragons",
-		// attempt to create tls certs twice
-		// should fail second time if this is false
-		TLSCertsOnly: false,
-		Silent:       true,
+		Silent:        true,
 	}
 
 	err := generateTLSCerts(cfg)

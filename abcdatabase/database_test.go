@@ -12,7 +12,7 @@ import (
 func TestGetConnStr(t *testing.T) {
 	t.Parallel()
 
-	cfg := &abcconfig.DBConfig{}
+	cfg := abcconfig.DBConfig{}
 
 	_, err := GetConnStr(cfg)
 	if err == nil {
@@ -40,7 +40,7 @@ func TestGetConnStr(t *testing.T) {
 func TestIsMigrated(t *testing.T) {
 	t.Parallel()
 
-	_, _, err := IsMigrated(&abcconfig.DBConfig{})
+	_, _, err := IsMigrated(abcconfig.DBConfig{})
 	if err != ErrNoMigrations {
 		t.Error("expected no migrations error since db/migrations doesnt exist")
 	}
@@ -90,7 +90,7 @@ func TestIsLatestVersion(t *testing.T) {
 func TestPGEnv(t *testing.T) {
 	t.Parallel()
 
-	cfg := &abcconfig.DBConfig{
+	cfg := abcconfig.DBConfig{
 		Host: "a",
 		Port: 1,
 		User: "b",
@@ -119,7 +119,7 @@ func TestPGEnv(t *testing.T) {
 func TestPGPassFile(t *testing.T) {
 	t.Parallel()
 
-	cfg := &abcconfig.DBConfig{
+	cfg := abcconfig.DBConfig{
 		Host:   "a",
 		Port:   1,
 		DBName: "b",
@@ -148,7 +148,7 @@ func TestPGPassFile(t *testing.T) {
 func TestMySQLPassFile(t *testing.T) {
 	t.Parallel()
 
-	cfg := &abcconfig.DBConfig{
+	cfg := abcconfig.DBConfig{
 		Host: "a",
 		Port: 1,
 		User: "b",
@@ -170,14 +170,5 @@ func TestMySQLPassFile(t *testing.T) {
 
 	if string(contents) != expected {
 		t.Errorf("expected %s, got %s", expected, contents)
-	}
-}
-
-func TestSQLTestdata(t *testing.T) {
-	t.Parallel()
-
-	err := SQLTestdata(&abcconfig.DBConfig{})
-	if err == nil {
-		t.Error("expected error due to no testdata.sql file")
 	}
 }
