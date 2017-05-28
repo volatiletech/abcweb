@@ -17,32 +17,14 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// AppName is the name of the app
-var AppName string
-// AppEnvName is the name of the app in env var format 
-var AppEnvName string
-
 // These are set by the linker when running the "abcweb build" command.
 var version = "unknown"
 var buildTime = "unknown"
 
-func init() {
-	var err error
-	AppName, err = git.GetAppName()
-	if err != nil {
-		panic(err)
-	}
-
-	AppEnvName, err = git.GetAppEnvName()
-	if err != nil {
-		panic(err)
-	}
-}
-
 // Setup initializes the App object and calls all setup on its members
 func Setup(a *app.App, flags *pflag.FlagSet) error {
 	var err error
-	c := abcconfig.NewConfig(AppEnvName)
+	c := abcconfig.NewConfig(git.GetAppEnvName())
 	if _, err := c.Bind(flags, a.Config); err != nil {
 		return errors.Wrap(err, "cannot bind app config")
 	}

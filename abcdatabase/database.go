@@ -53,10 +53,7 @@ func GetConnStr(cfg abcconfig.DBConfig) (string, error) {
 func SetupTestSuite(cfg abcconfig.DBConfig, testdata TestdataFunc) (int, error) {
 	var err error
 
-	appPath, err := git.GetAppPath()
-	if err != nil {
-		return 0, err
-	}
+	appPath := git.GetAppPath()
 
 	// copy cfg into cfgNew
 	cfgNew := cfg

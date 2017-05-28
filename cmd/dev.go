@@ -73,7 +73,7 @@ func devCmdRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 
-		publicPathEnv := fmt.Sprintf("%s_PUBLIC_PATH=%s", cnf.AppEnvName, publicPath)
+		publicPathEnv := fmt.Sprintf("%s_SERVER_PUBLIC_PATH=%s", cnf.AppEnvName, publicPath)
 
 		go func() {
 			err := startGulp(publicPathEnv, ctx)

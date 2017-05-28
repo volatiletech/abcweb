@@ -159,6 +159,117 @@ func TestBindLoadEnv(t *testing.T) {
 	}
 }
 
+func TestBindPublicPathEnv(t *testing.T) {
+	// replicate real config file
+	contents := []byte(`
+[dev]
+	[dev.server]
+		bind = ":4000"
+		tls-cert-file = "cert.pem"
+		tls-key-file = "private.key"
+		live-reload = true
+		prod-logger = false
+		assets-manifest = false
+		assets-no-cache = true
+		render-recompile = true
+		sessions-dev-storer = true
+	[dev.db]
+		db = "postgres"
+		user = "username"
+		pass = "password"
+		dbname = "lolwtf_dev"
+		host = "localhost"
+		sslmode = "require"
+		enforce-migration = false
+		blacklist = ["mig_migrations"]
+[prod]
+	[prod.server]
+		bind = ":80"
+		tls-bind = ":443"
+		tls-cert-file = "cert.pem"
+		tls-key-file = "private.key"
+	[prod.db]
+		pass = "password"
+		dbname = "lolwtf_prod"
+		host = "localhost"
+		sslmode = "require"
+		blacklist = ["mig_migrations"]
+[test]
+	[test.db]
+		db = "postgres"
+		user = "cooluser"
+		pass = "coolpass"
+		dbname = "lolwtf_test"
+		host = "localhost"
+		sslmode = "require"
+`)
+
+	var err error
+	err = os.Setenv("ABCWEB_ENV", "dev")
+	if err != nil {
+		t.Error(err)
+	}
+	defer os.Unsetenv("ABCWEB_DEV")
+
+	err = os.Setenv("ABCWEB_SERVER_PUBLIC_PATH", "testpath")
+	if err != nil {
+		t.Error(err)
+	}
+	defer os.Unsetenv("ABCWEB_SERVER_PUBLIC_PATH")
+
+	file, err := ioutil.TempFile("", "abcconfig")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		n := file.Name()
+		file.Close()
+		os.Remove(n)
+	}()
+
+	if _, err := file.Write(contents); err != nil {
+		t.Fatal(err)
+	}
+
+	c := NewConfig("ABCWEB")
+	c.File = file.Name()
+
+	cfg := &RealConfig{}
+	flags := NewFlagSet()
+
+	if _, err := c.Bind(flags, cfg); err != nil {
+		t.Error(err)
+	}
+
+	if cfg.DB.DB != "postgres" {
+		t.Errorf("expected postgres, got %s", cfg.DB.DB)
+	}
+	if cfg.DB.DBName != "lolwtf_dev" {
+		t.Errorf("expected lolwtf_dev, got %s", cfg.DB.DBName)
+	}
+	if cfg.DB.User != "username" {
+		t.Errorf("expected username, got %s", cfg.DB.User)
+	}
+	if cfg.DB.Pass != "password" {
+		t.Errorf("expected password, got %s", cfg.DB.Pass)
+	}
+	if cfg.DB.Host != "localhost" {
+		t.Errorf("expected localhost, got %s", cfg.DB.Host)
+	}
+	if cfg.DB.SSLMode != "require" {
+		t.Errorf("expected require, got %s", cfg.DB.SSLMode)
+	}
+	if cfg.DB.Port != 5432 {
+		t.Errorf("expected 5432, got %d", cfg.DB.Port)
+	}
+	if cfg.Env != "dev" {
+		t.Errorf("expected dev, got %s", cfg.Env)
+	}
+	if cfg.Server.PublicPath != "testpath" {
+		t.Errorf("expected testpath, got %s", cfg.Server.PublicPath)
+	}
+}
+
 func TestBind(t *testing.T) {
 	contents := []byte(`
 [prod]
@@ -210,10 +321,13 @@ func TestBind(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	defer os.Unsetenv("ABCWEB_SERVER_TLS_CERT_FILE")
+
 	err = os.Setenv("ABCWEB_DB_DB", "postgres")
 	if err != nil {
 		t.Error(err)
 	}
+	defer os.Unsetenv("ABCWEB_DB_DB")
 
 	cfg := &AppConfig{}
 	flags := NewFlagSet()
@@ -301,10 +415,13 @@ func TestBind(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	defer os.Unsetenv("ABCWEB_SERVER_TLS_CERT_FILE")
+
 	err = os.Setenv("ABCWEB_CUSTOM_THING_ANGRY", "zzz")
 	if err != nil {
 		t.Error(err)
 	}
+	defer os.Unsetenv("ABCWEB_CUSTOM_THING_ANGRY")
 
 	if _, err := c.Bind(flags, custom); err != nil {
 		t.Error(err)
@@ -360,10 +477,13 @@ func TestBind(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	defer os.Unsetenv("ABCWEB_SERVER_TLS_CERT_FILE")
+
 	err = os.Setenv("ABCWEB_CUSTOM_THING_ANGRY", "zzz")
 	if err != nil {
 		t.Error(err)
 	}
+	defer os.Unsetenv("ABCWEB_CUSTOM_THING_ANGRY")
 
 	if _, err := c.Bind(flags, imbedded); err != nil {
 		t.Error(err)
@@ -434,6 +554,8 @@ type TestD struct {
 }
 
 func TestGetTagMappings(t *testing.T) {
+	t.Parallel()
+
 	i := ""
 	j := ""
 	cfg := &Test{
@@ -472,6 +594,13 @@ func TestGetTagMappings(t *testing.T) {
 			t.Errorf("expected env: %s, got: %s", expected[i].env, m.env)
 		}
 	}
+
+	rcfg := &RealConfig{}
+
+	mappings, err = GetTagMappings(rcfg)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 // test a situation like we have in abcweb's generated app with the
@@ -508,6 +637,7 @@ func TestCustomCommandExample(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	defer os.Unsetenv("ABCWEB_DB_DB")
 
 	cfg := &AppConfig{}
 	c := NewConfig("ABCWEB")
