@@ -77,6 +77,8 @@ func migrateSetup(a *app.App) {
 
 	migrate.Flags().BoolP("down", "d", false, "Roll back the database migration version by one")
 	migrate.Flags().StringP("env", "e", "prod", "The database config file environment to load")
+	// Add the database config flags
+	migrate.Flags().AddFlagSet(abcconfig.NewDBFlagSet())
 	
 	a.Root.AddCommand(migrate)
 }
