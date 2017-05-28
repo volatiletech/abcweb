@@ -101,6 +101,7 @@ func init() {
 	modelsCmd.Flags().BoolP("no-auto-timestamps", "", false, "Disable automatic timestamps for created_at/updated_at")
 	modelsCmd.Flags().BoolP("tinyint-not-bool", "", false, "Map MySQL tinyint(1) in Go to int8 instead of bool")
 	modelsCmd.Flags().BoolP("wipe", "", true, "Delete the output folder (rm -rf) before generation to ensure sanity")
+	modelsCmd.Flags().StringP("env", "e", "dev", "The config.toml file environment to load")
 
 	// hide flags not recommended for use
 	modelsCmd.Flags().MarkHidden("replace")
@@ -133,9 +134,15 @@ func migrationCmdPreRun(*cobra.Command, []string) {
 
 // modelsCmdPreRun sets up the modelsCmdState and modelsCmdConfig objects
 func modelsCmdPreRun(cmd *cobra.Command, args []string) error {
+	var err error
+	cnf, err = config.Initialize(cmd.Flags().Lookup("env"))
+	if err != nil {
+		return err
+	}
+
 	cnf.ModeViper.BindPFlags(modelsCmd.Flags())
 
-	err := cnf.CheckEnv()
+	err = cnf.CheckEnv()
 	if err != nil {
 		return err
 	}
@@ -285,7 +292,13 @@ func modelsCmdSetup(cmd *cobra.Command, args []string) error {
 }
 
 func modelsCmdRun(cmd *cobra.Command, args []string) error {
-	return modelsCmdState.Run(true)
+	err := modelsCmdState.Run(true)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Success   Generating models")
+	return nil
 }
 
 func migrationCmdRun(cmd *cobra.Command, args []string) error {

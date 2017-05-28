@@ -93,6 +93,11 @@ func testMainMigrations(m *testing.M) int {
 		return 2
 	}
 
+	if err = db.InitDB(cfg.DB); err != nil {
+		fmt.Printf("Failed to initialize the global DB handle: %s\n", err)
+		return 3
+	}
+
 	fmt.Printf("TestMain Setup ran %d migrations.\n", count)
 
 	// Run the package tests
