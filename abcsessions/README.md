@@ -1,8 +1,8 @@
 # ABCSessions
 
-[![License](https://img.shields.io/badge/license-BSD-blue.svg)](https://github.com/volatiletech/abcsessions/blob/master/LICENSE)
-[![GoDoc](https://godoc.org/github.com/volatiletech/abcsessions?status.svg)](https://godoc.org/github.com/volatiletech/abcsessions)
-[![Go Report Card](https://goreportcard.com/badge/volatiletech/abcsessions)](http://goreportcard.com/report/volatiletech/abcsessions)
+[![License](https://img.shields.io/badge/license-BSD-blue.svg)](https://github.com/volatiletech/abcweb/abcsessions/blob/master/LICENSE)
+[![GoDoc](https://godoc.org/github.com/volatiletech/abcweb/abcsessions?status.svg)](https://godoc.org/github.com/volatiletech/abcweb/abcsessions)
+[![Go Report Card](https://goreportcard.com/badge/volatiletech/abcweb/abcsessions)](http://goreportcard.com/report/volatiletech/abcweb/abcsessions)
 
 ## Available Session Storers
 

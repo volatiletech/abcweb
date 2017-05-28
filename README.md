@@ -84,7 +84,7 @@ and `abcweb migrate` commands.
 
 #### Sessions, Cookies & Flash Messages
 
-[ABCSessions](https://github.com/volatiletech/abcsessions) was designed to make working with 
+[ABCSessions](https://github.com/volatiletech/abcweb/abcsessions) was designed to make working with 
 HTTP sessions and cookies a breeze, and it also comes with a flash messages API. ABCSessions 
 ships with disk, memory, redis and cookie storers, and the ability to easily add new storers using
 our provided interfaces.
@@ -93,7 +93,7 @@ our provided interfaces.
 
 [Render](https://github.com/unrolled/render) is a package that provides functionality for 
 easily rendering JSON, XML, text, binary data, and HTML templates. We have also written an interface
-wrapper for Render ([ABCRender](https://github.com/volatiletech/abcrender)) that allows you to
+wrapper for Render ([ABCRender](https://github.com/volatiletech/abcweb/abcrender)) that allows you to
 easily add support for any templating engine you choose if Go's `html/template` is not enough for you.
 
 #### Routing

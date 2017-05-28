@@ -1,8 +1,8 @@
 # ABCMiddleware
 
-[![License](https://img.shields.io/badge/license-BSD-blue.svg)](https://github.com/volatiletech/abcmiddleware/blob/master/LICENSE)
-[![GoDoc](https://godoc.org/github.com/volatiletech/abcmiddleware?status.svg)](https://godoc.org/github.com/volatiletech/abcmiddleware)
-[![Go Report Card](https://goreportcard.com/badge/volatiletech/abcmiddleware)](http://goreportcard.com/report/volatiletech/abcmiddleware)
+[![License](https://img.shields.io/badge/license-BSD-blue.svg)](https://github.com/volatiletech/abcweb/abcmiddleware/blob/master/LICENSE)
+[![GoDoc](https://godoc.org/github.com/volatiletech/abcweb/abcmiddleware?status.svg)](https://godoc.org/github.com/volatiletech/abcweb/abcmiddleware)
+[![Go Report Card](https://goreportcard.com/badge/volatiletech/abcweb/abcmiddleware)](http://goreportcard.com/report/volatiletech/abcweb/abcmiddleware)
 
 ## Available Middleware 
 
