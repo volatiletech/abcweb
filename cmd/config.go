@@ -33,7 +33,6 @@ type newConfig struct {
 	DevStorer        string `toml:"dev-storer"`
 	DefaultEnv       string `toml:"default-env"`
 	Bootstrap        string `toml:"bootstrap"`
-	NoDB             bool   `toml:"no-db"`
 	NoBootstrapJS    bool   `toml:"no-bootstrap-js"`
 	NoGulp           bool   `toml:"no-gulp"`
 	NoFontAwesome    bool   `toml:"no-font-awesome"`
@@ -43,7 +42,6 @@ type newConfig struct {
 	NoConfig         bool   `toml:"no-config"`
 	NoSessions       bool   `toml:"no-sessions"`
 	ForceOverwrite   bool   `toml:"force-overwrite"`
-	NoHTTPRedirect   bool   `toml:"no-http-redirect"`
 	SkipNPMInstall   bool   `toml:"skip-npm-install"`
 	SkipGovendorSync bool   `toml:"skip-govendor-sync"`
 	SkipGitInit      bool   `toml:"skip-git-init"`

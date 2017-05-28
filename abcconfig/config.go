@@ -164,6 +164,9 @@ func (c *Config) NewSubViper(flags *pflag.FlagSet, cfg interface{}) (*viper.Vipe
 	}
 
 	v = v.Sub(env)
+	if v == nil {
+		return nil, fmt.Errorf("cannot find env section named %s", env)
+	}
 
 	mappings, err := GetTagMappings(cfg)
 	if err != nil {

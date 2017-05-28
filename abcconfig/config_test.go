@@ -209,7 +209,7 @@ func TestBindPublicPathEnv(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	defer os.Unsetenv("ABCWEB_DEV")
+	defer os.Unsetenv("ABCWEB_ENV")
 
 	err = os.Setenv("ABCWEB_SERVER_PUBLIC_PATH", "testpath")
 	if err != nil {

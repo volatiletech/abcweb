@@ -12,9 +12,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/unrolled/render"
-	"github.com/volatiletech/abcmiddleware"
-	"github.com/volatiletech/abcrender"
 	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/volatiletech/abcweb/abcmiddleware"
+	"github.com/volatiletech/abcweb/abcrender"
 )
 
 // setup the temp dir public folder to give the NotFound handler files

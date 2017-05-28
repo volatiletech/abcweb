@@ -24,7 +24,7 @@ var buildTime = "unknown"
 // Setup initializes the App object and calls all setup on its members
 func Setup(a *app.App, flags *pflag.FlagSet) error {
 	var err error
-	c := abcconfig.NewConfig(git.GetAppEnvName())
+	c := abcconfig.NewConfig("{{.AppEnvName}}")
 	if _, err := c.Bind(flags, a.Config); err != nil {
 		return errors.Wrap(err, "cannot bind app config")
 	}
@@ -82,10 +82,8 @@ func main() {
 	// Setup the main app root command
 	rootSetup(a)
 
-	{{- if not .NoDB}}
 	// Setup and bind the migrate command
 	migrateSetup(a)
-	{{- end}}
 
 	if err := a.Root.Execute(); err != nil {
 		a.Log.Fatal("root command execution failed", zap.Error(err))

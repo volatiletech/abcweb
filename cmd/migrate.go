@@ -99,9 +99,26 @@ var downAllCmd = &cobra.Command{
 
 var redoCmd = &cobra.Command{
 	Use:   "redo",
-	Short: "Re-run the latest migration",
+	Short: "Down then up the latest migration",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := migrateExec(cmd, args, "redo")
+		if err != nil && err != errNoMigrations {
+			return err
+		}
+
+		if !cnf.ModeViper.GetBool("no-models") && err != errNoMigrations {
+			return modelsExec(cmd, args)
+		}
+
+		return nil
+	},
+}
+
+var redoAllCmd = &cobra.Command{
+	Use:   "redoall",
+	Short: "Down then up all migrations",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		err := migrateExec(cmd, args, "redoall")
 		if err != nil && err != errNoMigrations {
 			return err
 		}

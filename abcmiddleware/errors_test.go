@@ -11,7 +11,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/volatiletech/abcrender"
+	"github.com/volatiletech/abcweb/abcrender"
 )
 
 func TestRemoveAndAdd(t *testing.T) {
@@ -52,7 +52,7 @@ func TestRemoveAndAdd(t *testing.T) {
 	m.Remove(m.errors[0])
 
 	if len(m.errors) != 1 {
-		t.Error("expected len 1, got %d", len(m.errors))
+		t.Errorf("expected len 1, got %d", len(m.errors))
 	}
 
 	if !reflect.DeepEqual(m.errors[0], ebExpected) {
@@ -61,7 +61,7 @@ func TestRemoveAndAdd(t *testing.T) {
 
 	m.Remove(m.errors[0])
 	if len(m.errors) != 0 {
-		t.Error("expected len 0, got %d", len(m.errors))
+		t.Errorf("expected len 0, got %d", len(m.errors))
 	}
 }
 

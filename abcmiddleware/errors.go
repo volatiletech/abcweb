@@ -6,8 +6,7 @@ import (
 	"reflect"
 
 	chimiddleware "github.com/pressly/chi/middleware"
-	"github.com/volatiletech/abcmiddleware"
-	"github.com/volatiletech/abcrender"
+	"github.com/volatiletech/abcweb/abcrender"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -19,6 +18,7 @@ var (
 	ErrForbidden    = errors.New("access is forbidden")
 )
 
+// ErrorContainer holds all of the relevant variables for a users custom error
 type ErrorContainer struct {
 	// The error that will be returned by the controller
 	Err error
@@ -44,7 +44,7 @@ func NewErrorManager(render abcrender.Renderer) *errorManager {
 	}
 }
 
-// Create a new ErrorContainer that can be added to an errorManager.
+// NewError creates a new ErrorContainer that can be added to an errorManager.
 // If you provide a handler here (instead of nil) then the Errors middleware
 // will use your handler opposed to taking the default route of logging
 // and rendering. You must handle logging and rendering yourself.
@@ -128,7 +128,7 @@ func (m *errorManager) Errors(ctrl AppHandler) http.HandlerFunc {
 		}
 
 		// Get the Request ID scoped logger
-		log := abcmiddleware.Log(r)
+		log := Log(r)
 
 		fields := []zapcore.Field{
 			zap.String("method", r.Method),

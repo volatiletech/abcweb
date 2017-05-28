@@ -46,7 +46,6 @@ func init() {
 	newCmd.Flags().StringP("tls-common-name", "", "localhost", "Common Name for generated TLS certificate")
 	newCmd.Flags().StringP("default-env", "", "prod", "Default $APP_ENV to use when starting server")
 	newCmd.Flags().StringP("bootstrap", "b", "regular", "Include Twitter Bootstrap 4 (none|regular|gridonly|rebootonly|gridandrebootonly)")
-	newCmd.Flags().BoolP("no-db", "", false, "Skip generation of database package, migrations and database config")
 	newCmd.Flags().BoolP("no-gulp", "", false, "Skip generation of gulpfile.js, package.json and installation of gulp dependencies")
 	newCmd.Flags().BoolP("no-bootstrap-js", "j", false, "Skip Twitter Bootstrap 4 javascript inclusion")
 	newCmd.Flags().BoolP("no-font-awesome", "f", false, "Skip Font Awesome inclusion")
@@ -56,7 +55,6 @@ func init() {
 	newCmd.Flags().BoolP("no-config", "c", false, "Skip default config.toml file")
 	newCmd.Flags().BoolP("no-sessions", "s", false, "Skip support for http sessions")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
-	newCmd.Flags().BoolP("no-http-redirect", "", false, "Disable the http -> https redirect when using TLS")
 	newCmd.Flags().BoolP("skip-npm-install", "", false, "Skip running npm install command")
 	newCmd.Flags().BoolP("skip-govendor-sync", "", false, "Skip running govendor sync command")
 	newCmd.Flags().BoolP("skip-git-init", "", false, "Skip running git init command")
@@ -71,7 +69,6 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 	viper.BindPFlags(cmd.Flags())
 
 	newCmdConfig = newConfig{
-		NoDB:             viper.GetBool("no-db"),
 		NoGulp:           viper.GetBool("no-gulp"),
 		NoBootstrapJS:    viper.GetBool("no-bootstrap-js"),
 		NoFontAwesome:    viper.GetBool("no-font-awesome"),
@@ -81,7 +78,6 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		NoReadme:         viper.GetBool("no-readme"),
 		NoConfig:         viper.GetBool("no-config"),
 		ForceOverwrite:   viper.GetBool("force-overwrite"),
-		NoHTTPRedirect:   viper.GetBool("no-http-redirect"),
 		SkipNPMInstall:   viper.GetBool("skip-npm-install"),
 		SkipGovendorSync: viper.GetBool("skip-govendor-sync"),
 		SkipGitInit:      viper.GetBool("skip-git-init"),
@@ -129,10 +125,6 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Make the empty folders that cannot be committed to git.
 	for _, d := range emptyDirs {
-		// Skip migrations if --no-db set
-		if d == "db/migrations" && newCmdConfig.NoDB {
-			continue
-		}
 		emptyDir := filepath.Join(newCmdConfig.AppPath, d)
 		err := appFS.MkdirAll(emptyDir, 0755)
 		if err != nil {
@@ -383,10 +375,6 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 		}
 		// Skip FontAwesome files if requested
 		if cfg.NoFontAwesome && info.Name() == "font-awesome" {
-			return true, filepath.SkipDir
-		}
-		// Skip db package if requested
-		if cfg.NoDB && info.Name() == "db" {
 			return true, filepath.SkipDir
 		}
 
