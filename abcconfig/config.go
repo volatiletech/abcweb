@@ -316,7 +316,13 @@ func getTagMappingsRecursive(chain string, v reflect.Value) (Mappings, error) {
 
 		if cv.Kind() == reflect.Ptr {
 			nv := reflect.Indirect(cv)
-			if !nv.IsValid() {
+			// If it has no mapstructure set then fail gracefully,
+			// because it's probably not a field that should be read by viper.
+			// For example, a pointer to something that is late-initialized
+			// and isn't loaded by Bind or present in the config file.
+			if !nv.IsValid() && ms == "" {
+				continue
+			} else if !nv.IsValid() {
 				return nil, fmt.Errorf("cannot access non-initialized pointer %#v", cv)
 			}
 			// Only indirect struct types, if they're valid

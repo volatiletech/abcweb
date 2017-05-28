@@ -1,10 +1,12 @@
 package abcconfig
 
 import (
+	"database/sql"
 	"io/ioutil"
 	"os"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/pflag"
 )
 
@@ -553,6 +555,18 @@ type TestD struct {
 	DA string `mapstructure:"da" env:"B_D_DA"`
 }
 
+// Test non-exported struct with some non-exported fields and a non-exported ptr.
+// Also test how it handles only reading into DB and not Server as well.
+type otherConfig struct {
+	dbConn *sql.DB
+
+	Env string   `toml:"env" mapstructure:"env" env:"ENV"`
+	DB  DBConfig `toml:"db" mapstructure:"db"`
+
+	pgPassFile string
+	testDBName string
+}
+
 func TestGetTagMappings(t *testing.T) {
 	t.Parallel()
 
@@ -601,6 +615,54 @@ func TestGetTagMappings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	expected = Mappings{
+		{chain: "env", env: "ENV"},
+		{chain: "server.live-reload", env: "SERVER_LIVE_RELOAD"},
+		{chain: "server.prod-logger", env: "SERVER_PROD_LOGGER"},
+		{chain: "server.bind", env: "SERVER_BIND"},
+		{chain: "server.tls-bind", env: "SERVER_TLS_BIND"},
+		{chain: "server.tls-cert-file", env: "SERVER_TLS_CERT_FILE"},
+		{chain: "server.tls-key-file", env: "SERVER_TLS_KEY_FILE"},
+		{chain: "server.read-timeout", env: "SERVER_READ_TIMEOUT"},
+		{chain: "server.write-timeout", env: "SERVER_WRITE_TIMEOUT"},
+		{chain: "server.idle-timeout", env: "SERVER_IDLE_TIMEOUT"},
+		{chain: "server.assets-manifest", env: "SERVER_ASSETS_MANIFEST"},
+		{chain: "server.assets-no-cache", env: "SERVER_ASSETS_NO_CACHE"},
+		{chain: "server.render-recompile", env: "SERVER_RENDER_RECOMPILE"},
+		{chain: "server.sessions-dev-storer", env: "SERVER_SESSIONS_DEV_STORER"},
+		{chain: "server.public-path", env: "SERVER_PUBLIC_PATH"},
+		{chain: "db.db", env: "DB_DB"},
+		{chain: "db.dbname", env: "DB_DBNAME"},
+		{chain: "db.host", env: "DB_HOST"},
+		{chain: "db.port", env: "DB_PORT"},
+		{chain: "db.user", env: "DB_USER"},
+		{chain: "db.pass", env: "DB_PASS"},
+		{chain: "db.sslmode", env: "DB_SSLMODE"},
+		{chain: "db.enforce-migration", env: "DB_ENFORCE_MIGRATION"},
+	}
+
+	if len(mappings) != len(expected) {
+		t.Errorf("expected len %d, got %d", len(expected), len(mappings))
+	}
+
+	for i, m := range mappings {
+		if expected[i].chain != m.chain {
+			t.Errorf("expected chain: %s, got: %s", expected[i].chain, m.chain)
+		}
+		if expected[i].env != m.env {
+			t.Errorf("expected env: %s, got: %s", expected[i].env, m.env)
+		}
+	}
+
+	ocfg := &otherConfig{}
+
+	mappings, err = GetTagMappings(ocfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	spew.Dump(mappings)
 }
 
 // test a situation like we have in abcweb's generated app with the

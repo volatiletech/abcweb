@@ -1,16 +1,16 @@
 type mysqlTester struct {
 	dbConn *sql.DB
 
-	dbName	string
-	host	string
-	user	string
-	pass	string
-	sslmode	string
-	port	int
+	Env string
+	DB  abcconfig.DBConfig
 
 	optionFile string
-
 	testDBName string
+}
+
+type DBConfig struct {
+	Env string             `toml:"env" mapstructure:"env" env:"ENV"`
+	DB  abcconfig.DBConfig `toml:"db" mapstructure:"db"`
 }
 
 func init() {
@@ -20,14 +20,21 @@ func init() {
 func (m *mysqlTester) setup() error {
 	var err error
 
-	m.dbName = config.ModeViper.GetString("dbname")
-	m.host = config.ModeViper.GetString("host")
-	m.user = config.ModeViper.GetString("user")
-	m.pass = config.ModeViper.GetString("pass")
-	m.port = config.ModeViper.GetInt("port")
-	m.sslmode = config.ModeViper.GetString("sslmode")
+	c := abcconfig.NewConfig(git.GetAppName())
+	c.File = filepath.Join(git.GetAppPath(), "config.toml")
+	c.LoadEnv = "test"
+	dbCfg := &DBConfig{}
+
+	_, err = c.Bind(nil, dbCfg)
+	if err != nil {
+		return err
+	}
+
+	m.Env = dbCfg.Env
+	m.DB = dbCfg.DB
+
 	// Create a randomized db name.
-	m.testDBName = randomize.StableDBName(m.dbName)
+	m.testDBName = randomize.StableDBName(m.DB.DBName)
 
 	if err = m.makeOptionFile(); err != nil {
 		return errors.Wrap(err, "couldn't make option file")
@@ -40,7 +47,7 @@ func (m *mysqlTester) setup() error {
 		return err
 	}
 
-	dumpCmd := exec.Command("mysqldump", m.defaultsFile(), "--no-data", m.dbName)
+	dumpCmd := exec.Command("mysqldump", m.defaultsFile(), "--no-data", m.DB.DBName)
 	createCmd := exec.Command("mysql", m.defaultsFile(), "--database", m.testDBName)
 
 	r, w := io.Pipe()
@@ -91,18 +98,18 @@ func (m *mysqlTester) makeOptionFile() error {
 	}
 
 	fmt.Fprintln(tmp, "[client]")
-	fmt.Fprintf(tmp, "host=%s\n", m.host)
-	fmt.Fprintf(tmp, "port=%d\n", m.port)
-	fmt.Fprintf(tmp, "user=%s\n", m.user)
-	fmt.Fprintf(tmp, "password=%s\n", m.pass)
-	fmt.Fprintf(tmp, "ssl-mode=%s\n", m.sslMode(m.sslmode))
+	fmt.Fprintf(tmp, "host=%s\n", m.DB.Host)
+	fmt.Fprintf(tmp, "port=%d\n", m.DB.Port)
+	fmt.Fprintf(tmp, "user=%s\n", m.DB.User)
+	fmt.Fprintf(tmp, "password=%s\n", m.DB.Pass)
+	fmt.Fprintf(tmp, "ssl-mode=%s\n", m.DB.SSLMode(m.DB.SSLMode))
 
 	fmt.Fprintln(tmp, "[mysqldump]")
-	fmt.Fprintf(tmp, "host=%s\n", m.host)
-	fmt.Fprintf(tmp, "port=%d\n", m.port)
-	fmt.Fprintf(tmp, "user=%s\n", m.user)
-	fmt.Fprintf(tmp, "password=%s\n", m.pass)
-	fmt.Fprintf(tmp, "ssl-mode=%s\n", m.sslMode(m.sslmode))
+	fmt.Fprintf(tmp, "host=%s\n", m.DB.Host)
+	fmt.Fprintf(tmp, "port=%d\n", m.DB.Port)
+	fmt.Fprintf(tmp, "user=%s\n", m.DB.User)
+	fmt.Fprintf(tmp, "password=%s\n", m.DB.Pass)
+	fmt.Fprintf(tmp, "ssl-mode=%s\n", m.DB.SSLMode(m.DB.SSLMode))
 
 	m.optionFile = tmp.Name()
 
@@ -157,7 +164,7 @@ func (m *mysqlTester) conn() (*sql.DB, error) {
 	}
 
 	var err error
-	m.dbConn, err = sql.Open("mysql", drivers.MySQLBuildQueryString(m.user, m.pass, m.testDBName, m.host, m.port, m.sslmode))
+	m.dbConn, err = sql.Open("mysql", drivers.MySQLBuildQueryString(m.DB.User, m.DB.Pass, m.testDBName, m.DB.Host, m.DB.Port, m.DB.SSLMode))
 	if err != nil {
 	return nil, err
 	}

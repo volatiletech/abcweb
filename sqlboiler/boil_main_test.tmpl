@@ -11,18 +11,14 @@ type tester interface {
 }
 
 func TestMain(m *testing.M) {
+	var err error
+
+	// Seed rand
+	rand.Seed(time.Now().UnixNano())
+
 	if dbMain == nil {
 		fmt.Println("no dbMain tester interface was ready")
 		os.Exit(-1)
-	}
-
-	rand.Seed(time.Now().UnixNano())
-	var err error
-
-	setConfigDefaults()
-	if err := validateConfig(); err != nil {
-		fmt.Println("failed to validate config", err)
-		os.Exit(-2)
 	}
 
 	// Set DebugMode so we can see generated sql statements
@@ -31,13 +27,13 @@ func TestMain(m *testing.M) {
 
 	if err = dbMain.setup(); err != nil {
 		fmt.Println("Unable to execute setup:", err)
-		os.Exit(-3)
+		os.Exit(-2)
 	}
 
-  conn, err := dbMain.conn()
-  if err != nil {
-    fmt.Println("failed to get connection:", err)
-  }
+	conn, err := dbMain.conn()
+	if err != nil {
+		fmt.Println("failed to get connection:", err)
+	}
 
 	var code int
 	boil.SetDB(conn)
@@ -45,39 +41,8 @@ func TestMain(m *testing.M) {
 
 	if err = dbMain.teardown(); err != nil {
 		fmt.Println("Unable to execute teardown:", err)
-		os.Exit(-4)
+		os.Exit(-3)
 	}
 
 	os.Exit(code)
-}
-
-// setConfigDefaults is only necessary because of bugs in viper, noted in main
-func setConfigDefaults() {
-	{{if eq .DriverName "postgres" -}}
-	if config.ModeViper.GetString("sslmode") == "" {
-		config.ModeViper.Set("sslmode", "require")
-	}
-	if config.ModeViper.GetInt("port") == 0 {
-		config.ModeViper.Set("port", 5432)
-	}
-	{{- else if eq .DriverName "mysql" -}}
-	if config.ModeViper.GetString("sslmode") == "" {
-		config.ModeViper.Set("sslmode", "true")
-	}
-	if config.ModeViper.GetInt("port") == 0 {
-		config.ModeViper.Set("port", 3306)
-	}
-	{{- else -}}
-	panic("not a valid driver name")
-	{{- end}}
-}
-
-func validateConfig() error {
-	return vala.BeginValidation().Validate(
-		vala.StringNotEmpty(config.ModeViper.GetString("user"), "user"),
-		vala.StringNotEmpty(config.ModeViper.GetString("host"), "host"),
-		vala.Not(vala.Equals(config.ModeViper.GetInt("port"), 0, "port")),
-		vala.StringNotEmpty(config.ModeViper.GetString("dbname"), "dbname"),
-		vala.StringNotEmpty(config.ModeViper.GetString("sslmode"), "sslmode"),
-	).Check()
 }
