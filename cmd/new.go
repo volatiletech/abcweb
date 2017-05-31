@@ -59,6 +59,7 @@ func init() {
 	newCmd.Flags().BoolP("skip-dep-ensure", "", false, "Skip running dep ensure command")
 	newCmd.Flags().BoolP("skip-git-init", "", false, "Skip running git init command")
 	newCmd.Flags().BoolP("silent", "", false, "Disable console output")
+	newCmd.Flags().BoolP("verbose", "v", false, "Show verbose output for npm install and dep ensure")
 
 	RootCmd.AddCommand(newCmd)
 }
@@ -87,6 +88,7 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		TLSCommonName:  viper.GetString("tls-common-name"),
 		DefaultEnv:     viper.GetString("default-env"),
 		Bootstrap:      strings.ToLower(viper.GetString("bootstrap")),
+		Verbose:        viper.GetBool("verbose"),
 	}
 
 	validBootstrap := []string{"none", "regular", "gridonly", "rebootonly", "gridandrebootonly"}
@@ -149,22 +151,30 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if !newCmdConfig.NoGulp && !newCmdConfig.SkipNPMInstall {
-		err = npmInstall(newCmdConfig)
+	if !newCmdConfig.SkipGitInit {
+		err = gitInit(newCmdConfig)
 		if err != nil {
 			return err
 		}
+	}
+
+	if !newCmdConfig.Silent {
+		fmt.Printf("\n\tPlease note the `npm install` command can take a few minutes to complete.\n\tPlease be patient, generally the first run is the slowest.\n\n")
+	}
+
+	if !newCmdConfig.NoGulp && !newCmdConfig.SkipNPMInstall {
+		err = npmInstall(newCmdConfig, newCmdConfig.Verbose)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !newCmdConfig.Silent {
+		fmt.Printf("\n\tPlease note the `dep ensure` command can take a few minutes to complete.\n\tPlease be patient, generally the first run is the slowest.\n\n")
 	}
 
 	if !newCmdConfig.SkipDepEnsure {
-		err = depEnsure(newCmdConfig)
-		if err != nil {
-			return err
-		}
-	}
-
-	if !newCmdConfig.SkipGitInit {
-		err = gitInit(newCmdConfig)
+		err = depEnsure(newCmdConfig, newCmdConfig.Verbose)
 		if err != nil {
 			return err
 		}
@@ -174,23 +184,6 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		fmt.Printf("\tresult -> Finished\n")
 	}
 	return nil
-}
-
-func depEnsure(cfg newConfig) error {
-	if !cfg.Silent {
-		fmt.Println("\trunning -> dep ensure")
-	}
-
-	checkDep("dep")
-
-	exc := exec.Command("dep", "ensure")
-	exc.Dir = cfg.AppPath
-
-	out, err := exc.CombinedOutput()
-
-	fmt.Print(string(out))
-
-	return err
 }
 
 func gitInit(cfg newConfig) error {
@@ -208,17 +201,45 @@ func gitInit(cfg newConfig) error {
 	return err
 }
 
-func npmInstall(cfg newConfig) error {
+func npmInstall(cfg newConfig, verbose bool) error {
 	if !cfg.Silent {
 		fmt.Println("\trunning -> npm install")
 	}
 
 	checkDep("npm")
 
-	exc := exec.Command("npm", "install")
+	var exc *exec.Cmd
+	if verbose {
+		exc = exec.Command("npm", "install", "--verbose")
+		exc.Stdout = os.Stdout
+	} else {
+		exc = exec.Command("npm", "install")
+	}
 	exc.Dir = cfg.AppPath
 
 	err := exc.Run()
+
+	return err
+}
+
+func depEnsure(cfg newConfig, verbose bool) error {
+	if !cfg.Silent {
+		fmt.Println("\trunning -> dep ensure")
+	}
+
+	checkDep("dep")
+
+	var exc *exec.Cmd
+	if verbose {
+		exc = exec.Command("dep", "ensure", "-v")
+	} else {
+		exc = exec.Command("dep", "ensure")
+	}
+	exc.Dir = cfg.AppPath
+
+	out, err := exc.CombinedOutput()
+
+	fmt.Print(string(out))
 
 	return err
 }

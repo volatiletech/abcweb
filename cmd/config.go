@@ -45,6 +45,7 @@ type newConfig struct {
 	SkipDepEnsure  bool   `toml:"skip-dep-ensure"`
 	SkipGitInit    bool   `toml:"skip-git-init"`
 	Silent         bool   `toml:"silent"`
+	Verbose        bool   `toml:"verbose"`
 }
 
 // Create some config variables
