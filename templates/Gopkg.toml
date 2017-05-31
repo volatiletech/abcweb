@@ -64,49 +64,49 @@
 # source = "https://github.com/myfork/package.git"
 
 [[constraint]]
-  revision = "90f2daf1"
-  name = "github.com/markbates/refresh"
+	revision = "90f2daf1"
+	name = "github.com/markbates/refresh"
 
 [[constraint]]
-  version = "^0.8.0"
-  name = "github.com/pkg/errors"
+	version = "^0.8.0"
+	name = "github.com/pkg/errors"
 
 [[constraint]]
 	version = "^2.1.0"
-  name = "github.com/pressly/chi"
+	name = "github.com/pressly/chi"
 
 [[constraint]]
-  revision = "e606913c"
-  name = "github.com/spf13/cobra"
+	revision = "e606913c"
+	name = "github.com/spf13/cobra"
 
 [[constraint]]
-  revision = "e57e3eeb"
-  name = "github.com/spf13/pflag"
+	revision = "e57e3eeb"
+	name = "github.com/spf13/pflag"
 
 [[constraint]]
-  branch = "v1"
-  name = "github.com/unrolled/render"
-
-[[constraint]]
-  version = "^2.0.0"
-  name = "github.com/vattle/sqlboiler"
+	branch = "v1"
+	name = "github.com/unrolled/render"
 
 [[constraint]]
 	version = "^2.0.0"
-  name = "github.com/volatiletech/abcweb"
+	name = "github.com/vattle/sqlboiler"
 
 [[constraint]]
-  version = "^1.0.0"
-  name = "github.com/volatiletech/helpers"
-
-[[constraint]]
-  version = "^1.1.0"
-  name = "github.com/volatiletech/mig"
+	version = "^2.0.0"
+	name = "github.com/volatiletech/abcweb"
 
 [[constraint]]
 	version = "^1.0.0"
-  name = "go.uber.org/zap"
+	name = "github.com/volatiletech/helpers"
+
+[[constraint]]
+	version = "^1.1.0"
+	name = "github.com/volatiletech/mig"
+
+[[constraint]]
+	version = "^1.0.0"
+	name = "go.uber.org/zap"
 
 [[constraint]]
 	branch = "master"
-  name = "gopkg.in/nullbio/null.v6"
+	name = "gopkg.in/nullbio/null.v6"

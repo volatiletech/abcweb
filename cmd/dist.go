@@ -136,7 +136,8 @@ func copyConfig() error {
 
 	for _, file := range files {
 		name := file.Name()
-		if strings.HasSuffix(name, ".toml") && name != "Gopkg.toml" {
+		if strings.HasSuffix(name, ".toml") &&
+			name != "Gopkg.toml" && name != ".abcweb.toml" && name != "watch.toml" {
 			err = copyFile(
 				filepath.Join(cnf.AppPath, name),
 				filepath.Join(cnf.AppPath, "dist", name),
