@@ -232,14 +232,13 @@ func depEnsure(cfg newConfig, verbose bool) error {
 	var exc *exec.Cmd
 	if verbose {
 		exc = exec.Command("dep", "ensure", "-v")
+		exc.Stdout = os.Stdout
 	} else {
 		exc = exec.Command("dep", "ensure")
 	}
 	exc.Dir = cfg.AppPath
 
-	out, err := exc.CombinedOutput()
-
-	fmt.Print(string(out))
+	err := exc.Run()
 
 	return err
 }
