@@ -116,9 +116,11 @@ known, widely used and widely enjoyed.
 
 #### Vendoring
 
-When ABCWeb generates your app it also includes a `vendor.json` file with all of its dependencies
-in it. The `abcweb new` command will automatically sync your `vendor` folder on generation.
-[Govendor](github.com/kardianos/govendor) was the tool of choice here. It's functional and easy to use.
+When ABCWeb generates your app it also includes a `Gopkg.toml` file with all of its dependencies
+and their locked versions. The `abcweb new` command will automatically sync your `vendor` folder on
+generation by running the `dep ensure` command.
+[dep](github.com/golang/dep) was the tool of choice here since the file formats have now been
+locked in and it's shaping up to become the standard for Go vendoring.
 
 #### Build System, Asset Pipeline & Task Running
 
@@ -194,7 +196,6 @@ Available Commands:
   help        Help about any command
   migrate     Run migration tasks (up, down, redo, status, version)
   new         Generate a new abcweb app
-  revendor    Revendor updates your vendor.json file and resyncs your vendor folder
   test        Runs the tests for your abcweb app
 
 Flags:

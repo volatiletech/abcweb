@@ -13,7 +13,6 @@ const (
 
 type buildConfig struct{}
 type distConfig struct{}
-type revendorConfig struct{}
 
 type modelsConfig struct {
 	config.DBConfig
@@ -24,28 +23,28 @@ type migrateConfig struct {
 }
 
 type newConfig struct {
-	AppPath          string `toml:"app-path"`
-	ImportPath       string `toml:"import-path"`
-	AppName          string `toml:"app-name"`
-	AppEnvName       string `toml:"app-env-name"`
-	TLSCommonName    string `toml:"tls-common-name"`
-	ProdStorer       string `toml:"prod-storer"`
-	DevStorer        string `toml:"dev-storer"`
-	DefaultEnv       string `toml:"default-env"`
-	Bootstrap        string `toml:"bootstrap"`
-	NoBootstrapJS    bool   `toml:"no-bootstrap-js"`
-	NoGulp           bool   `toml:"no-gulp"`
-	NoFontAwesome    bool   `toml:"no-font-awesome"`
-	NoLiveReload     bool   `toml:"no-live-reload"`
-	NoTLSCerts       bool   `toml:"no-tls-certs"`
-	NoReadme         bool   `toml:"no-readme"`
-	NoConfig         bool   `toml:"no-config"`
-	NoSessions       bool   `toml:"no-sessions"`
-	ForceOverwrite   bool   `toml:"force-overwrite"`
-	SkipNPMInstall   bool   `toml:"skip-npm-install"`
-	SkipGovendorSync bool   `toml:"skip-govendor-sync"`
-	SkipGitInit      bool   `toml:"skip-git-init"`
-	Silent           bool   `toml:"silent"`
+	AppPath        string `toml:"app-path"`
+	ImportPath     string `toml:"import-path"`
+	AppName        string `toml:"app-name"`
+	AppEnvName     string `toml:"app-env-name"`
+	TLSCommonName  string `toml:"tls-common-name"`
+	ProdStorer     string `toml:"prod-storer"`
+	DevStorer      string `toml:"dev-storer"`
+	DefaultEnv     string `toml:"default-env"`
+	Bootstrap      string `toml:"bootstrap"`
+	NoBootstrapJS  bool   `toml:"no-bootstrap-js"`
+	NoGulp         bool   `toml:"no-gulp"`
+	NoFontAwesome  bool   `toml:"no-font-awesome"`
+	NoLiveReload   bool   `toml:"no-live-reload"`
+	NoTLSCerts     bool   `toml:"no-tls-certs"`
+	NoReadme       bool   `toml:"no-readme"`
+	NoConfig       bool   `toml:"no-config"`
+	NoSessions     bool   `toml:"no-sessions"`
+	ForceOverwrite bool   `toml:"force-overwrite"`
+	SkipNPMInstall bool   `toml:"skip-npm-install"`
+	SkipDepEnsure  bool   `toml:"skip-dep-ensure"`
+	SkipGitInit    bool   `toml:"skip-git-init"`
+	Silent         bool   `toml:"silent"`
 }
 
 // Create some config variables

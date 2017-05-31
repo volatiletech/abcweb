@@ -197,6 +197,7 @@ func init() {
 	migrateCmd.AddCommand(downCmd)
 	migrateCmd.AddCommand(downAllCmd)
 	migrateCmd.AddCommand(redoCmd)
+	migrateCmd.AddCommand(redoAllCmd)
 	migrateCmd.AddCommand(statusCmd)
 	migrateCmd.AddCommand(dbVersionCmd)
 

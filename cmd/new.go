@@ -56,7 +56,7 @@ func init() {
 	newCmd.Flags().BoolP("no-sessions", "s", false, "Skip support for http sessions")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("skip-npm-install", "", false, "Skip running npm install command")
-	newCmd.Flags().BoolP("skip-govendor-sync", "", false, "Skip running govendor sync command")
+	newCmd.Flags().BoolP("skip-dep-ensure", "", false, "Skip running dep ensure command")
 	newCmd.Flags().BoolP("skip-git-init", "", false, "Skip running git init command")
 	newCmd.Flags().BoolP("silent", "", false, "Disable console output")
 
@@ -69,24 +69,24 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 	viper.BindPFlags(cmd.Flags())
 
 	newCmdConfig = newConfig{
-		NoGulp:           viper.GetBool("no-gulp"),
-		NoBootstrapJS:    viper.GetBool("no-bootstrap-js"),
-		NoFontAwesome:    viper.GetBool("no-font-awesome"),
-		NoLiveReload:     viper.GetBool("no-livereload"),
-		NoSessions:       viper.GetBool("no-sessions"),
-		NoTLSCerts:       viper.GetBool("no-tls-certs"),
-		NoReadme:         viper.GetBool("no-readme"),
-		NoConfig:         viper.GetBool("no-config"),
-		ForceOverwrite:   viper.GetBool("force-overwrite"),
-		SkipNPMInstall:   viper.GetBool("skip-npm-install"),
-		SkipGovendorSync: viper.GetBool("skip-govendor-sync"),
-		SkipGitInit:      viper.GetBool("skip-git-init"),
-		Silent:           viper.GetBool("silent"),
-		ProdStorer:       viper.GetString("sessions-prod-storer"),
-		DevStorer:        viper.GetString("sessions-dev-storer"),
-		TLSCommonName:    viper.GetString("tls-common-name"),
-		DefaultEnv:       viper.GetString("default-env"),
-		Bootstrap:        strings.ToLower(viper.GetString("bootstrap")),
+		NoGulp:         viper.GetBool("no-gulp"),
+		NoBootstrapJS:  viper.GetBool("no-bootstrap-js"),
+		NoFontAwesome:  viper.GetBool("no-font-awesome"),
+		NoLiveReload:   viper.GetBool("no-livereload"),
+		NoSessions:     viper.GetBool("no-sessions"),
+		NoTLSCerts:     viper.GetBool("no-tls-certs"),
+		NoReadme:       viper.GetBool("no-readme"),
+		NoConfig:       viper.GetBool("no-config"),
+		ForceOverwrite: viper.GetBool("force-overwrite"),
+		SkipNPMInstall: viper.GetBool("skip-npm-install"),
+		SkipDepEnsure:  viper.GetBool("skip-dep-ensure"),
+		SkipGitInit:    viper.GetBool("skip-git-init"),
+		Silent:         viper.GetBool("silent"),
+		ProdStorer:     viper.GetString("sessions-prod-storer"),
+		DevStorer:      viper.GetString("sessions-dev-storer"),
+		TLSCommonName:  viper.GetString("tls-common-name"),
+		DefaultEnv:     viper.GetString("default-env"),
+		Bootstrap:      strings.ToLower(viper.GetString("bootstrap")),
 	}
 
 	validBootstrap := []string{"none", "regular", "gridonly", "rebootonly", "gridandrebootonly"}
@@ -156,8 +156,8 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if !newCmdConfig.SkipGovendorSync {
-		err = vendorSync(newCmdConfig)
+	if !newCmdConfig.SkipDepEnsure {
+		err = depEnsure(newCmdConfig)
 		if err != nil {
 			return err
 		}
@@ -176,14 +176,14 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func vendorSync(cfg newConfig) error {
+func depEnsure(cfg newConfig) error {
 	if !cfg.Silent {
-		fmt.Println("\trunning -> govendor sync")
+		fmt.Println("\trunning -> dep ensure")
 	}
 
-	checkDep("govendor")
+	checkDep("dep")
 
-	exc := exec.Command("govendor", "sync")
+	exc := exec.Command("dep", "ensure")
 	exc.Dir = cfg.AppPath
 
 	out, err := exc.CombinedOutput()
