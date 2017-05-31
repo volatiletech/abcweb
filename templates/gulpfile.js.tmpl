@@ -33,19 +33,19 @@ var config = {
 	production: !!util.env.production,
 
 	// buildTarget is initialized by the setup function.
-	// buildTarget is set to build or {{.AppEnvName}}_PUBLIC_PATH if present. 
+	// buildTarget is set to build or {{.AppEnvName}}_SERVER_PUBLIC_PATH if present. 
 	// All tasks get their build output path from this variable.
 	buildTarget: "",
 };
 
-// update the buildTarget if {{.AppEnvName}}_PUBLIC_PATH env var is set.
+// update the buildTarget if {{.AppEnvName}}_SERVER_PUBLIC_PATH env var is set.
 // This will be set to a /tmp folder when running "abcweb dev", so that
 // your development assets compile to tmp instead of ./public
 // which is usually reserved for full builds.
 // setup also sets config.production to true if executing the build task.
 (function setup() {
-	if (process.env.{{.AppEnvName}}_PUBLIC_PATH) {
-		config.buildTarget = path.join(process.env.{{.AppEnvName}}_PUBLIC_PATH, 'assets')
+	if (process.env.{{.AppEnvName}}_SERVER_PUBLIC_PATH) {
+		config.buildTarget = path.join(process.env.{{.AppEnvName}}_SERVER_PUBLIC_PATH, 'assets')
 	} else {
 		config.buildTarget = config.paths.build
 	}
@@ -190,15 +190,15 @@ gulp.task('clean', function() {
 });
 
 /**
-	COPY TASK - COPY NON-COMPILED ASSETS INTO {{.AppEnvName}}_PUBLIC_PATH IF SET 
+	COPY TASK - COPY NON-COMPILED ASSETS INTO {{.AppEnvName}}_SERVER_PUBLIC_PATH IF SET 
 */
 
 gulp.task('copy', function(cb) {
-	if (process.env.{{.AppEnvName}}_PUBLIC_PATH) {
+	if (process.env.{{.AppEnvName}}_SERVER_PUBLIC_PATH) {
 		return gulp.src([
 			path.join(config.paths.publics, '**/*'), 
 			'!' + config.paths.build
-		]).pipe(gulp.dest(process.env.{{.AppEnvName}}_PUBLIC_PATH))
+		]).pipe(gulp.dest(process.env.{{.AppEnvName}}_SERVER_PUBLIC_PATH))
 	}
 
 	return cb();
@@ -313,12 +313,12 @@ gulp.task('watch', gulp.series('clean', 'copy', 'compile', function() {
 		{{- end}}
 	
 	// non-compiled assets copy in public folder
-	if (process.env.{{.AppEnvName}}_PUBLIC_PATH) {
+	if (process.env.{{.AppEnvName}}_SERVER_PUBLIC_PATH) {
 		watch([
 			path.join(config.paths.publics, '**/*'), 
 			'!' + config.paths.build
 		]).pipe(plumber())
-			.pipe(gulp.dest(process.env.{{.AppEnvName}}_PUBLIC_PATH))
+			.pipe(gulp.dest(process.env.{{.AppEnvName}}_SERVER_PUBLIC_PATH))
 			{{if not .NoLiveReload -}}
 			.pipe(livereload())
 			{{- end}}

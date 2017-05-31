@@ -83,7 +83,7 @@ type ServerConfig struct {
 	// and disk storer for prod.
 	SessionsDevStorer bool `toml:"sessions-dev-storer" mapstructure:"sessions-dev-storer" env:"SERVER_SESSIONS_DEV_STORER"`
 	// PublicPath defaults to "public" but can be set to something else
-	// by the {{.AppEnvName}}_PUBLIC_PATH environment variable.
+	// by the {{.AppEnvName}}_SERVER_PUBLIC_PATH environment variable.
 	// This is set by the "abcweb dev" command to instruct the app to
 	// load assets from a /tmp folder instead of the local public folder.
 	PublicPath string `toml:"public-path" mapstructure:"public-path" env:"SERVER_PUBLIC_PATH"`

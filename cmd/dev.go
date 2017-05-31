@@ -186,7 +186,7 @@ func startRefresh(publicPathEnv string, ctx context.Context) (*refresh.Manager, 
 		}
 	}
 
-	// Append the APPNAME_PUBLIC_PATH environment var to refresh libs CommandEnv.
+	// Append the APPNAME_SERVER_PUBLIC_PATH environment var to refresh libs CommandEnv.
 	c.CommandEnv = append(c.CommandEnv, publicPathEnv)
 
 	rc := &refresh.Configuration{
