@@ -102,14 +102,14 @@ func (m *mysqlTester) makeOptionFile() error {
 	fmt.Fprintf(tmp, "port=%d\n", m.DB.Port)
 	fmt.Fprintf(tmp, "user=%s\n", m.DB.User)
 	fmt.Fprintf(tmp, "password=%s\n", m.DB.Pass)
-	fmt.Fprintf(tmp, "ssl-mode=%s\n", m.DB.SSLMode(m.DB.SSLMode))
+	fmt.Fprintf(tmp, "ssl-mode=%s\n", m.sslMode(m.DB.SSLMode))
 
 	fmt.Fprintln(tmp, "[mysqldump]")
 	fmt.Fprintf(tmp, "host=%s\n", m.DB.Host)
 	fmt.Fprintf(tmp, "port=%d\n", m.DB.Port)
 	fmt.Fprintf(tmp, "user=%s\n", m.DB.User)
 	fmt.Fprintf(tmp, "password=%s\n", m.DB.Pass)
-	fmt.Fprintf(tmp, "ssl-mode=%s\n", m.DB.SSLMode(m.DB.SSLMode))
+	fmt.Fprintf(tmp, "ssl-mode=%s\n", m.sslMode(m.DB.SSLMode))
 
 	m.optionFile = tmp.Name()
 

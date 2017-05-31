@@ -279,10 +279,16 @@ func modelsCmdSetup(cmd *cobra.Command, args []string) error {
 	}
 
 	// fix imports
-	modelsCmdState.Importer.TestSingleton.Add("boil_main_test", `"github.com/volatiletech/abcweb/config"`, true)
-	modelsCmdState.Importer.TestMain.Add("postgres", `"github.com/volatiletech/abcweb/config"`, true)
-	modelsCmdState.Importer.TestMain.Add("mysql", `"github.com/volatiletech/abcweb/config"`, true)
+	modelsCmdState.Importer.TestMain.Add("postgres", `"github.com/volatiletech/abcweb/abcconfig"`, true)
+	modelsCmdState.Importer.TestMain.Add("postgres", `"github.com/volatiletech/helpers/git"`, true)
+	modelsCmdState.Importer.TestMain.Add("postgres", `"github.com/volatiletech/abcweb/abcconfig"`, true)
+	modelsCmdState.Importer.TestMain.Add("postgres", `"path/filepath"`, true)
+	modelsCmdState.Importer.TestMain.Add("mysql", `"github.com/volatiletech/abcweb/abcconfig"`, true)
+	modelsCmdState.Importer.TestMain.Add("mysql", `"github.com/volatiletech/helpers/git"`, true)
+	modelsCmdState.Importer.TestMain.Add("mysql", `"github.com/volatiletech/abcweb/abcconfig"`, true)
+	modelsCmdState.Importer.TestMain.Add("mysql", `"path/filepath"`, true)
 	modelsCmdState.Importer.TestSingleton.Remove("boil_main_test", `"path/filepath"`)
+	modelsCmdState.Importer.TestSingleton.Remove("boil_main_test", `"github.com/kat-co/vala"`)
 	modelsCmdState.Importer.TestSingleton.Remove("boil_main_test", `"github.com/pkg/errors"`)
 	modelsCmdState.Importer.TestSingleton.Remove("boil_main_test", `"github.com/spf13/viper"`)
 	modelsCmdState.Importer.TestMain.Remove("postgres", `"github.com/spf13/viper"`)
