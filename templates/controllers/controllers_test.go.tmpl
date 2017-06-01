@@ -3,6 +3,7 @@ package controllers
 import (
 	"os"
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/volatiletech/abcweb/abcconfig"
@@ -10,7 +11,6 @@ import (
 	"github.com/volatiletech/abcweb/abcdatabase"
 	"{{.ImportPath}}/app"
 	"{{.ImportPath}}/rendering"
-	"path/filepath"
 	"{{.ImportPath}}/db"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -70,7 +70,7 @@ func testMainMigrations(m *testing.M) int {
 		LoadEnv: "test",
 	}
 
-	cfg := &app.AppConfig{}
+	cfg := &app.Config{}
 
 	// Load the database config from test env into cfg
 	_, err := c.Bind(nil, cfg)
