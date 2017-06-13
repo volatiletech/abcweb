@@ -108,5 +108,4 @@
 	name = "go.uber.org/zap"
 
 [[constraint]]
-	branch = "master"
 	name = "gopkg.in/nullbio/null.v6"
