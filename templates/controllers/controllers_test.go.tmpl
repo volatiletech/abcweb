@@ -3,10 +3,8 @@ package controllers
 import (
 	"os"
 	"fmt"
-	"path/filepath"
 	"testing"
 
-	"github.com/volatiletech/abcweb/abcconfig"
 	"github.com/volatiletech/abcweb/abcsessions"
 	"github.com/volatiletech/abcweb/abcdatabase"
 	"{{.ImportPath}}/app"
@@ -52,47 +50,15 @@ func newRootMock(templatesDir string) Root {
 }
 
 func TestMain(m *testing.M) {
-	// Your custom TestMain pre-Run() code goes here
-
-	r := testMainMigrations(m)
-
-	// Your custom TestMain post-Run() code goes here
-
-	os.Exit(r)
-}
-
-// testMainMigrations executes the database migrations for the test database
-// defined in config.toml and executes testdata.sql, then runs the unit tests.
-// It returns a status code to be used with os.Exit(). Codes > 0 indicate error.
-func testMainMigrations(m *testing.M) int {
-	c := &abcconfig.Config{
-		File: filepath.FromSlash("../config.toml"),
-		LoadEnv: "test",
-	}
-
-	cfg := &app.Config{}
-
-	// Load the database config from test env into cfg
-	_, err := c.Bind(nil, cfg)
+	var err error
+	var count int
+	db.DB, count, err = abcdatabase.SetupTestSuite(db.GoTestdata)
 	if err != nil {
-		fmt.Printf("TestMain cannot load environment \"test\" from config.toml: %s\n", err)
-		return 1
+		fmt.Printf("TestMain setup failed: %s\n", err)
+		os.Exit(1)
 	}
-
-	// Execute database migrations
-	count, err := abcdatabase.SetupTestSuite(cfg.DB, db.GoTestdata)
-	if err != nil {
-		fmt.Printf("TestMain Setup error: %s\n", err)
-		return 2
-	}
-
-	if err = db.InitDB(cfg.DB); err != nil {
-		fmt.Printf("Failed to initialize the global DB handle: %s\n", err)
-		return 3
-	}
-
 	fmt.Printf("TestMain Setup ran %d migrations.\n", count)
 
-	// Run the package tests
-	return m.Run()
+	r := m.Run()
+	os.Exit(r)
 }

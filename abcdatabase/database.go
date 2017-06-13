@@ -44,17 +44,105 @@ func GetConnStr(cfg abcconfig.DBConfig) (string, error) {
 	return "", fmt.Errorf("cannot get connection string for unknown database %q", cfg.DB)
 }
 
-// SetupTestSuite executes the migrations "up" against the passed in database
-// and also inserts the test data defined in testdata.sql and returns the
-// number of migrations run.
+// SetupTestSuite fully initializes a test database for you and returns
+// a database connection to that test database and the number of migrations
+// executed. It executes migrations testdata.sql and a TestdataFunc against
+// your test database if present.
 //
-// SetupTestSuite is used primarily as a testing helper, and is called in
-// controllers_test.go to set up the database state for the controller tests.
-func SetupTestSuite(cfg abcconfig.DBConfig, testdata TestdataFunc) (int, error) {
+// SetupTestSuite retrieves the test database configuration from the
+// config.toml file located in the root of the app, and loads the "test"
+// section of the config file. It also sets the environment prefix to
+// the name of the app (in uppercase, i.e. "my app" -> "MY_APP").
+//
+// SetupTestSuite will run the migrations located at approot/db/migrations
+// and then execute the testdata.sql file located at approot/db/testdata.sql
+// if it exists. If a TestdataFunc is provided to SetupTestSuite it will
+// execute this handler after executing the testdata.sql file.
+//
+// SetupTestSuite returns a connection to the test database, the number
+// of migrations executed, and an error if present.
+func SetupTestSuite(testdata TestdataFunc) (*sql.DB, int, error) {
+	var db *sql.DB
+	appPath := git.GetAppPath()
+
+	c := &abcconfig.Config{
+		File:      filepath.Join(appPath, "config.toml"),
+		LoadEnv:   "test",
+		EnvPrefix: git.GetAppEnvName(),
+	}
+
+	cfg := &abcconfig.AppConfig{}
+
+	// Load the database config from test env into cfg
+	_, err := c.Bind(nil, cfg)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "cannot load environment named test from config.toml")
+	}
+
+	err = createTestDB(cfg.DB)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "unable to create test database")
+	}
+
+	count, err := RunMigrations(cfg.DB, filepath.Join(appPath, "db", "migrations"))
+	if err != nil {
+		return nil, count, errors.Wrap(err, "cannot execute migrations up")
+	}
+
+	testdataFile := filepath.Join(appPath, "db", "testdata.sql")
+	_, err = os.Stat(testdataFile)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, count, errors.Wrapf(err, "unexpected error occurred trying to load %s", testdataFile)
+	} else if err != nil { // file not exists error
+		// set the file to empty string to tell SetupTestdata not to execute it
+		testdataFile = ""
+	}
+
+	err = SetupTestdata(cfg.DB, testdataFile, testdata)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "unable to setup testdata")
+	}
+
+	connStr, err := GetConnStr(cfg.DB)
+	if err != nil {
+		return nil, count, err
+	}
+
+	db, err = sql.Open(cfg.DB.DB, connStr)
+	if err != nil {
+		return nil, count, errors.Wrap(err, "cannot connect to test database")
+	}
+
+	return db, count, nil
+}
+
+// SetupDBData executes the migrations "up" against the passed in database
+// and also inserts the test data defined in testdata.sql and executes
+// the passed in TestdataFunc handler if present, and then returns the
+// number of migrations run.
+func SetupDBData(cfg abcconfig.DBConfig, testdata TestdataFunc) (int, error) {
 	var err error
 
 	appPath := git.GetAppPath()
 
+	err = createTestDB(cfg)
+	if err != nil {
+		return 0, err
+	}
+
+	count, err := RunMigrations(cfg, filepath.Join(appPath, "db", "migrations"))
+	if err != nil {
+		return count, errors.Wrap(err, "cannot execute migrations up")
+	}
+
+	testdataFile := filepath.Join(appPath, "db", "testdata.sql")
+	err = SetupTestdata(cfg, testdataFile, testdata)
+
+	return count, err
+}
+
+// createTestDB drops the test database if it exists, then recreates it
+func createTestDB(cfg abcconfig.DBConfig) error {
 	// copy cfg into cfgNew
 	cfgNew := cfg
 
@@ -64,79 +152,130 @@ func SetupTestSuite(cfg abcconfig.DBConfig, testdata TestdataFunc) (int, error) 
 		// Set the db to the default postgres db so we have something to connect to
 		// to create a new database or drop old databases
 		cfgNew.DBName = "postgres"
-
-		connStr, err := GetConnStr(cfgNew)
-		if err != nil {
-			return 0, err
-		}
-
-		db, err := sql.Open(cfgNew.DB, connStr)
-		if err != nil {
-			return 0, err
-		}
-
-		_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", cfg.DBName))
-		if err != nil {
-			return 0, errors.Wrap(err, "drop if exists failed")
-		}
-
-		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", cfg.DBName))
-		if err != nil {
-			return 0, errors.Wrap(err, "create database failed")
-		}
-
-		db.Close()
-	} else if cfg.DB == "mysql" {
+	} else {
+		// Other databases like MySQL don't have a default db to connect to
 		cfgNew.DBName = ""
-
-		connStr, err := GetConnStr(cfgNew)
-		if err != nil {
-			return 0, err
-		}
-
-		db, err := sql.Open(cfgNew.DB, connStr)
-		if err != nil {
-			return 0, err
-		}
-
-		_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", cfg.DBName))
-		if err != nil {
-			return 0, errors.Wrap(err, "drop if exists failed")
-		}
-
-		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", cfg.DBName))
-		if err != nil {
-			return 0, errors.Wrap(err, "create database failed")
-		}
-
-		db.Close()
 	}
 
+	connStr, err := GetConnStr(cfgNew)
+	if err != nil {
+		return err
+	}
+
+	db, err := sql.Open(cfgNew.DB, connStr)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", cfg.DBName))
+	if err != nil {
+		return errors.Wrap(err, "drop if exists failed")
+	}
+
+	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", cfg.DBName))
+	if err != nil {
+		return errors.Wrap(err, "create database failed")
+	}
+
+	db.Close()
+	return nil
+}
+
+// RunMigrations executes the migrations "up" against the passed in database
+// and returns the number of migrations run.
+func RunMigrations(cfg abcconfig.DBConfig, migrationsPath string) (int, error) {
 	connStr, err := GetConnStr(cfg)
 	if err != nil {
 		return 0, err
 	}
 
-	count, err := mig.Up(cfg.DB, connStr, filepath.Join(appPath, "db", "migrations"))
+	count, err := mig.Up(cfg.DB, connStr, migrationsPath)
 	if err != nil {
 		return count, err
 	}
 
-	testdataFile := filepath.Join(appPath, "db", "testdata.sql")
+	return count, nil
+}
 
-	contents, err := ioutil.ReadFile(testdataFile)
-	if err == nil && len(contents) > 0 {
-		if err := ExecuteScript(cfg, contents); err != nil {
-			return count, err
+// SetupTestdata executes the passed in sql file against the passed in database
+// and then executes the testdata handler function.
+//
+// SetupTestdata takes an db config, and an optional testdata.sql file path
+// and optional testdata function handler.
+//
+// If path or handler is nil they will be skipped. If both are nil an error
+// will be thrown.
+func SetupTestdata(cfg abcconfig.DBConfig, testdataPath string, testdataFunc TestdataFunc) error {
+	if len(testdataPath) == 0 && testdataFunc == nil {
+		return errors.New("no testdata resource provided")
+	}
+	var err error
+
+	connStr, err := GetConnStr(cfg)
+	if err != nil {
+		return err
+	}
+
+	if len(testdataPath) > 0 {
+		contents, err := ioutil.ReadFile(testdataPath)
+		if err != nil {
+			return err
+		}
+		if len(contents) > 0 {
+			if err := ExecuteScript(cfg, contents); err != nil {
+				return err
+			}
 		}
 	}
 
 	// call the users testdata handler func if provided
-	if testdata != nil {
-		err = testdata(cfg.DB, connStr)
+	if testdataFunc != nil {
+		err = testdataFunc(cfg.DB, connStr)
 	}
 
-	return count, err
+	return err
+}
+
+// ExecuteScript executes the passed in SQL script against the passed in db
+func ExecuteScript(cfg abcconfig.DBConfig, script []byte) error {
+	rdr := bytes.NewReader(script)
+
+	if cfg.DB == "postgres" {
+		passFilePath, err := pgPassFile(cfg)
+		if err != nil {
+			return err
+		}
+		defer os.Remove(passFilePath)
+
+		cmd := exec.Command("psql", cfg.DBName, "-v", "ON_ERROR_STOP=1")
+		cmd.Stdin = rdr
+		cmd.Env = append(os.Environ(), pgEnv(cfg, passFilePath)...)
+
+		res, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf(string(res))
+		}
+
+		return err
+	} else if cfg.DB == "mysql" {
+		passFile, err := mysqlPassFile(cfg)
+		if err != nil {
+			return err
+		}
+		defer os.Remove(passFile)
+
+		cmd := exec.Command("mysql", fmt.Sprintf("--defaults-file=%s", passFile), "--database", cfg.DBName)
+		cmd.Stdin = rdr
+
+		res, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Println(string(res))
+		}
+
+		return err
+	}
+
+	return fmt.Errorf("cannot execute sql script, incompatible database %q", cfg.DB)
 }
 
 // IsMigrated returns true if the database is migrated to the
@@ -241,46 +380,4 @@ func mysqlPassFile(cfg abcconfig.DBConfig) (string, error) {
 	fmt.Fprintf(tmp, "ssl-mode=%s\n", sslMode)
 
 	return tmp.Name(), nil
-}
-
-// ExecuteScript executes the passed in SQL script against the passed in db
-func ExecuteScript(cfg abcconfig.DBConfig, script []byte) error {
-	rdr := bytes.NewReader(script)
-
-	if cfg.DB == "postgres" {
-		passFilePath, err := pgPassFile(cfg)
-		if err != nil {
-			return err
-		}
-		defer os.Remove(passFilePath)
-
-		cmd := exec.Command("psql", cfg.DBName, "-v", "ON_ERROR_STOP=1")
-		cmd.Stdin = rdr
-		cmd.Env = append(os.Environ(), pgEnv(cfg, passFilePath)...)
-
-		res, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf(string(res))
-		}
-
-		return err
-	} else if cfg.DB == "mysql" {
-		passFile, err := mysqlPassFile(cfg)
-		if err != nil {
-			return err
-		}
-		defer os.Remove(passFile)
-
-		cmd := exec.Command("mysql", fmt.Sprintf("--defaults-file=%s", passFile), "--database", cfg.DBName)
-		cmd.Stdin = rdr
-
-		res, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Println(string(res))
-		}
-
-		return err
-	}
-
-	return fmt.Errorf("cannot execute sql script, incompatible database %q", cfg.DB)
 }
