@@ -632,6 +632,7 @@ func TestGetTagMappings(t *testing.T) {
 		{chain: "server.render-recompile", env: "SERVER_RENDER_RECOMPILE"},
 		{chain: "server.sessions-dev-storer", env: "SERVER_SESSIONS_DEV_STORER"},
 		{chain: "server.public-path", env: "SERVER_PUBLIC_PATH"},
+		{chain: "db.debug-mode", env: "DB_DEBUG_MODE"},
 		{chain: "db.db", env: "DB_DB"},
 		{chain: "db.dbname", env: "DB_DBNAME"},
 		{chain: "db.host", env: "DB_HOST"},

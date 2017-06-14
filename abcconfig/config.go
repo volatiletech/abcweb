@@ -92,6 +92,8 @@ type ServerConfig struct {
 // DBConfig holds the database config for the app loaded through
 // environment variables, or the config.toml file.
 type DBConfig struct {
+	// DebugMode is a flag to toggle the output of SQLBoiler's SQL queries
+	DebugMode bool `toml:"debug-mode" mapstructure:"debug-mode" env:"DB_DEBUG_MODE"`
 	// DB is the database software; "postgres", "mysql", etc.
 	DB string `toml:"db" mapstructure:"db" env:"DB_DB"`
 	// The database name
@@ -424,6 +426,7 @@ func NewDBFlagSet() *pflag.FlagSet {
 	flags := &pflag.FlagSet{}
 
 	// db subsection flags
+	flags.BoolP("db.debug-mode", "", false, "Output database model SQL queries")
 	flags.StringP("db.db", "", "", "The database software (postgres|mysql)")
 	flags.StringP("db.dbname", "", "", "The database name to connect to")
 	flags.StringP("db.host", "", "", "The database hostname, e.g localhost")

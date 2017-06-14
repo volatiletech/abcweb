@@ -13,6 +13,7 @@ import (
 	"github.com/volatiletech/abcweb/abcconfig"
 	"github.com/volatiletech/abcweb/abcdatabase"
 	"github.com/volatiletech/abcweb/abcrender"
+	"github.com/vattle/sqlboiler/boil"
 	"github.com/spf13/pflag"
 )
 
@@ -26,6 +27,10 @@ func Setup(a *app.App, flags *pflag.FlagSet) error {
 	c := abcconfig.NewConfig("{{.AppEnvName}}")
 	if _, err := c.Bind(flags, a.Config); err != nil {
 		return errors.Wrap(err, "cannot bind app config")
+	}
+
+	if a.Config.DB.DebugMode {
+		boil.DebugMode = true
 	}
 
 	// Set the AssetsManifest cache to the contents of the assets 
