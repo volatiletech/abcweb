@@ -51,6 +51,9 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"github.com/spf13/viper"},
 		{"github.com/markbates/refresh"},
 		{"gopkg.in/nullbio/null.v6"},
+		{"github.com/djherbis/times"},
+		{"github.com/satori/go.uuid"},
+		{"gopkg.in/redis.v5"},
 		{"-t", "github.com/vattle/sqlboiler"},
 	}
 
