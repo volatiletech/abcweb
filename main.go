@@ -7,7 +7,7 @@ import (
 	"github.com/volatiletech/abcweb/cmd"
 )
 
-const abcwebVersion = "2.1.2"
+const abcwebVersion = "2.1.3"
 
 func main() {
 	// Too much happens between here and cobra's argument handling, for
