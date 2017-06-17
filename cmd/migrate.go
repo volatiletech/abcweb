@@ -190,6 +190,7 @@ func init() {
 	downCmd.Flags().AddFlagSet(modelsFlags)
 	downAllCmd.Flags().AddFlagSet(modelsFlags)
 	redoCmd.Flags().AddFlagSet(modelsFlags)
+	redoAllCmd.Flags().AddFlagSet(modelsFlags)
 
 	RootCmd.AddCommand(migrateCmd)
 	migrateCmd.AddCommand(upCmd)
