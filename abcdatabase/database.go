@@ -13,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/vattle/sqlboiler/bdb/drivers"
+	"github.com/vattle/sqlboiler/boil"
 	"github.com/volatiletech/abcweb/abcconfig"
 	"github.com/volatiletech/helpers/git"
 	"github.com/volatiletech/mig"
@@ -78,6 +79,9 @@ func SetupTestSuite(testdata TestdataFunc) (*sql.DB, int, error) {
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "cannot load environment named test from config.toml")
 	}
+
+	// Set the sqlboiler debugmode
+	boil.DebugMode = cfg.DB.DebugMode
 
 	err = createTestDB(cfg.DB)
 	if err != nil {
