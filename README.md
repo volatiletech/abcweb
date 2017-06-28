@@ -18,8 +18,8 @@ You can specify extra `abcweb new` command-line arguments to tell the generator
 what features and packages you would like enabled.
 
 This customizability allows abcweb to suit your requirements, whether that be a 
-server-side rendered web app (html templates), a client-side rendered 
-web app (reactjs, angularjs) or a stand-alone web API server.
+server-side rendered web app with html templates, a client-side rendered 
+web app (react, angularjs) or a stand-alone web API server.
 
 ## Contents
 
@@ -34,7 +34,7 @@ web app (reactjs, angularjs) or a stand-alone web API server.
 
 ## Features
 
-Most features can be removed on a per-app basis by specifying
+A lot of these features can be removed on a per-app basis by specifying
 flags to the `abcweb new` command.
 
 * HTTP2 support
@@ -54,11 +54,15 @@ flags to the `abcweb new` command.
 * Flexible rendering (HTML, JSON, XML, text & binary data)
 * Colored and leveled logging 
 * TLS1.2/SSL support
+* Graceful shutdown of web server
 * HTTP sessions (supports cookie, disk, memory and redis sessions) 
 * Flash messages 
 * Rendering interface to easily add support for any templating engine
-* Vendored dependencies to ensure consistent compatibility 
+* Vendored dependencies to ensure consistent compatibility
+* Build command allows easy bundling & building of entire project for production deploy
 * Many more features!
+
+Databases supported: Postgres & MySQL (MSSQL and SQLite in the works).
 
 ## Packages
 
@@ -71,8 +75,9 @@ see [PACKAGES.md](https://github.com/volatiletech/abcweb/blob/master/PACKAGES.md
 
 [SQLBoiler](https://github.com/vattle/sqlboiler) is one of our other core projects and was a natural 
 fit for ABCWeb. It is the fastest ORM by far (on par with stdlib), it is featureful 
-and has excellent relationship support, and its generation approach allows for type-safety and
-editor auto-completion. We've made using SQLBoiler easy by bundling it into the `abcweb gen` command.
+and has excellent relationship support, and its generation approach allows for type-safety,
+editor auto-completion and easy tie-in with the abcweb. We've made using SQLBoiler even easier 
+by bundling it into the `abcweb gen` command.
 
 #### Database Migrations
 
@@ -84,9 +89,9 @@ and `abcweb migrate` commands.
 
 #### Sessions, Cookies & Flash Messages
 
-[ABCSessions](https://github.com/volatiletech/abcweb/abcsessions) was designed to make working with 
-HTTP sessions and cookies a breeze, and it also comes with a flash messages API. ABCSessions 
-ships with disk, memory, redis and cookie storers, and the ability to easily add new storers using
+[ABCSessions](https://github.com/volatiletech/abcweb/tree/master/abcsessions) was designed from the
+ground up to make working with HTTP sessions and cookies a breeze, and it also comes with a flash messages API. 
+ABCSessions ships with disk, memory, redis and cookie storers, and the ability to easily add new storers using
 our provided interfaces.
 
 #### Rendering API
@@ -98,8 +103,8 @@ easily add support for any templating engine you choose if Go's `html/template` 
 
 #### Routing
 
-[Chi](https://github.com/pressly/chi) is one of the fastest and most modern routers in the eco-system
-and is starting to gain a cult following. Chi was built on the `context` package that was introduced
+[Chi](https://github.com/pressly/chi) is one of the quickest and most modern routers in the eco-system
+and is starting to gain a cult-like following. Chi was built around the `context` package that was introduced
 in Go 1.7. It's elegant API design and stdlib-only philosophy is what has Chi standing out from the rest.
 
 #### Logging
@@ -165,18 +170,23 @@ Your app has now been generated!
 # cd into your new project folder
 cd $GOPATH/src/github.com/username/myapp 
 
+# add your database connection details to the config file (dev and test sections)
+vim config.toml
+
 # Run abcweb dev for auto-rebuild of app, assets and LiveReload.
 abcweb dev
 ```
 
 Navigate your browser to your now running server at http://localhost:4000/, 
-modify your `templates/main/home.html` template, and you should see your changes
+modify your `templates/main/home.html` template whilst it's running, and you should see your changes
 automatically load. Awesome!
 
 Note that changes to the `.go` files or `.toml` config files will automatically
 rebuild your go web-server, however they will require a manual browser refresh
 (automatically refreshing in the middle of server changes could put you in 
-a pickle, so we decided against it).
+a pickle, so we decided against it). Press the enter key in the terminal
+running `abcweb dev` to re-build and re-execute your go binary if you're
+making a change that is not automatically picked up.
 
 ## Usage
 
@@ -220,6 +230,77 @@ override values passed in through the config.toml and env vars.
 * `abcweb dev` Go auto-rebuild configuration is found in `watch.toml`.
 * Asset pipeline, task runner and build system configuration is found in `gulpfile.js`.
 
+## API
+
+The API documentation can be found in the individual repos being used. I'm planning on collating them all here
+shortly, however for the time being you can find the documentation at their project pages. Here are links 
+to the main ones:
+
+**Routing:** https://github.com/pressly/chi
+**Middleware:** https://godoc.org/github.com/volatiletech/abcweb/abcmiddleware
+**Rendering:** https://godoc.org/github.com/volatiletech/abcweb/abcrender
+**Sessions:** https://github.com/volatiletech/abcweb/tree/master/abcsessions
+**Server:** https://godoc.org/github.com/volatiletech/abcweb/abcserver
+**Logging:** go.uber.org/zap/zapcore
+
+#### Config
+**Loading:** https://godoc.org/github.com/volatiletech/abcweb/abcconfig
+**Command Line:** github.com/spf13/cobra
+
+#### Database 
+**Loading:** https://godoc.org/github.com/volatiletech/abcweb/abcdatabase
+**ORM:** https://github.com/vattle/sqlboiler
+**Migrations:** github.com/volatiletech/mig
+
+Here is a brief explanation of the generated app structure. A video and more thorough documentation
+is in the process of being created. The generated comments throughout the code are also very
+descriptive:
+
+**main.go**: Creates an app.App object which holds the configuration state for the entire app.
+It initializes the object and all of its members using the main.go Setup function. These members
+include things like the config object, the logger, the router, the renderer and so forth.
+
+Once this object is initializes, the app is executed by running the root Cobra command. The root
+cobra command starts the web server/listener.
+
+**commands.go**: Sets up the cobra commands for the app, comes with a root command and a command to 
+execute migrations so that you can run migrations on your production server and do not need to ship
+the abcweb binary along with it.
+
+**app package**: App package has methods for initializing the App object mentioned above, but
+this is also a good place for you to put your custom app code. You can add your own objects
+to the App object and pass these objects around to your controllers through the routes package.
+
+**assets package**: Where you put all of your website assets (css, fonts, imgs etc).
+There is also a vendor folder for vendored assets as well. The `abcweb dev` command will watch
+this folder and recompile these assets to a `/tmp` folder, but you can also compile these
+assets for production using the gulp build task. Building your assets manually or for
+production will place them in the `public` folder in your generated app, opposed to a `/tmp` folder.
+
+**controllers package**: Where you define your Root controller struct. All of your
+subsequent controller structs will embed this struct so that you can access all of the necessary
+app state in all controllers. You can add custom objects to the parent struct, there is an example
+using `Main` struct in the controllers.go file. Configure these objects in the routes package.
+You can also create and use custom error types here. Check out the [errors middleware](https://godoc.org/github.com/volatiletech/abcweb/abcmiddleware) for more info on that.
+
+**db package**: Where your generated migrations and models live, as well as any custom database
+code and your testdata sql file for inserting test data into the database when running `go test`.
+
+**public folder**: Assets compiled for production will be compiled into this folder.
+
+**rendering package**: Initializes your renderer and defines your custom template helper functions.
+
+**routes package**: Defines all of your routes, creates your controller objects and passes along
+the members of the App object into the controller objects. This is how your controllers get access
+to and manage your app state.
+
+**templates folder**: Contains a folder for error code templates (http 401-500 by default), layout files,
+and the templates for each of your controllers. Comes with examples for the main controller.
+
+**vendor folder**: Gopkg.lock and Gopkg.toml are used to configure vendoring, these are config files for
+the `dep` tool, which is installed when running `abcweb deps -u`. See `dep --help`. This vendor folder
+houses your vendored packages.
+
 ## Gulp
 
 See the [FAQ](#faq) for installation instructions.
@@ -228,7 +309,8 @@ When ABCWeb generates your app it also includes a `gulpfile.js` for you that has
 to perform all steps of the build process incrementally. Out of the box this includes
 SCSS, LESS, CSS, JS, fonts, video, images and audio. The `gulpfile.js` has also been configured to
 parse your CSS assets through [PostCSS Autoprefixer](https://github.com/postcss/autoprefixer) so
-CSS vendor prefixes are a thing of the past. This is also a Bootstrap 4 dependency.
+CSS vendor prefixes are a thing of the past. Another reason we've included it is because it's
+a Bootstrap 4 SASS dependency.
 
 Your gulp file also comes with a watch task that can be run using `abcweb dev` that will 
 watch all of your asset files and templates for changes, recompile them if necessary,
@@ -259,17 +341,17 @@ we quickly realized that not only would it not work effectively for a multitude 
 but it would also never be as flexible and simple to use as Gulp is due to the fact
 that Go is compiled and all of the existing asset tools out there are either written in or
 written for Javascript. With that being said, Gulp is extremely easy to use, and ABCWeb
-makes it even easier to use.
+makes it even easier to use. Once you have NodeJS installed everything just *works* because
+we've created a robust gulpfile for you.
 
 ### How do I install NodeJS, NPM and Gulp?
 
-Installing NodeJS is system dependant. `nvm` is a nice option on some systems
+Installing NodeJS is system dependant. `nvm` is a popular option on some systems
 but is not supported in some shells such as [fish shell](https://fishshell.com/).
 NPM comes bundled with NodeJS.
 
 * [Download Node.js](https://nodejs.org/en/download/)
 * [Installing Node.js via package manager](https://nodejs.org/en/download/package-manager/)
-
 
 ABCWeb uses [Gulp 4](https://github.com/gulpjs/gulp/tree/4.0) as its task runner and asset build system. Once NodeJS and 
 NPM is installed you can install [Gulp](https://github.com/gulpjs/gulp/tree/4.0) using:
@@ -291,7 +373,7 @@ Instructions for fixing this can be found [here.](https://docs.npmjs.com/getting
 
 ### Dependencies
 
-Bootstrap 4 dependencies (included by default):
+Bootstrap 4 dependencies (included in generated app by default):
 
 * [JQuery](https://jquery.com/)
 * [Tether](http://tether.io/)
