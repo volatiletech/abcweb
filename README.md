@@ -262,7 +262,7 @@ is in the process of being created**:
 * **main.go**: Creates an app.App object which holds the configuration state for the entire app.
 It initializes the object and all of its members using the main.go Setup function. These members
 include things like the config object, the logger, the router, the renderer and so forth.
-Once this object is initializes, the app is executed by running the root Cobra command. The root
+Once this object is initialized, the app is executed by running the root Cobra command. The root
 cobra command starts the web server/listener.
 
 * **commands.go**: Sets up the cobra commands for the app, comes with a root command and a command to 
