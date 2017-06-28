@@ -236,68 +236,70 @@ The API documentation can be found in the individual repos being used. I'm plann
 shortly, however for the time being you can find the documentation at their project pages. Here are links 
 to the main ones:
 
-**Routing:** https://github.com/pressly/chi
-**Middleware:** https://godoc.org/github.com/volatiletech/abcweb/abcmiddleware
-**Rendering:** https://godoc.org/github.com/volatiletech/abcweb/abcrender
-**Sessions:** https://github.com/volatiletech/abcweb/tree/master/abcsessions
-**Server:** https://godoc.org/github.com/volatiletech/abcweb/abcserver
-**Logging:** go.uber.org/zap/zapcore
+* **Routing:** [github.com/pressly/chi](https://github.com/pressly/chi)
+* **Middleware:** [godoc.org/github.com/volatiletech/abcweb/abcmiddleware](https://godoc.org/github.com/volatiletech/abcweb/abcmiddleware)
+* **Rendering:** [godoc.org/github.com/volatiletech/abcweb/abcrender](https://godoc.org/github.com/volatiletech/abcweb/abcrender)
+* **Sessions:** [github.com/volatiletech/abcweb/tree/master/abcsessions](https://github.com/volatiletech/abcweb/tree/master/abcsessions)
+* **Server:** [godoc.org/github.com/volatiletech/abcweb/abcserver](https://godoc.org/github.com/volatiletech/abcweb/abcserver)
+* **Logging:** [go.uber.org/zap/zapcore](https://go.uber.org/zap/zapcore)
 
-#### Config
-**Loading:** https://godoc.org/github.com/volatiletech/abcweb/abcconfig
-**Command Line:** github.com/spf13/cobra
+### Config
 
-#### Database 
-**Loading:** https://godoc.org/github.com/volatiletech/abcweb/abcdatabase
-**ORM:** https://github.com/vattle/sqlboiler
-**Migrations:** github.com/volatiletech/mig
+* **Loading:** [godoc.org/github.com/volatiletech/abcweb/abcconfig](https://godoc.org/github.com/volatiletech/abcweb/abcconfig)
+* **Command Line:** [github.com/spf13/cobra](https://github.com/spf13/cobra)
 
-Here is a brief explanation of the generated app structure. A video and more thorough documentation
-is in the process of being created. The generated comments throughout the code are also very
-descriptive:
+### Database 
+* **Loading:** [godoc.org/github.com/volatiletech/abcweb/abcdatabase](https://godoc.org/github.com/volatiletech/abcweb/abcdatabase)
+* **ORM:** [github.com/vattle/sqlboiler](https://github.com/vattle/sqlboiler)
+* **Migrations:** [github.com/volatiletech/mig](https://github.com/volatiletech/mig)
 
-**main.go**: Creates an app.App object which holds the configuration state for the entire app.
+### Project Structure
+
+Here is a brief explanation of the generated app structure. The generated comments throughout
+the code are also very descriptive. **A video and more thorough documentation
+is in the process of being created**:
+
+* **main.go**: Creates an app.App object which holds the configuration state for the entire app.
 It initializes the object and all of its members using the main.go Setup function. These members
 include things like the config object, the logger, the router, the renderer and so forth.
-
 Once this object is initializes, the app is executed by running the root Cobra command. The root
 cobra command starts the web server/listener.
 
-**commands.go**: Sets up the cobra commands for the app, comes with a root command and a command to 
+* **commands.go**: Sets up the cobra commands for the app, comes with a root command and a command to 
 execute migrations so that you can run migrations on your production server and do not need to ship
 the abcweb binary along with it.
 
-**app package**: App package has methods for initializing the App object mentioned above, but
+* **app package**: App package has methods for initializing the App object mentioned above, but
 this is also a good place for you to put your custom app code. You can add your own objects
 to the App object and pass these objects around to your controllers through the routes package.
 
-**assets package**: Where you put all of your website assets (css, fonts, imgs etc).
+* **assets package**: Where you put all of your website assets (css, fonts, imgs etc).
 There is also a vendor folder for vendored assets as well. The `abcweb dev` command will watch
 this folder and recompile these assets to a `/tmp` folder, but you can also compile these
 assets for production using the gulp build task. Building your assets manually or for
 production will place them in the `public` folder in your generated app, opposed to a `/tmp` folder.
 
-**controllers package**: Where you define your Root controller struct. All of your
+* **controllers package**: Where you define your Root controller struct. All of your
 subsequent controller structs will embed this struct so that you can access all of the necessary
 app state in all controllers. You can add custom objects to the parent struct, there is an example
 using `Main` struct in the controllers.go file. Configure these objects in the routes package.
 You can also create and use custom error types here. Check out the [errors middleware](https://godoc.org/github.com/volatiletech/abcweb/abcmiddleware) for more info on that.
 
-**db package**: Where your generated migrations and models live, as well as any custom database
+* **db package**: Where your generated migrations and models live, as well as any custom database
 code and your testdata sql file for inserting test data into the database when running `go test`.
 
-**public folder**: Assets compiled for production will be compiled into this folder.
+* **public folder**: Assets compiled for production will be compiled into this folder.
 
-**rendering package**: Initializes your renderer and defines your custom template helper functions.
+* **rendering package**: Initializes your renderer and defines your custom template helper functions.
 
-**routes package**: Defines all of your routes, creates your controller objects and passes along
+* **routes package**: Defines all of your routes, creates your controller objects and passes along
 the members of the App object into the controller objects. This is how your controllers get access
 to and manage your app state.
 
-**templates folder**: Contains a folder for error code templates (http 401-500 by default), layout files,
+* **templates folder**: Contains a folder for error code templates (http 401-500 by default), layout files,
 and the templates for each of your controllers. Comes with examples for the main controller.
 
-**vendor folder**: Gopkg.lock and Gopkg.toml are used to configure vendoring, these are config files for
+* **vendor folder**: Gopkg.lock and Gopkg.toml are used to configure vendoring, these are config files for
 the `dep` tool, which is installed when running `abcweb deps -u`. See `dep --help`. This vendor folder
 houses your vendored packages.
 
