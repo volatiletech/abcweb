@@ -55,6 +55,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"github.com/satori/go.uuid"},
 		{"gopkg.in/redis.v5"},
 		{"-t", "github.com/vattle/sqlboiler"},
+		{"github.com/golang/dep/cmd/dep"},
 	}
 
 	npmInstallArgs := [][]string{
