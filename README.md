@@ -132,7 +132,7 @@ locked in and it's shaping up to become the standard for Go vendoring.
 ABCWeb uses [Gulp](https://github.com/gulpjs/gulp/tree/4.0) to handle asset compilation,
 minification, task running and live reloading of the browser on changes to the asset files or
 html templates. Read the [Gulp section of this readme](#gulp) if you'd like further information.
-ABCWeb also uses [refresh](https://github.com/markbates/refresh) to rebuild your go web app on changes 
+ABCWeb also uses [refresh](https://github.com/volatiletech/refresh) to rebuild your go web app on changes 
 to your configuration or .go files. Refresh can be highly customized using the `watch.toml` config file.
 
 [Read here](#why-did-you-choose-to-use-gulp) if you're wondering why we chose a NodeJS dependency. 

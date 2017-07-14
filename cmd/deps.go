@@ -49,7 +49,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"github.com/spf13/pflag"},
 		{"github.com/spf13/cobra"},
 		{"github.com/spf13/viper"},
-		{"github.com/markbates/refresh"},
+		{"github.com/volatiletech/refresh"},
 		{"gopkg.in/nullbio/null.v6"},
 		{"github.com/djherbis/times"},
 		{"github.com/satori/go.uuid"},

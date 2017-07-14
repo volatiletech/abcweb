@@ -64,8 +64,8 @@
 # source = "https://github.com/myfork/package.git"
 
 [[constraint]]
-	revision = "90f2daf1"
-	name = "github.com/markbates/refresh"
+	version = "^2.0.0"
+	name = "github.com/volatiletech/refresh"
 
 [[constraint]]
 	version = "^0.8.0"

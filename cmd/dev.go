@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/markbates/refresh/refresh"
 	"github.com/spf13/cobra"
+	"github.com/volatiletech/refresh/refresh"
 )
 
 // devCmd represents the "dev" command
