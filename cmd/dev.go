@@ -197,7 +197,6 @@ func startRefresh(publicPathEnv string, ctx context.Context) (*refresh.Manager, 
 		BuildDelay:         c.BuildDelay,
 		BinaryName:         c.BinaryName,
 		CommandFlags:       c.CommandFlags,
-		CommandEnv:         c.CommandEnv,
 		EnableColors:       c.EnableColors,
 		LogName:            c.LogName,
 	}
