@@ -92,7 +92,7 @@
 	name = "github.com/vattle/sqlboiler"
 
 [[constraint]]
-	version = "^2.0.0"
+	version = "^3.0.0"
 	name = "github.com/volatiletech/abcweb"
 
 [[constraint]]
