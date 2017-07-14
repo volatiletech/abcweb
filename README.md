@@ -103,7 +103,7 @@ easily add support for any templating engine you choose if Go's `html/template` 
 
 #### Routing
 
-[Chi](https://github.com/pressly/chi) is one of the quickest and most modern routers in the eco-system
+[Chi](https://github.com/go-chi/chi) is one of the quickest and most modern routers in the eco-system
 and is starting to gain a cult-like following. Chi was built around the `context` package that was introduced
 in Go 1.7. It's elegant API design and stdlib-only philosophy is what has Chi standing out from the rest.
 
@@ -236,7 +236,7 @@ The API documentation can be found in the individual repos being used. I'm plann
 shortly, however for the time being you can find the documentation at their project pages. Here are links 
 to the main ones:
 
-* **Routing:** [github.com/pressly/chi](https://github.com/pressly/chi)
+* **Routing:** [github.com/go-chi/chi](https://github.com/go-chi/chi)
 * **Middleware:** [godoc.org/github.com/volatiletech/abcweb/abcmiddleware](https://godoc.org/github.com/volatiletech/abcweb/abcmiddleware)
 * **Rendering:** [godoc.org/github.com/volatiletech/abcweb/abcrender](https://godoc.org/github.com/volatiletech/abcweb/abcrender)
 * **Sessions:** [github.com/volatiletech/abcweb/tree/master/abcsessions](https://github.com/volatiletech/abcweb/tree/master/abcsessions)

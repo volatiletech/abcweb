@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"reflect"
 
-	chimiddleware "github.com/pressly/chi/middleware"
+	chimiddleware "github.com/go-chi/chi/middleware"
 	"github.com/volatiletech/abcweb/abcrender"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

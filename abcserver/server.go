@@ -10,8 +10,8 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/go-chi/chi"
 	"github.com/pkg/errors"
-	"github.com/pressly/chi"
 	"github.com/volatiletech/abcweb/abcconfig"
 	"go.uber.org/zap"
 )

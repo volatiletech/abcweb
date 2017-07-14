@@ -7,12 +7,12 @@ import (
 	"github.com/volatiletech/abcweb/abcconfig"
 	"github.com/volatiletech/abcweb/abcmiddleware"
 	"github.com/volatiletech/abcweb/abcrender"
-	"github.com/pressly/chi"
+	"github.com/go-chi/chi"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"github.com/volatiletech/refresh/refresh/web"
-	chimiddleware "github.com/pressly/chi/middleware"
+	chimiddleware "github.com/go-chi/chi/middleware"
 )
 
 // App is the configuration state for the entire app.
@@ -136,7 +136,7 @@ func NewSessions(cfg *Config) (abcsessions.Overseer, error) {
 {{- end}}
 
 // NewMiddlewares returns a list of middleware to be used by the router.
-// See https://github.com/pressly/chi#middlewares and abcweb readme for extras.
+// See https://github.com/go-chi/chi#middlewares and abcweb readme for extras.
 func NewMiddlewares(cfg *Config, sessions abcsessions.Overseer, log *zap.Logger) []abcmiddleware.MiddlewareFunc {
 	m := abcmiddleware.Middleware{
 		Log: log,

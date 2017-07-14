@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	chimiddleware "github.com/pressly/chi/middleware"
+	chimiddleware "github.com/go-chi/chi/middleware"
 	"go.uber.org/zap"
 )
 

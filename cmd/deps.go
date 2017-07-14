@@ -42,7 +42,7 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 		{"go.uber.org/zap"},
 		{"github.com/pkg/errors"},
 		{"github.com/volatiletech/helpers/..."},
-		{"github.com/pressly/chi/..."},
+		{"github.com/go-chi/chi/..."},
 		{"github.com/goware/cors"},
 		{"github.com/unrolled/render"},
 		{"github.com/volatiletech/mig/..."},

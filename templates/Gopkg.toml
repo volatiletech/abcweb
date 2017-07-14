@@ -72,8 +72,8 @@
 	name = "github.com/pkg/errors"
 
 [[constraint]]
-	version = "^2.1.0"
-	name = "github.com/pressly/chi"
+	version = "^3.1.0"
+	name = "github.com/go-chi/chi"
 
 [[constraint]]
 	revision = "e606913c"
