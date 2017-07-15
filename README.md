@@ -1,4 +1,4 @@
-![abcweb logo](http://i.imgur.com/xeiOcjF.png)
+![abcweb logo](http://i.imgur.com/IjQLizn.png)
 
 [![License](https://img.shields.io/badge/license-BSD-blue.svg)](https://github.com/volatiletech/abcweb/blob/master/LICENSE)
 [![GoDoc](https://godoc.org/github.com/volatiletech/abcweb?status.svg)](https://godoc.org/github.com/volatiletech/abcweb)
