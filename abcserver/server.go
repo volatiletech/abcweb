@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/pkg/errors"
@@ -108,13 +110,25 @@ func Redirect(cfg abcconfig.ServerConfig, logger *zap.Logger) {
 		ErrorLog:     log.New(serverErrLogger{logger}, "", 0),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Remove port if it exists so we can replace it with https port
-			var httpHost string
-			httpHost, _, err = net.SplitHostPort(r.Host)
-			if err != nil {
-				log.Fatal("failed to get http host from request", zap.Error(err))
+			httpHost := r.Host
+			if strings.ContainsRune(r.Host, ':') {
+				httpHost, _, err = net.SplitHostPort(r.Host)
+				if err != nil {
+					logger.Error("failed to get http host from request", zap.String("host", r.Host), zap.Error(err))
+					w.WriteHeader(http.StatusBadRequest)
+					io.WriteString(w, "invalid host header")
+					return
+				}
 			}
 
-			url := fmt.Sprintf("https://%s:%s%s", httpHost, httpsPort, r.RequestURI)
+			var url string
+			if httpsPort != "443" {
+				url = fmt.Sprintf("https://%s:%s%s", httpHost, httpsPort, r.RequestURI)
+			} else {
+				url = fmt.Sprintf("https://%s%s", httpHost, r.RequestURI)
+			}
+
+			logger.Info("redirect", zap.String("host", r.Host), zap.String("path", r.URL.String()), zap.String("redirecturl", url))
 			http.Redirect(w, r, url, http.StatusMovedPermanently)
 		}),
 	}
