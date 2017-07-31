@@ -108,4 +108,4 @@
 	name = "go.uber.org/zap"
 
 [[constraint]]
-	name = "gopkg.in/nullbio/null.v6"
+	name = "gopkg.in/volatiletech/null.v6"
