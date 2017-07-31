@@ -15,8 +15,8 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/kat-co/vala"
 	"github.com/spf13/cobra"
-	"github.com/vattle/sqlboiler/bdb/drivers"
-	"github.com/vattle/sqlboiler/boilingcore"
+	"github.com/volatiletech/sqlboiler/bdb/drivers"
+	"github.com/volatiletech/sqlboiler/boilingcore"
 	"github.com/volatiletech/abcweb/config"
 )
 
@@ -34,7 +34,7 @@ var modelsCmd = &cobra.Command{
 	Long: `Generate models will connect to your database and generate your models from your existing database structure.
 Don't forget to run your migrations.
 
-This tool pipes out to SQLBoiler: https://github.com/vattle/sqlboiler -- See README.md at sqlboiler repo for API guidance.`,
+This tool pipes out to SQLBoiler: https://github.com/volatiletech/sqlboiler -- See README.md at sqlboiler repo for API guidance.`,
 	Example: "abcweb gen models",
 	RunE:    modelsCmdRun,
 }

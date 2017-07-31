@@ -12,8 +12,8 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/vattle/sqlboiler/bdb/drivers"
-	"github.com/vattle/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/bdb/drivers"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/abcweb/abcconfig"
 	"github.com/volatiletech/helpers/git"
 	"github.com/volatiletech/mig"

@@ -73,7 +73,7 @@ see [PACKAGES.md](https://github.com/volatiletech/abcweb/blob/master/PACKAGES.md
 
 #### Database ORM
 
-[SQLBoiler](https://github.com/vattle/sqlboiler) is one of our other core projects and was a natural 
+[SQLBoiler](https://github.com/volatiletech/sqlboiler) is one of our other core projects and was a natural 
 fit for ABCWeb. It is the fastest ORM by far (on par with stdlib), it is featureful 
 and has excellent relationship support, and its generation approach allows for type-safety,
 editor auto-completion and easy tie-in with the abcweb. We've made using SQLBoiler even easier 
@@ -250,7 +250,7 @@ to the main ones:
 
 ### Database 
 * **Loading:** [godoc.org/github.com/volatiletech/abcweb/abcdatabase](https://godoc.org/github.com/volatiletech/abcweb/abcdatabase)
-* **ORM:** [github.com/vattle/sqlboiler](https://github.com/vattle/sqlboiler)
+* **ORM:** [github.com/volatiletech/sqlboiler](https://github.com/volatiletech/sqlboiler)
 * **Migrations:** [github.com/volatiletech/mig](https://github.com/volatiletech/mig)
 
 ### Project Structure

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/vattle/sqlboiler/boilingcore"
+	"github.com/volatiletech/sqlboiler/boilingcore"
 	"github.com/volatiletech/abcweb/config"
 )
 
