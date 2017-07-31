@@ -32,7 +32,6 @@ Thank you for your continued efforts.
 * [github.com/mattn/go-isatty](https://github.com/mattn/go-isatty)
 * [github.com/mitchellh/go-homedir](https://github.com/mitchellh/go-homedir)
 * [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure)
-* [github.com/nullbio/inflect](https://github.com/nullbio/inflect)
 * [github.com/pelletier/go-buffruneio](https://github.com/pelletier/go-buffruneio)
 * [github.com/pelletier/go-toml](https://github.com/pelletier/go-toml)
 * [github.com/pkg/errors](https://github.com/pkg/errors)
