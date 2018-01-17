@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"strings"
 
-	"github.com/go-chi/chi"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/abcweb/abcconfig"
 	"go.uber.org/zap"
@@ -32,7 +31,7 @@ func (s serverErrLogger) Write(b []byte) (int, error) {
 // StartServer starts the web server on the specified port, and can be
 // gracefully shut down by sending an os.Interrupt signal to the server.
 // This is a blocking call.
-func StartServer(cfg abcconfig.ServerConfig, router *chi.Mux, logger *zap.Logger) error {
+func StartServer(cfg abcconfig.ServerConfig, router http.Handler, logger *zap.Logger) error {
 	var err error
 	server := http.Server{
 		ReadTimeout:  cfg.ReadTimeout,
