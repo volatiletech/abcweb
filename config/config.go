@@ -3,7 +3,6 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"go/build"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -95,21 +94,6 @@ type DBConfig struct {
 	User    string `toml:"user" mapstructure:"user"`
 	Pass    string `toml:"pass" mapstructure:"pass"`
 	SSLMode string `toml:"sslmode" mapstructure:"sslmode"`
-	// Other SQLBoiler flags
-	Blacklist        []string `toml:"blacklist" mapstructure:"blacklist"`
-	Whitelist        []string `toml:"whitelist" mapstructure:"whitelist"`
-	Tag              []string `toml:"tag" mapstructure:"tag"`
-	Replacements     []string `toml:"replacements" mapstructure:"replacements"`
-	BaseDir          string   `toml:"base_dir" mapstructure:"base_dir"`
-	Output           string   `toml:"output" mapstructure:"output"`
-	PkgName          string   `toml:"pkg_name" mapstructure:"pkg_name"`
-	Schema           string   `toml:"schema" mapstructure:"schema"`
-	TinyintNotBool   bool     `toml:"tinyint_not_bool" mapstructure:"tinyint_not_bool"`
-	NoAutoTimestamps bool     `toml:"no_auto_timestamps" mapstructure:"no_auto_timestamps"`
-	Debug            bool     `toml:"debug" mapstructure:"debug"`
-	NoHooks          bool     `toml:"no_hooks" mapstructure:"no_hooks"`
-	NoTests          bool     `toml:"no_tests" mapstructure:"no_tests"`
-	Wipe             bool     `toml:"wipe" mapstructure:"wipe"`
 }
 
 // AppConfig holds the relevant generated app config.toml file variables
@@ -202,17 +186,6 @@ func getAppName(appPath string) string {
 	// Is "/" on both Windows and Linux
 	split := strings.Split(appPath, "/")
 	return split[len(split)-1]
-}
-
-// GetBasePath returns the full path to the custom sqlboiler template files
-// folder used with the sqlboiler --replace flag.
-func GetBasePath() (string, error) {
-	p, _ := build.Default.Import(basePackage, "", build.FindOnly)
-	if p != nil && len(p.Dir) > 0 {
-		return p.Dir, nil
-	}
-
-	return os.Getwd()
 }
 
 // CheckEnv outputs an error if no ActiveEnv is found

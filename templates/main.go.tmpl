@@ -13,7 +13,6 @@ import (
 	"github.com/volatiletech/abcweb/abcconfig"
 	"github.com/volatiletech/abcweb/abcdatabase"
 	"github.com/volatiletech/abcweb/abcrender"
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/spf13/pflag"
 )
 
@@ -27,10 +26,6 @@ func Setup(a *app.App, flags *pflag.FlagSet) error {
 	c := abcconfig.NewConfig("{{.AppEnvName}}")
 	if _, err := c.Bind(flags, a.Config); err != nil {
 		return errors.Wrap(err, "cannot bind app config")
-	}
-
-	if a.Config.DB.DebugMode {
-		boil.DebugMode = true
 	}
 
 	// Set the AssetsManifest cache to the contents of the assets 
@@ -54,10 +49,6 @@ func Setup(a *app.App, flags *pflag.FlagSet) error {
 
 	a.Render = rendering.New(a, "templates", a.AssetsManifest) 
 	a.Router = routes.NewRouter(a, app.NewMiddlewares(a.Config, a.Session, a.Log))
-
-	if err := db.InitDB(a.Config.DB); err != nil {
-		return errors.Wrap(err, "failed to create global db connection")
-	}
 
 	// Check if using the latest database migration if EnforceLatestMigration
 	if a.Config.DB.EnforceMigration {

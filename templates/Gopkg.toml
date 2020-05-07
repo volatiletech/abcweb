@@ -88,10 +88,6 @@
 	name = "github.com/unrolled/render"
 
 [[constraint]]
-	version = "^2.0.0"
-	name = "github.com/volatiletech/sqlboiler"
-
-[[constraint]]
 	version = "^3.0.0"
 	name = "github.com/volatiletech/abcweb"
 

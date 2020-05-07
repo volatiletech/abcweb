@@ -27,18 +27,6 @@ const fileOut = `[dev]
 	user="user1"
 	pass="pass1"
 	sslmode="sslmode1"
-	blacklist=["blacklist1"]
-	whitelist=["whitelist1"]
-	tag=["tag1"]
-	basedir="basedir1"
-	output="output1"
-	pkgname="pkgname1"
-	schema="schema1"
-	tinyint-not-bool=true
-	no-auto-timestamps=true
-	debug=true
-	no-hooks=true
-	no-tests=true
 [prod]
 [prod.db]
 	db = "db2"
@@ -48,18 +36,6 @@ const fileOut = `[dev]
 	user="user2"
 	pass="pass2"
 	sslmode="sslmode2"
-	blacklist=["blacklist2"]
-	whitelist=["whitelist2"]
-	tag=["tag2"]
-	basedir="basedir2"
-	output="output2"
-	pkgname="pkgname2"
-	schema="schema2"
-	tinyint-not-bool=true
-	no-auto-timestamps=true
-	debug=true
-	no-hooks=true
-	no-tests=true
 `
 
 func TestNewModeViper(t *testing.T) {
@@ -73,16 +49,6 @@ func TestNewModeViper(t *testing.T) {
 
 	modeViper := NewModeViper(appPath, appName, "prod")
 	modeViper.RegisterAlias("sql", "migrations.sql")
-
-	val := modeViper.GetString("basedir")
-	if val != "basedir2" {
-		t.Errorf("expected %q, got %q", "basedir2", val)
-	}
-
-	b := modeViper.GetBool("tinyint-not-bool")
-	if !b {
-		t.Error("expected true, got false")
-	}
 }
 
 func TestGetActiveEnv(t *testing.T) {

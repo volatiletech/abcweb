@@ -89,14 +89,10 @@ type ServerConfig struct {
 	PublicPath string `toml:"public-path" mapstructure:"public-path" env:"SERVER_PUBLIC_PATH"`
 }
 
-// DBConfig holds the database config for the app loaded through
+// DBConfig holds the Postgres database config for the app loaded through
 // environment variables, or the config.toml file.
 type DBConfig struct {
-	// DebugMode is a flag to toggle the output of SQLBoiler's SQL queries
-	DebugMode bool `toml:"debug-mode" mapstructure:"debug-mode" env:"DB_DEBUG_MODE"`
-	// DB is the database software; "postgres", "mysql", etc.
-	DB string `toml:"db" mapstructure:"db" env:"DB_DB"`
-	// The database name
+	// The Postgres database name
 	DBName  string `toml:"dbname" mapstructure:"dbname" env:"DB_DBNAME"`
 	Host    string `toml:"host" mapstructure:"host" env:"DB_HOST"`
 	Port    int    `toml:"port" mapstructure:"port" env:"DB_PORT"`
@@ -224,7 +220,7 @@ func UnmarshalAppConfig(cfg interface{}, v *viper.Viper) error {
 
 	val := reflect.Indirect(reflect.ValueOf(cfg))
 
-	// if cfg has an imbedded AppConfig then we need to unmarshal
+	// if cfg has an embedded AppConfig then we need to unmarshal
 	// directly into that and overwrite it in the parent struct,
 	// since its another layer of indirection and viper
 	// can't handle it magically.
@@ -255,13 +251,6 @@ func UnmarshalAppConfig(cfg interface{}, v *viper.Viper) error {
 			if dbCfg.SSLMode == "" {
 				dbCfg.SSLMode = "require"
 			}
-		} else if dbCfg.DB == "mysql" {
-			if dbCfg.Port == 0 {
-				dbCfg.Port = 3306
-			}
-			if dbCfg.SSLMode == "" {
-				dbCfg.SSLMode = "true"
-			}
 		}
 
 		val.Field(i).Set(reflect.ValueOf(dbCfg))
@@ -277,7 +266,6 @@ func UnmarshalAppConfig(cfg interface{}, v *viper.Viper) error {
 // fields are not set to their appropriate values.
 func ValidateDBConfig(cfg DBConfig) error {
 	err := vala.BeginValidation().Validate(
-		vala.StringNotEmpty(cfg.DB, "db"),
 		vala.StringNotEmpty(cfg.User, "user"),
 		vala.StringNotEmpty(cfg.Host, "host"),
 		vala.Not(vala.Equals(cfg.Port, 0, "port")),
@@ -286,10 +274,6 @@ func ValidateDBConfig(cfg DBConfig) error {
 	).Check()
 	if err != nil {
 		return err
-	}
-
-	if cfg.DB != "postgres" && cfg.DB != "mysql" {
-		return errors.New("not a valid driver name")
 	}
 
 	return nil
@@ -426,8 +410,6 @@ func NewDBFlagSet() *pflag.FlagSet {
 	flags := &pflag.FlagSet{}
 
 	// db subsection flags
-	flags.BoolP("db.debug-mode", "", false, "Output database model SQL queries")
-	flags.StringP("db.db", "", "", "The database software (postgres|mysql)")
 	flags.StringP("db.dbname", "", "", "The database name to connect to")
 	flags.StringP("db.host", "", "", "The database hostname, e.g localhost")
 	flags.IntP("db.port", "", 0, "The database port")

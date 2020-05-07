@@ -68,7 +68,7 @@ flags to the `abcweb new` command.
 * Build command allows easy bundling & building of entire project for production deploy
 * Many more features!
 
-Databases supported: Postgres & MySQL (MSSQL and SQLite in the works).
+Databases supported: Postgres 
 
 ## Packages
 
@@ -77,20 +77,12 @@ Go community has to offer. These packages were chosen specifically because
 they are fast, intelligently designed, easy to use and modern. For a full list
 see [PACKAGES.md](https://github.com/volatiletech/abcweb/blob/master/PACKAGES.md):
 
-#### Database ORM
-
-[SQLBoiler](https://github.com/volatiletech/sqlboiler) is one of our other core projects and was a natural 
-fit for ABCWeb. It is the fastest ORM by far (on par with stdlib), it is featureful 
-and has excellent relationship support, and its generation approach allows for type-safety,
-editor auto-completion and easy tie-in with the abcweb. We've made using SQLBoiler even easier 
-by bundling it into the `abcweb gen` command.
-
 #### Database Migrations
 
 [mig](https://github.com/volatiletech/mig) is our fork of [Goose](https://github.com/pressly/goose)
 that patches some big issues and was tweaked to make it work better with ABCWeb. It does
 everything you'd expect a migration tool to do, and has both a library and command-line component.
-Mig supports MySQL and Postgres at present. It has been bundled into the `abcweb gen` 
+Mig has been bundled into the `abcweb gen` 
 and `abcweb migrate` commands.
 
 #### Sessions, Cookies & Flash Messages

@@ -46,8 +46,8 @@ type CustomConfig struct {
 	Server ServerConfig `toml:"server" mapstructure:"server"`
 }
 
-// test imbedded struct
-type ImbeddedConfig struct {
+// test embedded struct
+type EmbeddedConfig struct {
 	AppConfig
 
 	// The active environment section
@@ -89,7 +89,6 @@ func TestBindLoadEnv(t *testing.T) {
 		host = "localhost"
 		sslmode = "require"
 		enforce-migration = false
-		blacklist = ["mig_migrations"]
 [prod]
 	[prod.server]
 		bind = ":80"
@@ -101,7 +100,6 @@ func TestBindLoadEnv(t *testing.T) {
 		dbname = "lolwtf_prod"
 		host = "localhost"
 		sslmode = "require"
-		blacklist = ["mig_migrations"]
 [test]
 	[test.db]
 		db = "postgres"
@@ -183,7 +181,6 @@ func TestBindPublicPathEnv(t *testing.T) {
 		host = "localhost"
 		sslmode = "require"
 		enforce-migration = false
-		blacklist = ["mig_migrations"]
 [prod]
 	[prod.server]
 		bind = ":80"
@@ -195,7 +192,6 @@ func TestBindPublicPathEnv(t *testing.T) {
 		dbname = "lolwtf_prod"
 		host = "localhost"
 		sslmode = "require"
-		blacklist = ["mig_migrations"]
 [test]
 	[test.db]
 		db = "postgres"
@@ -295,13 +291,13 @@ func TestBind(t *testing.T) {
 		tls-bind = "1"
 	[custom.custom-thing]
 		testy = "bbb"
-[imbedded]
+[embedded]
 	other = "global"
 	something = "aaa"
-	[imbedded.server]
+	[embedded.server]
 		live-reload = true
 		tls-bind = "1"
-	[imbedded.custom-thing]
+	[embedded.custom-thing]
 		testy = "bbb"
 `)
 
@@ -463,10 +459,10 @@ func TestBind(t *testing.T) {
 		t.Errorf("expected angry to be zzz, got %s", custom.CustomThing.Angry)
 	}
 
-	imbedded := &ImbeddedConfig{}
+	embedded := &EmbeddedConfig{}
 	flags = NewFlagSet()
 
-	if err := flags.Set("env", "imbedded"); err != nil {
+	if err := flags.Set("env", "embedded"); err != nil {
 		t.Error(err)
 	}
 
@@ -487,42 +483,42 @@ func TestBind(t *testing.T) {
 	}
 	defer os.Unsetenv("ABCWEB_CUSTOM_THING_ANGRY")
 
-	if _, err := c.Bind(flags, imbedded); err != nil {
+	if _, err := c.Bind(flags, embedded); err != nil {
 		t.Error(err)
 	}
 
 	// default values should be set appropriately
-	if imbedded.Server.Bind != ":80" {
-		t.Errorf("expected bind %q, got %q", ":80", imbedded.Server.Bind)
+	if embedded.Server.Bind != ":80" {
+		t.Errorf("expected bind %q, got %q", ":80", embedded.Server.Bind)
 	}
-	if imbedded.Server.LiveReload != true {
+	if embedded.Server.LiveReload != true {
 		t.Error("expected livereload true, got false")
 	}
-	if imbedded.Server.TLSBind != "1" {
-		t.Errorf("expected %q, got %q", "1", imbedded.Server.TLSBind)
+	if embedded.Server.TLSBind != "1" {
+		t.Errorf("expected %q, got %q", "1", embedded.Server.TLSBind)
 	}
-	if imbedded.Server.TLSCertFile != "z" {
-		t.Errorf("expected env var to set tls cert file to %q, got %q", "z", imbedded.Server.TLSCertFile)
+	if embedded.Server.TLSCertFile != "z" {
+		t.Errorf("expected env var to set tls cert file to %q, got %q", "z", embedded.Server.TLSCertFile)
 	}
-	if imbedded.Env != "imbedded" {
-		t.Errorf("expected env to be imbedded, got %s", imbedded.Env)
+	if embedded.Env != "embedded" {
+		t.Errorf("expected env to be embedded, got %s", embedded.Env)
 	}
-	if imbedded.Other != "global" {
-		t.Errorf("expected other to be global, got %s", imbedded.Other)
+	if embedded.Other != "global" {
+		t.Errorf("expected other to be global, got %s", embedded.Other)
 	}
-	if imbedded.Something != "aaa" {
-		t.Errorf("expected something to be aaa, got %s", imbedded.Something)
+	if embedded.Something != "aaa" {
+		t.Errorf("expected something to be aaa, got %s", embedded.Something)
 	}
-	if imbedded.CustomThing.Testy != "bbb" {
-		t.Errorf("expected testy to be bbb, got %s", imbedded.CustomThing.Testy)
+	if embedded.CustomThing.Testy != "bbb" {
+		t.Errorf("expected testy to be bbb, got %s", embedded.CustomThing.Testy)
 	}
 	// test flag default value
-	if imbedded.CustomThing.Crusty != "xxx" {
-		t.Errorf("expected crusty to be xxx, got %s", imbedded.CustomThing.Crusty)
+	if embedded.CustomThing.Crusty != "xxx" {
+		t.Errorf("expected crusty to be xxx, got %s", embedded.CustomThing.Crusty)
 	}
 	// test env overwrite
-	if imbedded.CustomThing.Angry != "zzz" {
-		t.Errorf("expected angry to be zzz, got %s", imbedded.CustomThing.Angry)
+	if embedded.CustomThing.Angry != "zzz" {
+		t.Errorf("expected angry to be zzz, got %s", embedded.CustomThing.Angry)
 	}
 }
 
@@ -632,7 +628,6 @@ func TestGetTagMappings(t *testing.T) {
 		{chain: "server.render-recompile", env: "SERVER_RENDER_RECOMPILE"},
 		{chain: "server.sessions-dev-storer", env: "SERVER_SESSIONS_DEV_STORER"},
 		{chain: "server.public-path", env: "SERVER_PUBLIC_PATH"},
-		{chain: "db.debug-mode", env: "DB_DEBUG_MODE"},
 		{chain: "db.db", env: "DB_DB"},
 		{chain: "db.dbname", env: "DB_DBNAME"},
 		{chain: "db.host", env: "DB_HOST"},

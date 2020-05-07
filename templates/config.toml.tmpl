@@ -18,25 +18,16 @@
 		render-recompile = true
 		sessions-dev-storer = true
 	[dev.db]
-		# set SQLBoiler DebugMode to specify whether to output SQL queries.
-		debug-mode = true
-		# valid values are postgres|mysql
-		# db = "postgres"
-		# If the user line is commented the database will not be connected to.
+		# If the user line is commented InitDB will not connect to the database.
 		# user = "username"
 		pass = "password"
 		dbname = "{{dbAppName .AppName}}_dev"
 		host = "localhost"
 		# SSLMode possible values:
-		# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
-		# MySQL: https://github.com/go-sql-driver/mysql#tls
+		# https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
 		sslmode = "require"
 		# do not error in dev mode if database is not using latest migration.
 		enforce-migration = false
-		# SQLBoiler (models generator) additional config
-		# tables to ignore when generating models (migration tables, etc)
-		blacklist = ["mig_migrations"]
-
 [prod]
 	[prod.server]
 		bind = ":80"
@@ -44,43 +35,11 @@
 		tls-cert-file = "cert.pem"
 		tls-key-file = "private.key"
 	[prod.db]
-		# valid values are postgres|mysql
-		# db = "postgres"
-		# If the user line is commented the database will not be connected to.
+		# If the user line is commented InitDB will not connect to the database.
 		# user = "username"
 		pass = "password"
 		dbname = "{{dbAppName .AppName}}_prod"
 		host = "localhost"
 		# SSLMode possible values:
-		# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
-		# MySQL: https://github.com/go-sql-driver/mysql#tls
-		sslmode = "require"
-		# SQLBoiler (models generator) additional config
-		# tables to ignore when generating models (migration tables, etc)
-		blacklist = ["mig_migrations"]
-
-# The test section is loaded by your app when running unit tests.
-# The app will create the database named name below, and then drop it
-# after the tests are complete, so make sure you_ALWAYS_ point to a 
-# disposable test database name (not an existing one).
-#
-# If database details are not provided here then migrations will
-# be skipped for unit tests.
-[test]
-	[test.db]
-		# set SQLBoiler DebugMode to specify whether to output SQL queries.
-		debug-mode = true
-		# valid values are postgres|mysql
-		# db = "postgres"
-		# If the user line is commented the database will not be connected to
-		# and the unit tests will not run migrations.
-		# The test database user needs to be a superuser so that it can create
-		# and drop the test database.
-		# user = "username"
-		pass = "password"
-		dbname = "{{dbAppName .AppName}}_test"
-		host = "localhost"
-		# SSLMode possible values:
-		# Postgres: https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
-		# MySQL: https://github.com/go-sql-driver/mysql#tls
+		# https://www.postgresql.org/docs/9.1/static/libpq-ssl.html
 		sslmode = "require"

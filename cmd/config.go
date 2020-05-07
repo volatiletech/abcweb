@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/volatiletech/sqlboiler/boilingcore"
 	"github.com/volatiletech/abcweb/config"
 )
 
@@ -13,10 +12,6 @@ const (
 
 type buildConfig struct{}
 type distConfig struct{}
-
-type modelsConfig struct {
-	config.DBConfig
-}
 
 type migrateConfig struct {
 	config.DBConfig
@@ -51,8 +46,6 @@ type newConfig struct {
 // Create some config variables
 var (
 	migrateCmdConfig migrateConfig
-	modelsCmdConfig  *boilingcore.Config
-	modelsCmdState   *boilingcore.State
 )
 
 // skipDirs are the directories to skip creating for new command
