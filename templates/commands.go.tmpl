@@ -21,7 +21,7 @@ func rootSetup(a *app.App) {
 		Use:   "{{.AppName}} [flags]",
 		Short: "{{.AppName}} web app server",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return abcserver.StartServer(a.Config.Server, a.Router, a.Log) 
+			return abcserver.StartServer(a.Config.Server, a.Router, a.Log, nil) 
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return Setup(a, cmd.Flags())

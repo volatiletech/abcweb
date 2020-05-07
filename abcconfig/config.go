@@ -244,13 +244,11 @@ func UnmarshalAppConfig(cfg interface{}, v *viper.Viper) error {
 			continue
 		}
 
-		if dbCfg.DB == "postgres" {
-			if dbCfg.Port == 0 {
-				dbCfg.Port = 5432
-			}
-			if dbCfg.SSLMode == "" {
-				dbCfg.SSLMode = "require"
-			}
+		if dbCfg.Port == 0 {
+			dbCfg.Port = 5432
+		}
+		if dbCfg.SSLMode == "" {
+			dbCfg.SSLMode = "require"
 		}
 
 		val.Field(i).Set(reflect.ValueOf(dbCfg))
