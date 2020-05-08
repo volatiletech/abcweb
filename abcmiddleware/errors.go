@@ -30,15 +30,16 @@ type ErrorContainer struct {
 	Handler ErrorHandler
 }
 
-type errorManager struct {
+// ErrorManager helps manage errors at the application level
+type ErrorManager struct {
 	render abcrender.Renderer
 	errors []ErrorContainer
 }
 
 // NewErrorManager creates an error manager that can be used to
 // create an error handler to wrap your controllers with
-func NewErrorManager(render abcrender.Renderer) *errorManager {
-	return &errorManager{
+func NewErrorManager(render abcrender.Renderer) *ErrorManager {
+	return &ErrorManager{
 		render: render,
 		errors: []ErrorContainer{},
 	}
@@ -67,7 +68,7 @@ func NewError(err error, code int, template string, handler ErrorHandler) ErrorC
 }
 
 // Remove a ErrorContainer from the error manager
-func (m *errorManager) Remove(e ErrorContainer) {
+func (m *ErrorManager) Remove(e ErrorContainer) {
 	for i, v := range m.errors {
 		if reflect.DeepEqual(v, e) {
 			m.errors = append(m.errors[:i], m.errors[i+1:]...)
@@ -76,7 +77,7 @@ func (m *errorManager) Remove(e ErrorContainer) {
 }
 
 // Add a new ErrorContainer to the error manager
-func (m *errorManager) Add(e ErrorContainer) {
+func (m *ErrorManager) Add(e ErrorContainer) {
 	m.errors = append(m.errors, e)
 }
 
@@ -91,7 +92,7 @@ type ErrorHandler func(w http.ResponseWriter, r *http.Request, e ErrorContainer,
 // errors directly in your controller is that it's all centralized to one
 // location which simplifies adding notifiers (like slack and email).
 // It also reduces a lot of controller boilerplate.
-func (m *errorManager) Errors(ctrl AppHandler) http.HandlerFunc {
+func (m *ErrorManager) Errors(ctrl AppHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := ctrl(w, r)
 		if err == nil {

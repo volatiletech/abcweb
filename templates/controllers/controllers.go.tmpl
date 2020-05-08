@@ -43,5 +43,5 @@ type Main struct {
 // and panics if it cannot be found.
 // This is a convenience wrapper -- Log() is nicer than abcmiddleware.Log()
 func Log(r *http.Request) *zap.Logger {
-	return abcmiddleware.Log(r)
+	return abcmiddleware.Logger(r)
 }

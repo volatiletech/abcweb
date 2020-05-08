@@ -2,15 +2,26 @@
 
 package main
 
+import (
+	"github.com/google/wire"
+	"{{.ImportPath}}/app"
+	"{{.ImportPath}}/routes"
+	"{{.ImportPath}}/rendering"
+	"github.com/spf13/pflag"
+	"github.com/volatiletech/abcweb/abcmiddleware"
+)
+
 func BuildApp(flags *pflag.FlagSet) (*app.App, func(), error) {
 	wire.Build(
 		wire.Struct(new(app.App), "*"),
-		routes.NewRouter,
-		app.NewMiddlewares,
-		rendering.New,
 		{{if not .NoSessions -}}
 		app.NewSessions,
 		{{end -}}
+		abcmiddleware.NewErrorManager,
+		routes.NewRouter,
+		rendering.New,
+		app.NewRootController,
+		app.NewMiddlewares,
 		app.NewLogger,
 		app.NewManifest,
 		app.NewConfig,

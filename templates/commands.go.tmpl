@@ -1,35 +1,31 @@
 package main
 
 import (
-	"path/filepath"
 	"fmt"
 	"os"
+	"path/filepath"
 
-	"github.com/volatiletech/abcweb/abcconfig"
-	"github.com/volatiletech/abcweb/abcserver"
-	"github.com/volatiletech/abcweb/abcconfig"
-	"github.com/volatiletech/abcweb/abcdatabase"
 	"{{.ImportPath}}/app"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/mig"
 	"github.com/spf13/cobra"
+	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/volatiletech/abcweb/abcdatabase"
+	"github.com/volatiletech/mig"
 )
 
 // rootSetup sets up the root cobra command
-func rootSetup(a *app.App) *cobra.Command {
+func rootSetup() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "{{.AppName}} [flags]",
 		Short: "{{.AppName}} web app server",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return abcserver.StartServer(a.Config.Server, a.Router, a.Log, nil) 
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return Setup(a, cmd.Flags())
-		},
+		Run: runRootCmd,
 	}
+
+	root.AddCommand(migrateSetup())
 
 	// Register the cmd-line flags for --help output
 	root.Flags().AddFlagSet(abcconfig.NewFlagSet())
+
 	return root
 }
 
@@ -60,13 +56,13 @@ func migrateSetup() *cobra.Command {
 			}
 
 			if v.GetBool("down") {
-				name, err := mig.Down(cfg.DB.DB, connStr, filepath.Join("db", "migrations"))
+				name, err := mig.Down("postgres", connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig down failed")
 				}
 				fmt.Printf("rolled back migration %q\n", name)
 			} else {
-				count, err := mig.Up(cfg.DB.DB, connStr, filepath.Join("db", "migrations"))
+				count, err := mig.Up("postgres", connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig up failed")
 				}

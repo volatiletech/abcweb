@@ -1,19 +1,16 @@
 package abcdatabase
 
 import (
-	"bytes"
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/volatiletech/abcweb/abcconfig"
-	"github.com/volatiletech/helpers/git"
 	"github.com/volatiletech/mig"
 )
 
@@ -60,7 +57,7 @@ func RunMigrations(cfg abcconfig.DBConfig, migrationsPath string) (int, error) {
 		return 0, err
 	}
 
-	count, err := mig.Up(cfg.DB, connStr, migrationsPath)
+	count, err := mig.Up("postgres", connStr, migrationsPath)
 	if err != nil {
 		return count, err
 	}
@@ -82,7 +79,7 @@ func IsMigrated(cfg abcconfig.DBConfig) (bool, int64, error) {
 		return false, 0, err
 	}
 
-	version, err := mig.Version(cfg.DB, connStr)
+	version, err := mig.Version("postgres", connStr)
 	if err != nil {
 		return false, version, err
 	}

@@ -8,24 +8,27 @@ import (
 	"github.com/unrolled/render"
 )
 
-func CustomHelpers(a *app.App) template.FuncMap {
+const templatesDir = "templates"
+
+func CustomHelpers(cfg *app.Config) template.FuncMap {
 	return template.FuncMap{
-		"config": func() interface{} { return a.Config },
+		"config": func() interface{} { return cfg },
 	}
 }
 
-func New(a *app.App, templatesDir string, manifest map[string]string) abcrender.Renderer {
+func New(cfg *app.Config, manifest map[string]string) abcrender.Renderer {
 	appHelpers := []template.FuncMap{
 		abcrender.AppHelpers(manifest),
-		CustomHelpers(a),
+		CustomHelpers(cfg),
 	}
 
 	renderOpts := render.Options{
 		Directory:     templatesDir,
 		Layout:        "layouts/main",
 		Extensions:    []string{".tmpl", ".html"},
-		IsDevelopment: a.Config.Server.RenderRecompile,
-		Funcs:			appHelpers,
+		IsDevelopment: cfg.Server.RenderRecompile,
+		Funcs:         appHelpers,
+
 		DisableHTTPErrorRendering: true,
 	}
 

@@ -4,40 +4,15 @@ import (
 	"fmt"
 	"os"
 
-	"{{.ImportPath}}/app"
-	"{{.ImportPath}}/db"
-	"{{.ImportPath}}/routes"
-	"{{.ImportPath}}/rendering"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/spf13/cobra"
 	"github.com/volatiletech/abcweb/abcdatabase"
-	"github.com/volatiletech/abcweb/abcrender"
-	"github.com/spf13/pflag"
+	"github.com/volatiletech/abcweb/abcserver"
+	"go.uber.org/zap"
 )
 
 // These are set by the linker when running the "abcweb build" command.
 var version = "unknown"
 var buildTime = "unknown"
-
-// Setup initializes the App object and calls all setup on its members
-func Setup(a *app.App, flags *pflag.FlagSet) error {
-	a.Render = rendering.New(a, "templates", a.AssetsManifest) 
-	a.Router = routes.NewRouter(a, app.NewMiddlewares(a.Config, a.Session, a.Log))
-
-	// Check if using the latest database migration if EnforceLatestMigration
-	if a.Config.DB.EnforceMigration {
-		migrated, version, err := abcdatabase.IsMigrated(a.Config.DB)
-		if err != nil && err != abcdatabase.ErrNoMigrations {
-			return errors.Wrap(err, "failed to check if using latest migration")
-		}
-		if !migrated && err != abcdatabase.ErrNoMigrations {
-			return fmt.Errorf("database is out of sync with migrations, database version: %d", version)
-		}
-	}
-
-	return nil
-}
 
 func main() {
 	// Display the version hash and build time
@@ -47,16 +22,39 @@ func main() {
 		return
 	}
 	
-	a := app.NewApp()
-
-	// Setup the main app root command
-	root := rootSetup(a)
-
-	// Setup and bind the migrate command
-	root.AddCommand(migrateSetup(a.Config))
+	// Setup the cli
+	root := rootSetup()
 
 	if err := root.Execute(); err != nil {
-		a.Log.Fatal("root command execution failed", zap.Error(err))
+		fmt.Println("root command execution failed:", err)
+		os.Exit(1)
 	}
 }
 
+func runRootCmd(cmd *cobra.Command, args []string) {
+	a, cleanup, err := BuildApp(cmd.Flags())
+	if err != nil {
+		fmt.Println("failed to initialize application:", err)
+		os.Exit(1)
+	}
+	defer cleanup()
+
+	// Check if using the latest database migration if EnforceLatestMigration
+	if a.Config.DB.EnforceMigration {
+		migrated, version, err := abcdatabase.IsMigrated(a.Config.DB)
+		if err != nil && err != abcdatabase.ErrNoMigrations {
+			fmt.Println("failed to check if using latest migration:", err)
+			os.Exit(1)
+		}
+		if !migrated && err != abcdatabase.ErrNoMigrations {
+			fmt.Printf("database is out of sync with migrations, database version: %d\n", version)
+			os.Exit(1)
+		}
+	}
+
+	err = abcserver.StartServer(a.Config.Server, a.Router, a.Log, nil) 
+	if err != nil {
+		a.Log.Error("server failed", zap.Error(err))
+		os.Exit(1)
+	}
+}

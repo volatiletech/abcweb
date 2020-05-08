@@ -75,7 +75,7 @@ func NewNotFoundHandler(manifest map[string]string) *NotFound {
 func (n *NotFound) Handler(cfg abcconfig.ServerConfig, render abcrender.Renderer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the Request ID scoped logger
-		log := abcmiddleware.Log(r)
+		log := abcmiddleware.Logger(r)
 
 		reqPath := r.URL.Path
 		// Ensure path is rooted at / to prevent path traversal
@@ -168,7 +168,7 @@ func (n *NotFound) Handler(cfg abcconfig.ServerConfig, render abcrender.Renderer
 func (m *MethodNotAllowed) Handler(render abcrender.Renderer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the Request ID scoped logger
-		log := abcmiddleware.Log(r)
+		log := abcmiddleware.Logger(r)
 
 		log.Warn("method not allowed",
 			zap.String("method", r.Method),

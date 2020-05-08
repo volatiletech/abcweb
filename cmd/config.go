@@ -19,6 +19,7 @@ type migrateConfig struct {
 
 type newConfig struct {
 	AppPath        string `toml:"app-path"`
+	TemplatePath   string `toml:"template-path"`
 	ImportPath     string `toml:"import-path"`
 	AppName        string `toml:"app-name"`
 	AppEnvName     string `toml:"app-env-name"`

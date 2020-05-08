@@ -5,8 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
-	"go/build"
-	"go/format"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,14 +23,14 @@ var newCmdConfig newConfig
 
 // newCmd represents the new command
 var newCmd = &cobra.Command{
-	Use:   "new <import_path> [flags]",
+	Use:   "new [flags] <import_path> <abcweb_templates_path>",
 	Short: "Generate a new abcweb app",
 	Long: `The 'abcweb new' command generates a new abcweb application with a 
 default directory structure and configuration at the Go src import path you specify.
 
-The app will generate in $GOPATH/src/<import_path>.
+The app will generate inside a new APPNAME folder.
 `,
-	Example: "abcweb new github.com/yourusername/myapp",
+	Example: "abcweb new github.com/USERNAME/APPNAME",
 	// Needs to be a persistentPreRunE to override root's config.Initialize call
 	// otherwise abcweb needs to be run from the abcweb project or the git rev-parse
 	// will cause a fatal error.
@@ -56,7 +54,6 @@ func init() {
 	newCmd.Flags().BoolP("no-sessions", "s", false, "Skip support for http sessions")
 	newCmd.Flags().BoolP("force-overwrite", "", false, "Force overwrite of existing files in your import_path")
 	newCmd.Flags().BoolP("skip-npm-install", "", false, "Skip running npm install command")
-	newCmd.Flags().BoolP("skip-dep-ensure", "", false, "Skip running dep ensure command")
 	newCmd.Flags().BoolP("skip-git-init", "", false, "Skip running git init command")
 	newCmd.Flags().BoolP("silent", "", false, "Disable console output")
 	newCmd.Flags().BoolP("verbose", "v", false, "Show verbose output for npm install and dep ensure")
@@ -80,7 +77,6 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		NoConfig:       viper.GetBool("no-config"),
 		ForceOverwrite: viper.GetBool("force-overwrite"),
 		SkipNPMInstall: viper.GetBool("skip-npm-install"),
-		SkipDepEnsure:  viper.GetBool("skip-dep-ensure"),
 		SkipGitInit:    viper.GetBool("skip-git-init"),
 		Silent:         viper.GetBool("silent"),
 		ProdStorer:     viper.GetString("sessions-prod-storer"),
@@ -104,11 +100,18 @@ func newCmdPreRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid bootstrap option (%q) supplied, valid options are: none|regular|gridonly|rebootonly|gridandrebootonly", newCmdConfig.Bootstrap)
 	}
 
-	newCmdConfig.AppPath, newCmdConfig.ImportPath, newCmdConfig.AppName, newCmdConfig.AppEnvName, err = getAppPath(args)
+	newCmdConfig.AppPath, newCmdConfig.TemplatePath,
+		newCmdConfig.ImportPath, newCmdConfig.AppName,
+		newCmdConfig.AppEnvName, err = getAppPath(args)
 	return err
 }
 
 func newCmdRun(cmd *cobra.Command, args []string) error {
+	if len(args) < 2 {
+		cmd.Usage()
+		os.Exit(1)
+	}
+
 	if !newCmdConfig.Silent {
 		fmt.Println("Generating in:", newCmdConfig.AppPath)
 	}
@@ -117,12 +120,6 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 	err := appFS.MkdirAll(newCmdConfig.AppPath, 0755)
 	if err != nil {
 		return err
-	}
-
-	// Get base path containing templates folder and source files
-	p, _ := build.Default.Import(basePackage, "", build.FindOnly)
-	if p == nil || len(p.Dir) == 0 {
-		return errors.New("cannot locate base path containing templates folder")
 	}
 
 	// Make the empty folders that cannot be committed to git.
@@ -135,9 +132,8 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Walk all files in the templates folder
-	basePath := filepath.Join(p.Dir, "templates")
-	err = afero.Walk(appFS, basePath, func(path string, info os.FileInfo, err error) error {
-		return newCmdWalk(newCmdConfig, basePath, path, info, err)
+	err = afero.Walk(appFS, newCmdConfig.TemplatePath, func(path string, info os.FileInfo, err error) error {
+		return newCmdWalk(newCmdConfig, newCmdConfig.TemplatePath, path, info, err)
 	})
 	if err != nil {
 		return err
@@ -151,6 +147,10 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if err := goModInit(newCmdConfig); err != nil {
+		return err
+	}
+
 	if !newCmdConfig.SkipGitInit {
 		err = gitInit(newCmdConfig)
 		if err != nil {
@@ -158,30 +158,19 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if !newCmdConfig.Silent {
-		fmt.Printf("\n\tPlease note the `npm install` command can take a few minutes to complete.\n\tPlease be patient, generally the first run is the slowest.\n\n")
-	}
-
 	if !newCmdConfig.NoGulp && !newCmdConfig.SkipNPMInstall {
-		err = npmInstall(newCmdConfig, newCmdConfig.Verbose)
+		if !newCmdConfig.Silent {
+			fmt.Printf("\n\tPlease note the `npm install` command can take a few minutes to complete.\n\tPlease be patient, generally the first run is the slowest.\n\n")
+		}
+
+		err = npmInstall(newCmdConfig)
 		if err != nil {
 			return err
 		}
 	}
 
 	if !newCmdConfig.Silent {
-		fmt.Printf("\n\tPlease note the `dep ensure` command can take a few minutes to complete.\n\tPlease be patient, generally the first run is the slowest.\n\n")
-	}
-
-	if !newCmdConfig.SkipDepEnsure {
-		err = depEnsure(newCmdConfig, newCmdConfig.Verbose)
-		if err != nil {
-			return err
-		}
-	}
-
-	if !newCmdConfig.Silent {
-		fmt.Printf("\tresult -> Finished\n")
+		fmt.Printf("\tresult -> finished\n")
 	}
 	return nil
 }
@@ -201,19 +190,19 @@ func gitInit(cfg newConfig) error {
 	return err
 }
 
-func npmInstall(cfg newConfig, verbose bool) error {
+func goModInit(cfg newConfig) error {
 	if !cfg.Silent {
-		fmt.Println("\trunning -> npm install")
+		fmt.Println("\trunning -> go mod init")
 	}
 
-	checkDep("npm")
+	checkDep("go")
 
 	var exc *exec.Cmd
-	if verbose {
-		exc = exec.Command("npm", "install", "--verbose")
+	if cfg.Verbose {
+		exc = exec.Command("go", "mod", "init", cfg.ImportPath)
 		exc.Stdout = os.Stdout
 	} else {
-		exc = exec.Command("npm", "install")
+		exc = exec.Command("go", "mod", "init", cfg.ImportPath)
 	}
 	exc.Dir = cfg.AppPath
 
@@ -222,19 +211,19 @@ func npmInstall(cfg newConfig, verbose bool) error {
 	return err
 }
 
-func depEnsure(cfg newConfig, verbose bool) error {
+func npmInstall(cfg newConfig) error {
 	if !cfg.Silent {
-		fmt.Println("\trunning -> dep ensure")
+		fmt.Println("\trunning -> npm install")
 	}
 
-	checkDep("dep")
+	checkDep("npm")
 
 	var exc *exec.Cmd
-	if verbose {
-		exc = exec.Command("dep", "ensure", "-v")
+	if cfg.Verbose {
+		exc = exec.Command("npm", "install", "--verbose")
 		exc.Stdout = os.Stdout
 	} else {
-		exc = exec.Command("dep", "ensure")
+		exc = exec.Command("npm", "install")
 	}
 	exc.Dir = cfg.AppPath
 
@@ -356,16 +345,16 @@ func newCmdWalk(cfg newConfig, basePath string, path string, info os.FileInfo, e
 		}
 
 		// Gofmt go files before save.
-		if strings.HasSuffix(fullPath, ".go") {
-			res, err := format.Source(fileContents.Bytes())
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("failed to format %s", fullPath))
-			}
-			fileContents.Reset()
-			if _, err := fileContents.Write(res); err != nil {
-				return err
-			}
-		}
+		// if strings.HasSuffix(fullPath, ".go") {
+		// 	res, err := format.Source(fileContents.Bytes())
+		// 	if err != nil {
+		// 		return errors.Wrap(err, fmt.Sprintf("failed to format %s", fullPath))
+		// 	}
+		// 	fileContents.Reset()
+		// 	if _, err := fileContents.Write(res); err != nil {
+		// 		return err
+		// 	}
+		// }
 
 		err = afero.WriteFile(appFS, fullPath, fileContents.Bytes(), 0644)
 		if err != nil {
@@ -472,54 +461,27 @@ func processSkips(cfg newConfig, basePath string, path string, info os.FileInfo)
 	return false, nil
 }
 
-func getAppPath(args []string) (appPath, importPath, appName, appEnvName string, err error) {
-	if len(args) == 0 {
-		return "", "", "", "", errors.New("must provide an app path")
+func getAppPath(args []string) (appPath, templatePath, importPath, appName, appEnvName string, err error) {
+	if len(args) < 2 {
+		return "", "", "", "", "", errors.New("must provide an import path and template path")
 	}
 
-	appPath = filepath.Clean(args[0])
-	importPath = strings.Replace(appPath, `\`, "/", -1)
-
-	// Somewhat validate provided app path, valid paths will have at least 2 components
-	appPathChunks := strings.Split(appPath, string(os.PathSeparator))
-	if len(appPathChunks) < 2 {
-		return "", "", "", "", errors.New("invalid app path provided, see --help for example")
+	importPath = strings.Replace(args[0], `\`, "/", -1)
+	// Somewhat validate provided import path, must have at least 2 components
+	if !strings.ContainsRune(importPath, '/') {
+		return "", "", "", "", "", errors.New("invalid import path provided, see --help for example")
 	}
 
-	_, appName = filepath.Split(appPath)
-
-	if appName == "" || appName == "." || appName == "/" {
-		return "", "", "", "", errors.New("app path must contain an output folder name")
+	appName = filepath.Base(importPath)
+	appPath, err = filepath.Abs(appName)
+	if err != nil {
+		return "", "", "", "", "", fmt.Errorf("could not determine absolute path for project: %w", err)
 	}
+	templatePath = filepath.Clean(args[1])
 
 	appEnvName = strmangle.EnvAppName(appName)
 
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
-		return "", "", "", "", errors.New("cannot get GOPATH from environment variables")
-	}
-
-	// If GOPATH has more than one directory, prompt user to choose which one
-	goPathChunks := strings.Split(gopath, string(os.PathListSeparator))
-	if len(goPathChunks) > 1 {
-		fmt.Println("Your GOPATH has multiple paths, select your desired GOPATH:")
-		for pos, chunk := range goPathChunks {
-			fmt.Printf("[%d] %s\n", pos+1, chunk)
-		}
-
-		num := 0
-		for num < 1 || num > len(goPathChunks) {
-			fmt.Printf("Select GOPATH number: ")
-			fmt.Scanln(&num)
-			fmt.Println(num)
-		}
-
-		gopath = goPathChunks[num-1]
-	}
-
-	// Target directory is $GOPATH/src/<import_path>
-	appPath = filepath.Join(gopath, "src", appPath)
-	return appPath, importPath, appName, appEnvName, nil
+	return appPath, templatePath, importPath, appName, appEnvName, nil
 }
 
 func getProcessedPaths(path string, pathSeparator string, cfg newConfig) (cleanPath string, fullPath string) {

@@ -1,18 +1,23 @@
 package app
 
 import (
-	{{if not .NoSessions -}}
-	"github.com/volatiletech/abcweb/abcsessions"
-	{{- end}}
+	"fmt"
+	"net/http"
+
+	"github.com/go-chi/chi"
+	chimiddleware "github.com/go-chi/chi/middleware"
+	"github.com/patreek/rofl/controllers"
+	"github.com/pkg/errors"
+	"github.com/spf13/pflag"
 	"github.com/volatiletech/abcweb/abcconfig"
 	"github.com/volatiletech/abcweb/abcmiddleware"
 	"github.com/volatiletech/abcweb/abcrender"
-	"github.com/go-chi/chi"
-	"github.com/spf13/cobra"
+	{{if not .NoSessions -}}
+	"github.com/volatiletech/abcweb/abcsessions"
+	{{- end}}
+	"github.com/volatiletech/refresh/refresh/web"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"github.com/volatiletech/refresh/refresh/web"
-	chimiddleware "github.com/go-chi/chi/middleware"
 )
 
 // App is the configuration state for the entire app.
@@ -42,6 +47,7 @@ type Config struct {
 	// Custom configuration can be added here.
 }
 
+// NewConfig creates the configuration by reading env & files
 func NewConfig(flags *pflag.FlagSet) (*Config, error) {
 	cfg := new(Config)
 	c := abcconfig.NewConfig("{{.AppEnvName}}")
@@ -51,15 +57,26 @@ func NewConfig(flags *pflag.FlagSet) (*Config, error) {
 	return cfg, nil
 }
 
+// NewRootController builds the root controller
+func NewRootController(renderer abcrender.Renderer {{- if not .NoSessions}}, sessions abcsessions.Overseer{{end}}) controllers.Root {
+	// The common state for each route handler
+	return controllers.Root{
+		Render:  renderer,
+		{{if not .NoSessions -}}
+		Session: sessions,
+		{{- end}}
+	}
+}
+
 // NewManifest makes an assets manifest if it's set in the config
 func NewManifest(cfg *Config) (map[string]string, error) {
-	if !config.Server.AssetsManifest {
+	if !cfg.AppConfig.Server.AssetsManifest {
 		return nil, nil
 	}
 
-	manifest, err := abcrender.GetManifest(a.Config.Server.PublicPath)
+	manifest, err := abcrender.GetManifest(cfg.Server.PublicPath)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("cannot get assets manifest cache at path %q", a.Config.Server.PublicPath))
+		return nil, errors.Wrap(err, fmt.Sprintf("cannot get assets manifest cache at path %q", cfg.Server.PublicPath))
 	}
 
 	return manifest, nil
@@ -165,11 +182,7 @@ func NewSessions(cfg *Config) (abcsessions.Overseer, error) {
 
 // NewMiddlewares returns a list of middleware to be used by the router.
 // See https://github.com/go-chi/chi#middlewares and abcweb readme for extras.
-func NewMiddlewares(cfg *Config,{{if not .NoSessions}} sessions abcsessions.Overseer,{{end}} log *zap.Logger) []abcmiddleware.MiddlewareFunc {
-	m := abcmiddleware.Middleware{
-		Log: log,
-	}
-
+func NewMiddlewares(cfg *Config,{{if not .NoSessions}} sessions abcsessions.Overseer,{{end}} log *zap.Logger, renderer abcrender.Renderer) []abcmiddleware.MiddlewareFunc {
 	middlewares := []abcmiddleware.MiddlewareFunc{}
 	
 	// Display "abcweb dev" build errors in the browser.
@@ -183,13 +196,19 @@ func NewMiddlewares(cfg *Config,{{if not .NoSessions}} sessions abcsessions.Over
 	// Creates the derived request ID logger and sets it in the context object.
 	// Use middleware.Log(r) to retrieve it from the context object for usage in
 	// other middleware injected below this one, and in your controllers.
-	middlewares = append(middlewares, m.RequestIDLogger)
+	requestIDMiddleware := abcmiddleware.ZapRequestIDLogger(log)
+	middlewares = append(middlewares, requestIDMiddleware.Wrap)
 
 	// Graceful panic recovery that uses zap to log the stack trace
-	middlewares = append(middlewares, m.Recover)
+	recoverMiddleware := abcmiddleware.ZapRecover(log, func(w http.ResponseWriter, r *http.Request) {
+		requestID := chimiddleware.GetReqID(r.Context())
+		renderer.HTML(w, http.StatusInternalServerError, "errors/500", requestID)
+	})
+	middlewares = append(middlewares, recoverMiddleware.Wrap)
 
 	// Use zap logger for all routing
-	middlewares = append(middlewares, m.Zap)
+	loggerMiddleware := abcmiddleware.ZapLog(log)
+	middlewares = append(middlewares, loggerMiddleware.Wrap)
 
 	// Sets response headers to prevent clients from caching
 	if cfg.Server.AssetsNoCache {
