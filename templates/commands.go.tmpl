@@ -16,8 +16,8 @@ import (
 )
 
 // rootSetup sets up the root cobra command
-func rootSetup(a *app.App) {
-	a.Root = &cobra.Command{
+func rootSetup(a *app.App) *cobra.Command {
+	root := &cobra.Command{
 		Use:   "{{.AppName}} [flags]",
 		Short: "{{.AppName}} web app server",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -29,21 +29,23 @@ func rootSetup(a *app.App) {
 	}
 
 	// Register the cmd-line flags for --help output
-	a.Root.Flags().AddFlagSet(abcconfig.NewFlagSet())
+	root.Flags().AddFlagSet(abcconfig.NewFlagSet())
+	return root
 }
 
-// migrateSetup sets up the migrate command and binds it to the root command.
+// migrateSetup sets up the migrate command and returns it.
 //
 // The migrate up and down command is built into the app so that you do not
 // need to deploy abcweb to your server to run your migrations.
-func migrateSetup(a *app.App) { 
+func migrateSetup() *cobra.Command { 
 	migrate := &cobra.Command{
 		Use:   "migrate",
 		Short: "Run your database migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c := abcconfig.NewConfig("")
+			cfg := new(app.Config)
+			c := abcconfig.NewConfig("{{.AppEnvName}}")
 
-			v, err := c.Bind(cmd.Flags(), a.Config)
+			v, err := c.Bind(cmd.Flags(), cfg)
 			if err != nil {
 				return errors.Wrap(err, "cannot bind app config")
 			}
@@ -52,19 +54,19 @@ func migrateSetup(a *app.App) {
 				return errors.Wrap(err, "could not find migrations folder")
 			}
 
-			connStr, err := abcdatabase.GetConnStr(a.Config.DB)
+			connStr, err := abcdatabase.GetConnStr(cfg.DB)
 			if err != nil {
 				return errors.Wrap(err, "could not create connection string")
 			}
 
 			if v.GetBool("down") {
-				name, err := mig.Down(a.Config.DB.DB, connStr, filepath.Join("db", "migrations"))
+				name, err := mig.Down(cfg.DB.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig down failed")
 				}
 				fmt.Printf("rolled back migration %q\n", name)
 			} else {
-				count, err := mig.Up(a.Config.DB.DB, connStr, filepath.Join("db", "migrations"))
+				count, err := mig.Up(cfg.DB.DB, connStr, filepath.Join("db", "migrations"))
 				if err != nil {
 					return errors.Wrap(err, "call to mig up failed")
 				}
@@ -80,5 +82,5 @@ func migrateSetup(a *app.App) {
 	// Add the database config flags
 	migrate.Flags().AddFlagSet(abcconfig.NewDBFlagSet())
 	
-	a.Root.AddCommand(migrate)
+	return migrate
 }

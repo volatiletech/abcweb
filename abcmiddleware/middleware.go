@@ -6,9 +6,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// CtxLoggerKey is the http.Request Context lookup key for the request ID logger
-const CtxLoggerKey = "request_id_logger"
-
 // MiddlewareFunc is the function signature for Chi's Use() middleware
 type MiddlewareFunc func(http.Handler) http.Handler
 
@@ -17,4 +14,9 @@ type Middleware struct {
 	// Log is used for logging in your middleware and to
 	// create a derived logger that includes the request ID.
 	Log *zap.Logger
+}
+
+// MW is an interface defining middleware wrapping
+type MW interface {
+	Wrap(http.Handler) http.Handler
 }

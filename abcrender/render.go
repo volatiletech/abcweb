@@ -34,7 +34,7 @@ type Renderer interface {
 }
 
 // Render implements the HTML and HTMLWithLayout functions on the Renderer
-// interface and imbeds the unrolled Render type to satisfy the rest of the interface.
+// interface and embeds the unrolled Render type to satisfy the rest of the interface.
 // The custom HTML/HTMLWithLayout implementation is required due to the Render
 // HTML function having a package-specific type for the layout string (Render.HTMLOptions).
 // It's also required to wrap the AssetsManifest for the template function helpers.

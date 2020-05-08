@@ -1,0 +1,20 @@
+//+build wireinject 
+
+package main
+
+func BuildApp(flags *pflag.FlagSet) (*app.App, func(), error) {
+	wire.Build(
+		wire.Struct(new(app.App), "*"),
+		routes.NewRouter,
+		app.NewMiddlewares,
+		rendering.New,
+		{{if not .NoSessions -}}
+		app.NewSessions,
+		{{end -}}
+		app.NewLogger,
+		app.NewManifest,
+		app.NewConfig,
+	)
+
+	return &app.App{}, func() {}, nil
+}

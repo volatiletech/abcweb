@@ -73,7 +73,7 @@ you can use these overseer methods.
 
 `Resetter`
 
-The Overseer interface imbeds the Resetter interface which defines the functions
+The Overseer interface embeds the Resetter interface which defines the functions
 used to reset the expiries of your sessions. This is handled automatically
 by the ResetMiddleware and is not something that needs to be called directly.
 

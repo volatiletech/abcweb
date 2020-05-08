@@ -22,31 +22,6 @@ var buildTime = "unknown"
 
 // Setup initializes the App object and calls all setup on its members
 func Setup(a *app.App, flags *pflag.FlagSet) error {
-	var err error
-	c := abcconfig.NewConfig("{{.AppEnvName}}")
-	if _, err := c.Bind(flags, a.Config); err != nil {
-		return errors.Wrap(err, "cannot bind app config")
-	}
-
-	// Set the AssetsManifest cache to the contents of the assets 
-	// manifest in the public directory
-	if a.Config.Server.AssetsManifest {
-		a.AssetsManifest, err = abcrender.GetManifest(a.Config.Server.PublicPath)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("cannot get assets manifest cache at path %q", a.Config.Server.PublicPath))
-		}
-	}
-	
-	if a.Log, err = app.NewLogger(a.Config); err != nil {
-		return errors.Wrap(err, "cannot create new logger")
-	}
-	
-	{{- if not .NoSessions}}
-	if a.Session, err = app.NewSessions(a.Config); err != nil {
-		return errors.Wrap(err, "cannot create new sessions overseer")
-	}
-	{{- end}}
-
 	a.Render = rendering.New(a, "templates", a.AssetsManifest) 
 	a.Router = routes.NewRouter(a, app.NewMiddlewares(a.Config, a.Session, a.Log))
 
@@ -75,12 +50,12 @@ func main() {
 	a := app.NewApp()
 
 	// Setup the main app root command
-	rootSetup(a)
+	root := rootSetup(a)
 
 	// Setup and bind the migrate command
-	migrateSetup(a)
+	root.AddCommand(migrateSetup(a.Config))
 
-	if err := a.Root.Execute(); err != nil {
+	if err := root.Execute(); err != nil {
 		a.Log.Fatal("root command execution failed", zap.Error(err))
 	}
 }

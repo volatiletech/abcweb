@@ -20,6 +20,7 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.3
+	github.com/stretchr/testify v1.3.0
 	github.com/unrolled/render v1.0.3
 	github.com/volatiletech/helpers v1.0.0
 	github.com/volatiletech/mig v1.2.0

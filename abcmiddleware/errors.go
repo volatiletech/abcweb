@@ -128,7 +128,7 @@ func (m *errorManager) Errors(ctrl AppHandler) http.HandlerFunc {
 		}
 
 		// Get the Request ID scoped logger
-		log := Log(r)
+		log := Logger(r)
 
 		fields := []zapcore.Field{
 			zap.String("method", r.Method),

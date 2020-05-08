@@ -22,7 +22,6 @@ type App struct {
 	Log		 *zap.Logger
 	Router	 *chi.Mux
 	Render	 abcrender.Renderer
-	Root		 *cobra.Command
 	{{if not .NoSessions -}}
 	Session abcsessions.Overseer
 	{{- end}}
@@ -30,24 +29,40 @@ type App struct {
 }
 
 // Config holds the configuration for the app.
-// It imbeds abcconfig.AppConfig so that it can hold the
+// It embeds abcconfig.AppConfig so that it can hold the
 // Env, DB and Server configuration.
 //
 // If you did not wish to use ALL abcconfig.AppConfig members you could add
-// them as individual members opposed to imbedding abcconfig.AppConfig,
+// them as individual members opposed to embedding abcconfig.AppConfig,
 // i.e: Server abcconfig.ServerConfig `toml:"server" mapstructure:"server"`
 type Config struct {
-	// imbed AppConfig
+	// embed AppConfig
 	abcconfig.AppConfig
 
 	// Custom configuration can be added here.
 }
 
-// NewApp returns an initialized App object
-func NewApp() *App {
-	return &App{
-		Config: &Config{},
+func NewConfig(flags *pflag.FlagSet) (*Config, error) {
+	cfg := new(Config)
+	c := abcconfig.NewConfig("{{.AppEnvName}}")
+	if _, err := c.Bind(flags, cfg); err != nil {
+		return nil, errors.Wrap(err, "cannot bind app config")
 	}
+	return cfg, nil
+}
+
+// NewManifest makes an assets manifest if it's set in the config
+func NewManifest(cfg *Config) (map[string]string, error) {
+	if !config.Server.AssetsManifest {
+		return nil, nil
+	}
+
+	manifest, err := abcrender.GetManifest(a.Config.Server.PublicPath)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("cannot get assets manifest cache at path %q", a.Config.Server.PublicPath))
+	}
+
+	return manifest, nil
 }
 
 // NewLogger returns a new zap logger
@@ -67,7 +82,12 @@ func NewLogger(cfg *Config) (*zap.Logger, error) {
 	// the abcweb dev command from displaying duplicate lines
 	zapCfg.OutputPaths = []string{"stdout"}
 
-	return zapCfg.Build()
+	logger, err := zapCfg.Build()
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot create new logger")
+	}
+	
+	return logger, nil
 }
 
 {{if not .NoSessions -}}
@@ -81,54 +101,62 @@ func NewSessions(cfg *Config) (abcsessions.Overseer, error) {
 	}
 
 	var overseer abcsessions.Overseer
-	if cfg.Server.SessionsDevStorer {
-		{{if eq .DevStorer "cookie" -}}
-		overseer = abcsessions.NewCookieOverseer(opts, []byte("{{randString 32}}"))
-		{{- else if eq .DevStorer "memory" -}}
-		storer, err := abcsessions.NewDefaultMemoryStorer()
-		if err != nil {
-			return nil, err
+	
+	err := func() error {
+		if cfg.Server.SessionsDevStorer {
+			{{if eq .DevStorer "cookie" -}}
+			overseer = abcsessions.NewCookieOverseer(opts, []byte("{{randString 32}}"))
+			{{- else if eq .DevStorer "memory" -}}
+			storer, err := abcsessions.NewDefaultMemoryStorer()
+			if err != nil {
+				return err
+			}
+			overseer = abcsessions.NewStorageOverseer(opts, storer)
+			{{- else if eq .DevStorer "disk" -}}
+			storer, err := abcsessions.NewDefaultDiskStorer("{{randString 8}}")
+			if err != nil {
+				return err
+			}
+			storer.StartCleaner()
+			overseer = abcsessions.NewStorageOverseer(opts, storer)
+			{{- else if eq .DevStorer "redis" -}}
+			// localhost:6379, no password, 0th indexed database.
+			storer, err := abcsessions.NewDefaultRedisStorer("", "", 0)
+			if err != nil {
+				return err
+			}
+			overseer = abcsessions.NewStorageOverseer(opts, storer)
+			{{- end}}
+		} else {
+			{{if eq .ProdStorer "cookie" -}}
+			cfg.Session = abcsessions.NewCookieOverseer(opts, []byte("{{randString 32}}"))
+			{{- else if eq .ProdStorer "memory" -}}
+			storer, err := abcsessions.NewDefaultMemoryStorer()
+			if err != nil {
+				return err
+			}
+			overseer = abcsessions.NewStorageOverseer(opts, storer)
+			{{- else if eq .ProdStorer "disk" -}}
+			storer, err := abcsessions.NewDefaultDiskStorer("{{randString 8}}")
+			if err != nil {
+				return err
+			}
+			storer.StartCleaner()
+			overseer = abcsessions.NewStorageOverseer(opts, storer)
+			{{- else if eq .ProdStorer "redis" -}}
+			// localhost:6379, no password, 0th indexed database.
+			storer, err := abcsessions.NewDefaultRedisStorer("", "", 0)
+			if err != nil {
+				return err
+			}
+			overseer = abcsessions.NewStorageOverseer(opts, storer)
+			{{- end}}
 		}
-		overseer = abcsessions.NewStorageOverseer(opts, storer)
-		{{- else if eq .DevStorer "disk" -}}
-		storer, err := abcsessions.NewDefaultDiskStorer("{{randString 8}}")
-		if err != nil {
-			return nil, err
-		}
-		storer.StartCleaner()
-		overseer = abcsessions.NewStorageOverseer(opts, storer)
-		{{- else if eq .DevStorer "redis" -}}
-		// localhost:6379, no password, 0th indexed database.
-		storer, err := abcsessions.NewDefaultRedisStorer("", "", 0)
-		if err != nil {
-			return nil, err
-		}
-		overseer = abcsessions.NewStorageOverseer(opts, storer)
-		{{- end}}
-	} else {
-		{{if eq .ProdStorer "cookie" -}}
-		cfg.Session = abcsessions.NewCookieOverseer(opts, []byte("{{randString 32}}"))
-		{{- else if eq .ProdStorer "memory" -}}
-		storer, err := abcsessions.NewDefaultMemoryStorer()
-		if err != nil {
-			return nil, err
-		}
-		overseer = abcsessions.NewStorageOverseer(opts, storer)
-		{{- else if eq .ProdStorer "disk" -}}
-		storer, err := abcsessions.NewDefaultDiskStorer("{{randString 8}}")
-		if err != nil {
-			return nil, err
-		}
-		storer.StartCleaner()
-		overseer = abcsessions.NewStorageOverseer(opts, storer)
-		{{- else if eq .ProdStorer "redis" -}}
-		// localhost:6379, no password, 0th indexed database.
-		storer, err := abcsessions.NewDefaultRedisStorer("", "", 0)
-		if err != nil {
-			return nil, err
-		}
-		overseer = abcsessions.NewStorageOverseer(opts, storer)
-		{{- end}}
+		return nil
+	}()
+
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot create new sessions overseer")
 	}
 
 	return overseer, nil
@@ -137,7 +165,7 @@ func NewSessions(cfg *Config) (abcsessions.Overseer, error) {
 
 // NewMiddlewares returns a list of middleware to be used by the router.
 // See https://github.com/go-chi/chi#middlewares and abcweb readme for extras.
-func NewMiddlewares(cfg *Config, sessions abcsessions.Overseer, log *zap.Logger) []abcmiddleware.MiddlewareFunc {
+func NewMiddlewares(cfg *Config,{{if not .NoSessions}} sessions abcsessions.Overseer,{{end}} log *zap.Logger) []abcmiddleware.MiddlewareFunc {
 	m := abcmiddleware.Middleware{
 		Log: log,
 	}
