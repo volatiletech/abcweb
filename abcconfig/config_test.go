@@ -136,9 +136,6 @@ func TestBindLoadEnv(t *testing.T) {
 		t.Error(err)
 	}
 
-	if cfg.DB.DB != "postgres" {
-		t.Errorf("expected postgres, got %s", cfg.DB.DB)
-	}
 	if cfg.DB.DBName != "lolwtf_test" {
 		t.Errorf("expected lolwtf_test, got %s", cfg.DB.DBName)
 	}
@@ -239,9 +236,6 @@ func TestBindPublicPathEnv(t *testing.T) {
 		t.Error(err)
 	}
 
-	if cfg.DB.DB != "postgres" {
-		t.Errorf("expected postgres, got %s", cfg.DB.DB)
-	}
 	if cfg.DB.DBName != "lolwtf_dev" {
 		t.Errorf("expected lolwtf_dev, got %s", cfg.DB.DBName)
 	}
@@ -374,9 +368,6 @@ func TestBind(t *testing.T) {
 	}
 	if cfg.Env != "cool" {
 		t.Errorf("expected env to be cool, got %s", cfg.Env)
-	}
-	if cfg.DB.DB != "postgres" {
-		t.Errorf("expected postgres, got %s", cfg.DB.DB)
 	}
 	if cfg.DB.Port != 5432 {
 		t.Errorf("expected port 5432, got %d", cfg.DB.Port)
@@ -628,7 +619,6 @@ func TestGetTagMappings(t *testing.T) {
 		{chain: "server.render-recompile", env: "SERVER_RENDER_RECOMPILE"},
 		{chain: "server.sessions-dev-storer", env: "SERVER_SESSIONS_DEV_STORER"},
 		{chain: "server.public-path", env: "SERVER_PUBLIC_PATH"},
-		{chain: "db.db", env: "DB_DB"},
 		{chain: "db.dbname", env: "DB_DBNAME"},
 		{chain: "db.host", env: "DB_HOST"},
 		{chain: "db.port", env: "DB_PORT"},

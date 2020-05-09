@@ -14,12 +14,6 @@ func TestGetConnStr(t *testing.T) {
 
 	cfg := abcconfig.DBConfig{}
 
-	_, err := GetConnStr(cfg)
-	if err == nil {
-		t.Error("expected error")
-	}
-
-	cfg.DB = "postgres"
 	cfg.User = "a"
 	cfg.Pass = "b"
 	cfg.DBName = "c"

@@ -98,7 +98,7 @@ func TestCustomErrorHandler(t *testing.T) {
 	})
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest("get", "/", nil)
-	r = r.WithContext(context.WithValue(context.Background(), CtxLoggerKey, zap.NewNop()))
+	r = r.WithContext(context.WithValue(context.Background(), CTXKeyLogger, zap.NewNop()))
 	fn.ServeHTTP(w, r)
 	if rndr.status != http.StatusInternalServerError {
 		t.Errorf("expected StatusInternalServerError, got %d", rndr.status)
@@ -119,7 +119,7 @@ func TestCustomErrorHandler(t *testing.T) {
 	})
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest("get", "/", nil)
-	r = r.WithContext(context.WithValue(context.Background(), CtxLoggerKey, zap.NewNop()))
+	r = r.WithContext(context.WithValue(context.Background(), CTXKeyLogger, zap.NewNop()))
 	fn.ServeHTTP(w, r)
 	if rndr.status != 100 {
 		t.Errorf("expected 100, got %d", rndr.status)

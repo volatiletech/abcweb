@@ -122,7 +122,7 @@ func TestNotFound(t *testing.T) {
 	notFound := n.Handler(serverCfg, render)
 
 	// set the logger on the context so calls to abcmiddleware.Log don't fail
-	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, log))
+	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CTXKeyLogger, log))
 
 	// Call the handler
 	notFound(w, r)
@@ -140,7 +140,7 @@ func TestNotFound(t *testing.T) {
 	w = httptest.NewRecorder()
 
 	// set the logger on the context so calls to abcmiddleware.Log don't fail
-	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, log))
+	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CTXKeyLogger, log))
 
 	// Call the handler
 	notFound(w, r)
@@ -157,7 +157,7 @@ func TestNotFound(t *testing.T) {
 	r = httptest.NewRequest("GET", "/assets/css/main-manifestmagic.css", nil)
 	w = httptest.NewRecorder()
 
-	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CtxLoggerKey, log))
+	r = r.WithContext(context.WithValue(r.Context(), abcmiddleware.CTXKeyLogger, log))
 
 	// Set asset manifest to test manifest hotpath
 	manifest := map[string]string{

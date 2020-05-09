@@ -18,17 +18,17 @@ func TestGetAppPath(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	os.Setenv("GOPATH", "testpath/test")
 
-	appPath, importPath, appName, appEnvName, err := getAppPath([]string{"."})
+	appPath, _, importPath, appName, appEnvName, err := getAppPath([]string{".", "/templatepath"})
 	if err == nil {
 		t.Errorf("expected error, but got none: %s - %s", appPath, appName)
 	}
 
-	appPath, importPath, appName, appEnvName, err = getAppPath([]string{"/"})
+	appPath, _, importPath, appName, appEnvName, err = getAppPath([]string{"/", "/templatepath"})
 	if err == nil {
 		t.Errorf("expected error, but got none: %s - %s", appPath, appName)
 	}
 
-	appPath, importPath, appName, appEnvName, err = getAppPath([]string{"/test"})
+	appPath, _, importPath, appName, appEnvName, err = getAppPath([]string{"/test", "/templatepath"})
 	if err != nil {
 		t.Error(err)
 	}
@@ -45,7 +45,7 @@ func TestGetAppPath(t *testing.T) {
 		t.Errorf("mismatch, got %s", importPath)
 	}
 
-	appPath, importPath, appName, appEnvName, err = getAppPath([]string{"./stuff/test"})
+	appPath, _, importPath, appName, appEnvName, err = getAppPath([]string{"./stuff/test"}, "/templatepath")
 	if err != nil {
 		t.Error(err)
 	}
@@ -279,7 +279,7 @@ func TestNewCmdWalk(t *testing.T) {
 	}
 
 	// check template file write
-	err = afero.WriteFile(appFS, "/templates/template.go.tmpl", []byte(`package    {{.AppName}}`), 0644)
+	err = afero.WriteFile(appFS, "/templates/template.go.tmpl", []byte(`package  {{.AppName}}`), 0644)
 	if err != nil {
 		t.Fatal(err)
 	}

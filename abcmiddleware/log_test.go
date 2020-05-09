@@ -17,11 +17,11 @@ func TestLog(t *testing.T) {
 		t.Error(err)
 	}
 
-	ctx = context.WithValue(ctx, CtxLoggerKey, z)
+	ctx = context.WithValue(ctx, CTXKeyLogger, z)
 	r := &http.Request{}
 	r = r.WithContext(ctx)
 
 	// Ensure log can be called successfully. Ignore response because we don't
 	// need to validate anything.
-	_ = Log(r)
+	_ = Logger(r)
 }

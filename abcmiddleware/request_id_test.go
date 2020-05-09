@@ -14,6 +14,12 @@ import (
 	"go.uber.org/zap"
 )
 
+type bufSyncer struct {
+	*bytes.Buffer
+}
+
+func (bufSyncer) Sync() error { return nil }
+
 func TestRequestID(t *testing.T) {
 	t.Parallel()
 
