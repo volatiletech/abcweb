@@ -45,7 +45,7 @@ func TestGetAppPath(t *testing.T) {
 		t.Errorf("mismatch, got %s", importPath)
 	}
 
-	appPath, _, importPath, appName, appEnvName, err = getAppPath([]string{"./stuff/test"}, "/templatepath")
+	appPath, _, importPath, appName, appEnvName, err = getAppPath([]string{"./stuff/test", "/templatepath"})
 	if err != nil {
 		t.Error(err)
 	}
