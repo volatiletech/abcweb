@@ -5,10 +5,10 @@ import (
 	"errors"
 
 	{{if not .NoSessions -}}
-	"github.com/volatiletech/abcweb/v4/abcsessions"
+	"github.com/volatiletech/abcweb/v5/abcsessions"
 	{{- end}}
-	"github.com/volatiletech/abcweb/v4/abcrender"
-	"github.com/volatiletech/abcweb/v4/abcmiddleware"
+	"github.com/volatiletech/abcweb/v5/abcrender"
+	"github.com/volatiletech/abcweb/v5/abcmiddleware"
 	"go.uber.org/zap"
 )
 

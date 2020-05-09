@@ -9,11 +9,11 @@ import (
 	"github.com/patreek/rofl/controllers"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-	"github.com/volatiletech/abcweb/v4/abcconfig"
-	"github.com/volatiletech/abcweb/v4/abcmiddleware"
-	"github.com/volatiletech/abcweb/v4/abcrender"
+	"github.com/volatiletech/abcweb/v5/abcconfig"
+	"github.com/volatiletech/abcweb/v5/abcmiddleware"
+	"github.com/volatiletech/abcweb/v5/abcrender"
 	{{if not .NoSessions -}}
-	"github.com/volatiletech/abcweb/v4/abcsessions"
+	"github.com/volatiletech/abcweb/v5/abcsessions"
 	{{- end}}
 	"github.com/volatiletech/refresh/refresh/web"
 	"go.uber.org/zap"
