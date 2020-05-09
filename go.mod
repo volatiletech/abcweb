@@ -22,7 +22,6 @@ require (
 	github.com/spf13/viper v1.6.3
 	github.com/stretchr/testify v1.3.0
 	github.com/unrolled/render v1.0.3
-	github.com/volatiletech/helpers v1.0.0
 	github.com/volatiletech/mig v1.2.0
 	github.com/volatiletech/refresh v2.0.0+incompatible
 	go.uber.org/zap v1.10.0
