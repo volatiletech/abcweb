@@ -39,11 +39,11 @@ func depsCmdRun(cmd *cobra.Command, args []string) error {
 	var err error
 
 	goGetArgs := [][]string{
-		{"github.com/golang/dep/cmd/dep"},
+		{"github.com/google/wire/cmd/wire"},
 	}
 
 	npmInstallArgs := [][]string{
-		{"gulpjs/gulp.git#4.0"},
+		{"gulp@v4"},
 	}
 
 	prependArgs := []string{"get"}
@@ -115,6 +115,7 @@ https://docs.npmjs.com/getting-started/fixing-npm-permissions
 			fmt.Printf("%s ... ", goGetArg[len(goGetArg)-1])
 
 			exc := exec.Command("go", goGetArg...)
+			exc.Env = append(os.Environ(), "GO111MODULE=off")
 			out, err := exc.CombinedOutput()
 
 			if err != nil {

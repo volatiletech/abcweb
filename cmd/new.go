@@ -169,9 +169,24 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	_, wireErr := exec.LookPath("wire")
+	if wireErr == nil {
+		fmt.Println("\trunning -> wire")
+		cmd := exec.Command("wire")
+		err = cmd.Run()
+		if err != nil {
+			return errors.Wrap(err, "wire failed")
+		}
+	}
 	if !newCmdConfig.Silent {
 		fmt.Printf("\tresult -> finished\n")
 	}
+
+	if wireErr != nil {
+		fmt.Println("\n\tBefore your app will compile you will need to run wire. To install wire, please run 'abcweb deps' in your app folder.")
+		fmt.Println("\tYou can run wire manually using 'wire' or 'go generate' once it is installed.")
+	}
+
 	return nil
 }
 
