@@ -38,7 +38,6 @@ type newConfig struct {
 	NoSessions     bool   `toml:"no-sessions"`
 	ForceOverwrite bool   `toml:"force-overwrite"`
 	SkipNPMInstall bool   `toml:"skip-npm-install"`
-	SkipDepEnsure  bool   `toml:"skip-dep-ensure"`
 	SkipGitInit    bool   `toml:"skip-git-init"`
 	Silent         bool   `toml:"silent"`
 	Verbose        bool   `toml:"verbose"`

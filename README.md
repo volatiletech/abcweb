@@ -117,10 +117,24 @@ ABCWeb comes with [Cobra](https://github.com/spf13/cobra) for handling command-l
 [Viper](https://github.com/spf13/viper) for handling configuration loading. These packages are widely
 known, widely used and widely enjoyed.
 
-#### Vendoring
+#### Dependencies
 
-When ABCWeb generates your app it also runs `go mod init` to generate you a go mod file and download
-relevant dependencies for the project. 
+ABCWeb uses the following dependency managers:
+
+* Go modules
+* NPM (if not skipped when generating the app)
+
+When a project is created no versions for any software is recorded in go.mod and package.json. When you first run `go` 
+tool commands and `npm install`, the required packages will be downloaded and have their versions fixed in 
+`go.mod` and `package.lock`. You should commit these files to ensure reproducible builds.
+
+#### Dependencies
+
+ABCWeb uses `npm` for asset management (if specified when generating the app) and `go mod` for Go dependency management.
+
+
+When ABCWeb generates your app it also runs `go mod init` to generate you a go mod file. These dependencies will
+ be downloaded when you run `go build` or when abcweb runs that for you when you run `abcweb dev`.
 
 #### Build System, Asset Pipeline & Task Running
 
