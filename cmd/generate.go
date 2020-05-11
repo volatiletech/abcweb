@@ -18,7 +18,7 @@ import (
 // generateCmd represents the "generate" command
 var generateCmd = &cobra.Command{
 	Use:     "gen",
-	Short:   "Generate your migration files",
+	Short:   "Generate your migrations, certs and config files",
 	Example: "abcweb gen migration add_users",
 }
 
