@@ -173,6 +173,7 @@ func newCmdRun(cmd *cobra.Command, args []string) error {
 	if wireErr == nil {
 		fmt.Println("\trunning -> wire")
 		cmd := exec.Command("wire")
+		cmd.Dir = newCmdConfig.AppPath
 		err = cmd.Run()
 		if err != nil {
 			return errors.Wrap(err, "wire failed")
