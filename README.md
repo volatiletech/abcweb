@@ -119,11 +119,8 @@ known, widely used and widely enjoyed.
 
 #### Vendoring
 
-When ABCWeb generates your app it also includes a `Gopkg.toml` file with all of its dependencies
-and their locked versions. The `abcweb new` command will automatically sync your `vendor` folder on
-generation by running the `dep ensure` command.
-[dep](github.com/golang/dep) was the tool of choice here since the file formats have now been
-locked in and it's shaping up to become the standard for Go vendoring.
+When ABCWeb generates your app it also runs `go mod init` to generate you a go mod file and download
+relevant dependencies for the project. 
 
 #### Build System, Asset Pipeline & Task Running
 
