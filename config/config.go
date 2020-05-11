@@ -1,10 +1,8 @@
 package config
 
 import (
-	"bytes"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -19,8 +17,6 @@ import (
 const (
 	// AppConfigFilename is the filename for the app config file
 	AppConfigFilename = "config.toml"
-	// basePackage is used to find templates
-	basePackage = "github.com/volatiletech/abcweb"
 )
 
 // AppFS is a handle to the filesystem in use
@@ -162,23 +158,24 @@ func getActiveEnv(appPath, appName string) string {
 // getAppPath executes the git cmd "git rev-parse --show-toplevel" to obtain
 // the full path of the current app. The last folder in the path is the app name.
 func getAppPath() (string, error) {
-	gitCmd := exec.Command("git", "rev-parse", "--show-toplevel")
-
-	b := &bytes.Buffer{}
-	gitCmd.Stdout = b
-
-	err := gitCmd.Run()
+	f, err := os.Stat(".abcweb.toml")
 	if err != nil {
-		return "", errors.Wrap(err, "cannot find app root dir git rev-parse failed")
+		if os.IsNotExist(err) {
+			return "", errors.New("abcweb must be run from project root directory")
+		}
+		return "", err
 	}
 
-	output := b.String()
-
-	if len(output) == 0 {
-		return "", errors.New("cannot find app root dir git rev-parse had no output")
+	if f.IsDir() {
+		return "", errors.New(".abcweb.toml is a directory, not a file")
 	}
 
-	return strings.TrimSpace(output), nil
+	path, err := filepath.Abs(f.Name())
+	if err != nil {
+		return "", errors.Wrap(err, "cannot find absolute path to .abcweb.toml")
+	}
+
+	return filepath.Dir(path), nil
 }
 
 // getAppName gets the appname portion of a project path

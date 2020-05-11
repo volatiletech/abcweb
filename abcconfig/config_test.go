@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/pflag"
 )
 
@@ -647,8 +646,6 @@ func TestGetTagMappings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	spew.Dump(mappings)
 }
 
 // test a situation like we have in abcweb's generated app with the
