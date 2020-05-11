@@ -1,4 +1,4 @@
-module github.com/volatiletech/abcweb
+module github.com/volatiletech/abcweb/v5
 
 go 1.14
 
