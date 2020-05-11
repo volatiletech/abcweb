@@ -7,6 +7,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/djherbis/times v1.2.0
 	github.com/fatih/color v1.9.0 // indirect
+	github.com/friendsofgo/errors v0.9.2 // indirect
 	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
@@ -22,8 +23,11 @@ require (
 	github.com/spf13/viper v1.6.3
 	github.com/stretchr/testify v1.3.0
 	github.com/unrolled/render v1.0.3
+	github.com/volatiletech/abcweb v3.0.4+incompatible
+	github.com/volatiletech/inflect v0.0.1 // indirect
 	github.com/volatiletech/mig v1.2.0
 	github.com/volatiletech/refresh v2.0.0+incompatible
+	github.com/volatiletech/sqlboiler v3.7.1+incompatible // indirect
 	go.uber.org/zap v1.10.0
 	gopkg.in/redis.v5 v5.2.9
 )

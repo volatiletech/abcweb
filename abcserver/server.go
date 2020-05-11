@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/volatiletech/abcweb/v5/abcconfig"
 	"go.uber.org/zap"
 )
 

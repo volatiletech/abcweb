@@ -11,7 +11,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/volatiletech/abcweb/abcrender"
+	"github.com/volatiletech/abcweb/v5/abcrender"
 )
 
 func TestRemoveAndAdd(t *testing.T) {

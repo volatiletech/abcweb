@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/volatiletech/abcweb/config"
+	"github.com/volatiletech/abcweb/v5/config"
 )
 
 var (

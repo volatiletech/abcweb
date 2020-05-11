@@ -248,7 +248,6 @@ to the main ones:
 
 ### Database 
 * **Loading:** [godoc.org/github.com/volatiletech/abcweb/abcdatabase](https://godoc.org/github.com/volatiletech/abcweb/abcdatabase)
-* **ORM:** [github.com/volatiletech/sqlboiler](https://github.com/volatiletech/sqlboiler)
 * **Migrations:** [github.com/volatiletech/mig](https://github.com/volatiletech/mig)
 
 ### Project Structure

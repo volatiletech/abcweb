@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/spf13/afero"
-	"github.com/volatiletech/abcweb/config"
+	"github.com/volatiletech/abcweb/v5/config"
 )
 
 func init() {

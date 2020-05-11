@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/volatiletech/abcweb/abcconfig"
-	"github.com/volatiletech/abcweb/abcmiddleware"
-	"github.com/volatiletech/abcweb/abcrender"
+	"github.com/volatiletech/abcweb/v5/abcconfig"
+	"github.com/volatiletech/abcweb/v5/abcmiddleware"
+	"github.com/volatiletech/abcweb/v5/abcrender"
 	"go.uber.org/zap"
 )
 

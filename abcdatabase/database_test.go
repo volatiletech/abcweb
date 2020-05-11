@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/volatiletech/abcweb/abcconfig"
+	"github.com/volatiletech/abcweb/v5/abcconfig"
 )
 
 func TestGetConnStr(t *testing.T) {

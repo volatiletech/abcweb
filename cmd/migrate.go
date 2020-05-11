@@ -9,7 +9,7 @@ import (
 
 	"github.com/kat-co/vala"
 	"github.com/spf13/cobra"
-	"github.com/volatiletech/abcweb/config"
+	"github.com/volatiletech/abcweb/v5/config"
 )
 
 // migrateCmd represents the "migrate" command

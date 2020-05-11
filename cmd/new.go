@@ -15,8 +15,8 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/volatiletech/abcweb/cert"
-	"github.com/volatiletech/abcweb/strmangle"
+	"github.com/volatiletech/abcweb/v5/cert"
+	"github.com/volatiletech/abcweb/v5/strmangle"
 )
 
 var newCmdConfig newConfig
@@ -27,10 +27,10 @@ var newCmd = &cobra.Command{
 	Short: "Generate a new abcweb app",
 	Long: `The 'abcweb new' command generates a new abcweb application with a 
 default directory structure and configuration at the Go src import path you specify.
-
-The app will generate inside a new APPNAME folder.
 `,
-	Example: "abcweb new github.com/USERNAME/APPNAME",
+	Example: `abcweb new github.com/john/spinesnapper          -> generates app inside a ./spinesnapper folder
+abcweb new github.com/john/spinesnapper/backend  -> generates app inside a ./backend folder
+abcweb new gopkg.in/yaml                         -> generates app inside a ./yaml folder`,
 	// Needs to be a persistentPreRunE to override root's config.Initialize call
 	// otherwise abcweb needs to be run from the abcweb project or the git rev-parse
 	// will cause a fatal error.

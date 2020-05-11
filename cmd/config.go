@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/volatiletech/abcweb/config"
+	"github.com/volatiletech/abcweb/v5/config"
 )
 
 const (

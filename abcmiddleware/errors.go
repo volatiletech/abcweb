@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	chimiddleware "github.com/go-chi/chi/middleware"
-	"github.com/volatiletech/abcweb/abcrender"
+	"github.com/volatiletech/abcweb/v5/abcrender"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
