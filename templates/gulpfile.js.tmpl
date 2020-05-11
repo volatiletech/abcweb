@@ -3,7 +3,7 @@
 */
 
 var gulp = require('gulp');
-var util = require('gulp-util');
+var argv = require('minimist')(process.argv.slice(2));
 var es   = require('event-stream');
 var path = require('path');
 
@@ -30,7 +30,7 @@ var config = {
 	// If production is set to true then livereload.js will be ignored.
 	{{- end}}
 	// production is automatically set to true when running "build" task.
-	production: !!util.env.production,
+	production: !!argv["production"],
 
 	// buildTarget is initialized by the setup function.
 	// buildTarget is set to build or {{.AppEnvName}}_SERVER_PUBLIC_PATH if present. 
