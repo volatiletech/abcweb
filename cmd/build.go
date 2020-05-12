@@ -27,6 +27,7 @@ func init() {
 	buildCmd.Flags().BoolP("go-only", "g", false, "Only build the go binary")
 	buildCmd.Flags().BoolP("assets-only", "a", false, "Only build the assets")
 	buildCmd.Flags().BoolP("verbose", "v", false, "Verbose output")
+	buildCmd.Flags().BoolP("alpine", "", false, "Create a statically linked binary for compatibility with Alpine systems")
 
 	RootCmd.AddCommand(buildCmd)
 }
@@ -59,6 +60,10 @@ func buildApp() error {
 
 	if cnf.ModeViper.GetBool("verbose") {
 		args = append(args, "-v")
+	}
+
+	if cnf.ModeViper.GetBool("alpine") {
+		args = append(args, "-tags netgo")
 	}
 
 	var version string

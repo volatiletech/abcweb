@@ -37,6 +37,7 @@ func init() {
 	distCmd.Flags().BoolP("no-migrations", "", false, "Skip inclusion of migrations folder")
 	distCmd.Flags().BoolP("no-assets", "", false, "Skip inclusion of public assets folder")
 	distCmd.Flags().BoolP("no-templates", "", false, "Skip inclusion of templates folder")
+	distCmd.Flags().BoolP("alpine", "a", false, "Create a statically linked binary for compatibility with Alpine systems")
 
 	RootCmd.AddCommand(distCmd)
 }
