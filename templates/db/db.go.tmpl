@@ -25,7 +25,7 @@ func InitDB(cfg abcconfig.DBConfig) (*sql.DB, error) {
 		return nil, err
 	}
 
-	db, err = sql.Open(cfg.DB, connStr)
+	db, err = sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
