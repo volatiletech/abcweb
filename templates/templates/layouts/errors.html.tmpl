@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>{{.AppName}}</title>
+
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<link rel="icon" href="/favicon.ico">
+
+		{{if eq .Bootstrap "regular" -}}
+		{{"{"}}{ cssPath "bootstrap/bootstrap.css" | cssTag }{{"}"}}
+		{{- else if eq .Bootstrap "gridonly" -}}
+		{{"{"}}{ cssPath "bootstrap/bootstrap-grid.css" | cssTag }{{"}"}}
+		{{- else if eq .Bootstrap "rebootonly" -}}
+		{{"{"}}{ cssPath "bootstrap/bootstrap-reboot.css" | cssTag }{{"}"}}
+		{{- else if eq .Bootstrap "gridandrebootonly" -}}
+		{{"{"}}{ cssPath "bootstrap/bootstrap-grid.css" | cssTag }{{"}"}}
+		{{"{"}}{ cssPath "bootstrap/bootstrap-reboot.css" | cssTag }{{"}"}}
+		{{- end}}
+		{{if not .NoFontAwesome -}}
+		{{"{"}}{ cssPath "font-awesome/font-awesome.css" | cssTag }{{"}"}}
+		{{- end}}
+		{{"{"}}{ cssPath "main.css" | cssTag }{{"}"}}
+		{{if not .NoLiveReload -}}
+      {{"{"}}{if config.Server.LiveReload -}{{"}"}}
+         {{"{"}}{liveReload "livereload.js" "localhost" | jsTag }{{"}"}}
+      {{"{"}}{- end}{{"}"}}
+		{{- end}}
+	</head>
+	<body>
+		{{"{"}}{ yield }{{"}"}}
+
+		{{- if (and (eq .Bootstrap "regular") (not .NoBootstrapJS)) -}}
+		<!-- jquery is a twitter bootstrap dependency -->
+		{{"{"}}{ jsPath "jquery-3.1.1.js" | jsTag }{{"}"}}
+
+		<!-- tether is a twitter bootstrap tooltips dependency -->
+		{{"{"}}{ jsPath "tether.js" | jsTag }{{"}"}}
+
+		<!-- include all twitter bootstrap javascript plugins -->
+		{{"{"}}{ jsBootstrap }{{"}"}}
+		{{- end}}
+	</body>
+</html>

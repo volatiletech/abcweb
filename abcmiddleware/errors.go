@@ -155,17 +155,15 @@ func (m *ErrorManager) Errors(ctrl AppHandler) http.HandlerFunc {
 			log.Error("request error", fields...)
 			requestID := chimiddleware.GetReqID(r.Context())
 
-			if len(layout) != 0 {
-				m.render.HTMLWithLayout(w, code, template, requestID, layout)
-			} else {
-				m.render.HTML(w, code, template, requestID)
+			err = m.render.HTMLWithLayout(w, code, template, requestID, layout)
+			if err != nil {
+				panic(err)
 			}
 		default: // warn does not log stacktrace in prod, but error and above does
 			log.Warn("request failed", fields...)
-			if len(layout) != 0 {
-				m.render.HTMLWithLayout(w, code, template, nil, layout)
-			} else {
-				m.render.HTML(w, code, template, nil)
+			err = m.render.HTMLWithLayout(w, code, template, nil, layout)
+			if err != nil {
+				panic(err)
 			}
 		}
 	}

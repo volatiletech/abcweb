@@ -17,7 +17,7 @@ func BuildApp(flags *pflag.FlagSet) (*app.App, func(), error) {
 		{{if not .NoSessions -}}
 		app.NewSessions,
 		{{end -}}
-		abcmiddleware.NewErrorManager,
+		app.NewErrorManager,
 		routes.NewRouter,
 		rendering.New,
 		app.NewRootController,

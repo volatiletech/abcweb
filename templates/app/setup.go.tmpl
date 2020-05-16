@@ -68,6 +68,12 @@ func NewRootController(renderer abcrender.Renderer {{- if not .NoSessions}}, ses
 	}
 }
 
+// NewErrorManager creates a new error manager
+func NewErrorManager(renderer abcrender.Renderer) *abcmiddleware.ErrorManager {
+	// The empty string here can be replaced for a specific layout for errors
+	return abcmiddleware.NewErrorManager(renderer, "layouts/errors")
+}
+
 // NewManifest makes an assets manifest if it's set in the config
 func NewManifest(cfg *Config) (map[string]string, error) {
 	if !cfg.AppConfig.Server.AssetsManifest {

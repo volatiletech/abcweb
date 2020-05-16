@@ -39,8 +39,8 @@ func NewRouter(
 	methodNotAllowed := abcserver.NewMethodNotAllowedHandler()
 	router.MethodNotAllowed(methodNotAllowed.Handler(renderer))
 	
-	errMgr.Add(abcmiddleware.NewError(controllers.ErrUnauthorized, http.StatusUnauthorized, "errors/401", nil))
-	errMgr.Add(abcmiddleware.NewError(controllers.ErrForbidden, http.StatusForbidden, "errors/403", nil))
+	errMgr.Add(abcmiddleware.NewError(controllers.ErrUnauthorized, http.StatusUnauthorized, "layouts/errors", "errors/401", nil))
+	errMgr.Add(abcmiddleware.NewError(controllers.ErrForbidden, http.StatusForbidden, "layouts/errors", "errors/403", nil))
 
 	// Make a pointer to the errMgr.Errors function so it's easier to call
 	e := errMgr.Errors
