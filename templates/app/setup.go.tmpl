@@ -208,7 +208,7 @@ func NewMiddlewares(cfg *Config,{{if not .NoSessions}} sessions abcsessions.Over
 	// Graceful panic recovery that uses zap to log the stack trace
 	recoverMiddleware := abcmiddleware.ZapRecover(log, func(w http.ResponseWriter, r *http.Request) {
 		requestID := chimiddleware.GetReqID(r.Context())
-		renderer.HTML(w, http.StatusInternalServerError, "errors/500", requestID)
+		renderer.HTMLWithLayout(w, http.StatusInternalServerError, "layouts/errors", "errors/500", requestID)
 	})
 	middlewares = append(middlewares, recoverMiddleware.Wrap)
 

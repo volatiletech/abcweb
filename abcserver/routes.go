@@ -27,12 +27,14 @@ type MethodNotAllowed struct {
 
 // NotFoundTemplates for specific errors
 type NotFoundTemplates struct {
+	ErrorLayout         string
 	NotFound            string
 	InternalServerError string
 }
 
 // MethodNotAllowedTemplates for specific errors
 type MethodNotAllowedTemplates struct {
+	ErrorLayout      string
 	MethodNotAllowed string
 }
 
@@ -40,6 +42,7 @@ type MethodNotAllowedTemplates struct {
 func NewMethodNotAllowedHandler() *MethodNotAllowed {
 	return &MethodNotAllowed{
 		Templates: MethodNotAllowedTemplates{
+			ErrorLayout:      "layouts/errors",
 			MethodNotAllowed: "errors/405",
 		},
 	}
@@ -49,6 +52,7 @@ func NewMethodNotAllowedHandler() *MethodNotAllowed {
 func NewNotFoundHandler(manifest map[string]string) *NotFound {
 	return &NotFound{
 		Templates: NotFoundTemplates{
+			ErrorLayout:         "layouts/errors",
 			NotFound:            "errors/404",
 			InternalServerError: "errors/500",
 		},
@@ -124,7 +128,7 @@ func (n *NotFound) Handler(cfg abcconfig.ServerConfig, render abcrender.Renderer
 		stat, err := os.Stat(fpath)
 		// If file doesn't exist, or there's no error and the path is a dir, then 404
 		if os.IsNotExist(err) || (err == nil && stat.IsDir()) {
-			if err := render.HTML(w, http.StatusNotFound, n.Templates.NotFound, nil); err != nil {
+			if err := render.HTMLWithLayout(w, http.StatusNotFound, n.Templates.NotFound, nil, n.Templates.ErrorLayout); err != nil {
 				panic(err)
 			}
 			return
@@ -134,7 +138,7 @@ func (n *NotFound) Handler(cfg abcconfig.ServerConfig, render abcrender.Renderer
 				zap.String("file_path", fpath),
 				zap.Error(err),
 			)
-			if err := render.HTML(w, http.StatusInternalServerError, n.Templates.InternalServerError, nil); err != nil {
+			if err := render.HTMLWithLayout(w, http.StatusInternalServerError, n.Templates.InternalServerError, nil, n.Templates.ErrorLayout); err != nil {
 				panic(err)
 			}
 			return
@@ -147,7 +151,7 @@ func (n *NotFound) Handler(cfg abcconfig.ServerConfig, render abcrender.Renderer
 				zap.String("file_path", fpath),
 				zap.Error(err),
 			)
-			if err := render.HTML(w, http.StatusInternalServerError, n.Templates.InternalServerError, nil); err != nil {
+			if err := render.HTMLWithLayout(w, http.StatusInternalServerError, n.Templates.InternalServerError, nil, n.Templates.ErrorLayout); err != nil {
 				panic(err)
 			}
 			return
@@ -179,7 +183,7 @@ func (m *MethodNotAllowed) Handler(render abcrender.Renderer) http.HandlerFunc {
 			zap.String("remote_addr", r.RemoteAddr),
 		)
 
-		if err := render.HTML(w, http.StatusMethodNotAllowed, m.Templates.MethodNotAllowed, nil); err != nil {
+		if err := render.HTMLWithLayout(w, http.StatusMethodNotAllowed, m.Templates.MethodNotAllowed, nil, m.Templates.ErrorLayout); err != nil {
 			panic(err)
 		}
 	}
