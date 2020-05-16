@@ -12,7 +12,7 @@ import (
 	"os/signal"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/friendsofgo/errors"
 	"github.com/volatiletech/abcweb/v5/abcconfig"
 	"go.uber.org/zap"
 )

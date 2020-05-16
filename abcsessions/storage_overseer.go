@@ -3,7 +3,7 @@ package abcsessions
 import (
 	"net/http"
 
-	"github.com/pkg/errors"
+	"github.com/friendsofgo/errors"
 	uuid "github.com/satori/go.uuid"
 )
 

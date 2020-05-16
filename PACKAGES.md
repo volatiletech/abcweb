@@ -33,7 +33,7 @@ Thank you for your continued efforts.
 * [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure)
 * [github.com/pelletier/go-buffruneio](https://github.com/pelletier/go-buffruneio)
 * [github.com/pelletier/go-toml](https://github.com/pelletier/go-toml)
-* [github.com/pkg/errors](https://github.com/pkg/errors)
+* [github.com/friendsofgo/errors](https://github.com/friendsofgo/errors)
 * [github.com/pmezard/go-difflib/difflib](https://github.com/pmezard/go-difflib/difflib)
 * [github.com/go-chi/chi](https://github.com/go-chi/chi)
 * [github.com/go-chi/chi/middleware](https://github.com/go-chi/chi/middleware)

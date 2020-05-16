@@ -22,6 +22,8 @@ var (
 type ErrorContainer struct {
 	// The error that will be returned by the controller
 	Err error
+	// Optional override layout string
+	ErrLayout string
 	// The template file top render (e.g "errors/500")
 	Template string
 	// HTTP status code to respond with
@@ -32,16 +34,18 @@ type ErrorContainer struct {
 
 // ErrorManager helps manage errors at the application level
 type ErrorManager struct {
-	render abcrender.Renderer
-	errors []ErrorContainer
+	render    abcrender.Renderer
+	errors    []ErrorContainer
+	errLayout string
 }
 
 // NewErrorManager creates an error manager that can be used to
 // create an error handler to wrap your controllers with
-func NewErrorManager(render abcrender.Renderer) *ErrorManager {
+func NewErrorManager(render abcrender.Renderer, errorLayout string) *ErrorManager {
 	return &ErrorManager{
-		render: render,
-		errors: []ErrorContainer{},
+		render:    render,
+		errors:    []ErrorContainer{},
+		errLayout: errorLayout,
 	}
 }
 
@@ -49,7 +53,7 @@ func NewErrorManager(render abcrender.Renderer) *ErrorManager {
 // If you provide a handler here (instead of nil) then the Errors middleware
 // will use your handler opposed to taking the default route of logging
 // and rendering. You must handle logging and rendering yourself.
-func NewError(err error, code int, template string, handler ErrorHandler) ErrorContainer {
+func NewError(err error, code int, errorLayout, template string, handler ErrorHandler) ErrorContainer {
 	if err == nil {
 		panic("cannot supply nil error")
 	}
@@ -60,10 +64,11 @@ func NewError(err error, code int, template string, handler ErrorHandler) ErrorC
 	}
 
 	return ErrorContainer{
-		Err:      err,
-		Code:     code,
-		Template: template,
-		Handler:  handler,
+		Err:       err,
+		Code:      code,
+		ErrLayout: errorLayout,
+		Template:  template,
+		Handler:   handler,
 	}
 }
 
@@ -100,12 +105,13 @@ func (m *ErrorManager) Errors(ctrl AppHandler) http.HandlerFunc {
 		}
 
 		var container ErrorContainer
+		var layout string
 		var template string
 		var code int
 
 		found := false
 		for _, e := range m.errors {
-			if e.Err == err {
+			if errors.Is(err, e.Err) {
 				container = e
 				found = true
 				break
@@ -114,6 +120,7 @@ func (m *ErrorManager) Errors(ctrl AppHandler) http.HandlerFunc {
 
 		if !found { // no error containers/handlers found, default path
 			code = http.StatusInternalServerError
+			layout = m.errLayout
 			template = "errors/500"
 		} else if container.Handler != nil { // container and handler are set
 			err := container.Handler(w, r, container, m.render)
@@ -125,6 +132,7 @@ func (m *ErrorManager) Errors(ctrl AppHandler) http.HandlerFunc {
 			return
 		} else { // container is set and handler is nil
 			code = container.Code
+			layout = container.ErrLayout
 			template = container.Template
 		}
 
@@ -146,10 +154,19 @@ func (m *ErrorManager) Errors(ctrl AppHandler) http.HandlerFunc {
 		case http.StatusInternalServerError:
 			log.Error("request error", fields...)
 			requestID := chimiddleware.GetReqID(r.Context())
-			m.render.HTML(w, code, template, requestID)
+
+			if len(layout) != 0 {
+				m.render.HTMLWithLayout(w, code, template, requestID, layout)
+			} else {
+				m.render.HTML(w, code, template, requestID)
+			}
 		default: // warn does not log stacktrace in prod, but error and above does
 			log.Warn("request failed", fields...)
-			m.render.HTML(w, code, template, nil)
+			if len(layout) != 0 {
+				m.render.HTMLWithLayout(w, code, template, nil, layout)
+			} else {
+				m.render.HTML(w, code, template, nil)
+			}
 		}
 	}
 }

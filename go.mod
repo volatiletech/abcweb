@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/djherbis/times v1.2.0
 	github.com/fatih/color v1.9.0 // indirect
+	github.com/friendsofgo/errors v0.9.2
 	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
@@ -13,7 +14,6 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/pierrre/archivefile v0.0.0-20170218184037-e2d100bc74f5
-	github.com/pkg/errors v0.9.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v1.0.0

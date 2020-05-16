@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/djherbis/times"
-	"github.com/pkg/errors"
+	"github.com/friendsofgo/errors"
 )
 
 // DiskStorer is a session storer implementation for saving sessions

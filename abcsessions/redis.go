@@ -3,7 +3,7 @@ package abcsessions
 import (
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/friendsofgo/errors"
 	redis "gopkg.in/redis.v5"
 )
 

@@ -5,7 +5,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/pkg/errors"
+	"github.com/friendsofgo/errors"
 )
 
 // zapResponseWriter is a wrapper that includes that http status and size for logging

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/friendsofgo/errors"
 )
 
 // session holds the session value and the flash messages key/value mapping

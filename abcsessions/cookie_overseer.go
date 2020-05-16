@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/pkg/errors"
+	"github.com/friendsofgo/errors"
 )
 
 // CookieOverseer oversees cookie operations that are encrypted and verified
