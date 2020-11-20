@@ -79,7 +79,7 @@ func buildApp() error {
 
 	buildTime := time.Now().Format(time.RFC3339)
 
-	args = append(args, "-ldflags", fmt.Sprintf("-X main.version=%s -X main.buildTime=%s", version, buildTime))
+	args = append(args, "-trimpath", "-ldflags", fmt.Sprintf("-X main.version=%s -X main.buildTime=%s", version, buildTime))
 
 	cmd = exec.Command("go", args...)
 	cmd.Dir = cnf.AppPath
