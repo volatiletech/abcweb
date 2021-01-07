@@ -378,7 +378,7 @@ func NewServerFlagSet() *pflag.FlagSet {
 	// server subsection flags
 	flags.BoolP("server.live-reload", "", false, "Enable or disable LiveReload")
 	flags.BoolP("server.prod-logger", "", true, "Use the production logger, JSON and log level warn")
-	flags.StringP("server.bind", "", ":80", `HTTP bind address, eg: ":80"`)
+	flags.StringP("server.bind", "", "", `HTTP bind address, eg: ":80"`)
 	flags.StringP("server.tls-bind", "", "", `HTTPS bind address, eg: ":443"`)
 	flags.StringP("server.tls-cert-file", "", "", "TLS certificate file path")
 	flags.StringP("server.tls-key-file", "", "", "TLS key file path")
