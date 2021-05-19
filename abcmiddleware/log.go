@@ -57,8 +57,7 @@ func (z zapLogger) writeZap(zw *zapResponseWriter, r *http.Request, startTime ti
 		}
 	}
 
-	// log all the fields
-	logger.Info(fmt.Sprintf("%s request", protocol),
+	fields := []zap.Field{
 		zap.Int("status", zw.status),
 		zap.Int("size", zw.size),
 		zap.Bool("hijacked", zw.hijacked),
@@ -69,5 +68,11 @@ func (z zapLogger) writeZap(zw *zapResponseWriter, r *http.Request, startTime ti
 		zap.String("host", r.Host),
 		zap.String("remote_addr", r.RemoteAddr),
 		zap.Duration("elapsed", elapsed),
-	)
+	}
+
+	if ff := r.Header.Get("X-Forwarded-For"); ff != "" {
+		fields = append(fields, zap.String("x_forwarded_for", ff))
+	}
+
+	logger.Info(fmt.Sprintf("%s request", protocol), fields...)
 }
