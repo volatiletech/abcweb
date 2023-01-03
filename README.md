@@ -10,10 +10,6 @@
 - As such, I do not recommend this project for production systems unless you're well equipped to diagnose problems yourself.
 ```
 
-## Install
-
-`go install github.com/volatiletech/abcweb/v5@latest`
-
 ABCWeb was heavily inspired by Rails for its ease-of-use, flexibility, 
 and development speed. The goal of this project is to make developing a 
 web app in Go just as painless. We've tried to remain as unopinionated
@@ -30,6 +26,10 @@ what features and packages you would like enabled.
 This customizability allows abcweb to suit your requirements, whether that be a 
 server-side rendered web app with html templates, a client-side rendered 
 web app (react, angularjs) or a stand-alone web API server.
+
+## Install
+
+`go install github.com/volatiletech/abcweb/v5@latest`
 
 ## Contents
 
