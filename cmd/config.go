@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	basePackage         = "github.com/volatiletech/abcweb"
+	basePackage         = "github.com/volatiletech/abcweb/v5"
 	templatesDirectory  = "templates"
 	migrationsDirectory = "db/migrations"
 )
