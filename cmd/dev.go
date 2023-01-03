@@ -10,7 +10,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/spf13/cobra"
-	"github.com/volatiletech/refresh/refresh"
+	"github.com/volatiletech/refresh/v3/refresh"
 )
 
 // devCmd represents the "dev" command

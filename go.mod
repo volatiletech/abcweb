@@ -5,7 +5,6 @@ go 1.14
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/djherbis/times v1.2.0
-	github.com/fatih/color v1.9.0 // indirect
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
@@ -15,14 +14,14 @@ require (
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/pierrre/archivefile v0.0.0-20170218184037-e2d100bc74f5
 	github.com/satori/go.uuid v1.2.0
-	github.com/spf13/afero v1.2.2
-	github.com/spf13/cobra v1.0.0
+	github.com/spf13/afero v1.6.0
+	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.6.3
-	github.com/stretchr/testify v1.3.0
+	github.com/spf13/viper v1.8.1
+	github.com/stretchr/testify v1.7.0
 	github.com/unrolled/render v1.0.3
 	github.com/volatiletech/mig v1.2.0
-	github.com/volatiletech/refresh v2.0.0+incompatible
-	go.uber.org/zap v1.10.0
+	github.com/volatiletech/refresh/v3 v3.0.4
+	go.uber.org/zap v1.17.0
 	gopkg.in/redis.v5 v5.2.9
 )

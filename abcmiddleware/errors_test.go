@@ -34,10 +34,10 @@ func TestRemoveAndAdd(t *testing.T) {
 		Handler:  nil,
 	}
 
-	m := NewErrorManager(&abcrender.Render{})
+	m := NewErrorManager(&abcrender.Render{}, "")
 
-	m.Add(NewError(ea, 404, "errors/404", nil))
-	m.Add(NewError(eb, 404, "errors/404", nil))
+	m.Add(NewError(ea, 404, "", "errors/404", nil))
+	m.Add(NewError(eb, 404, "", "errors/404", nil))
 
 	if len(m.errors) != 2 {
 		t.Errorf("expected len 2, got %d", len(m.errors))
@@ -76,8 +76,8 @@ func TestCustomErrorHandler(t *testing.T) {
 
 	// test handler route
 	ea := errors.New("error1")
-	m := NewErrorManager(&abcrender.Render{})
-	m.Add(NewError(ea, 404, "errors/404", myHandler))
+	m := NewErrorManager(&abcrender.Render{}, "")
+	m.Add(NewError(ea, 404, "", "errors/404", myHandler))
 	fn := m.Errors(func(w http.ResponseWriter, r *http.Request) error {
 		return ea
 	})
@@ -90,7 +90,7 @@ func TestCustomErrorHandler(t *testing.T) {
 
 	// test non-handler non-custom error route
 	rndr := &mockRender{}
-	m = NewErrorManager(rndr)
+	m = NewErrorManager(rndr, "")
 	fn = m.Errors(func(w http.ResponseWriter, r *http.Request) error {
 		// generic error that isnt added to error manager
 		// this should test default case
@@ -110,8 +110,8 @@ func TestCustomErrorHandler(t *testing.T) {
 	// test non-handler but custom error route
 	e1 := errors.New("100 error")
 	rndr = &mockRender{}
-	m = NewErrorManager(rndr)
-	m.Add(NewError(e1, 100, "errors/100", nil))
+	m = NewErrorManager(rndr, "")
+	m.Add(NewError(e1, 100, "", "errors/100", nil))
 	fn = m.Errors(func(w http.ResponseWriter, r *http.Request) error {
 		// generic error that isnt added to error manager
 		// this should test default case
